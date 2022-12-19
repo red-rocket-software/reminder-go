@@ -10,5 +10,5 @@ type Todo struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	DeadlineAt  time.Time `json:"deadlineAt"`
 	FinishedAt  time.Time `json:"finishedAt,omitempty"`
-	Completed   string    `json:"completed"`
+	Completed   bool      `json:"completed"`
 }
