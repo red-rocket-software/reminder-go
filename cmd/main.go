@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/red-rocket-software/reminder-go/server"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -12,6 +12,9 @@ func init() {
 }
 
 func main() {
+	cfg := config.GetConfig()
+	log.Info(cfg.HTTP.IP)
+
 	app := server.New()
 
 	log.Info("Starting server on port 8080")
