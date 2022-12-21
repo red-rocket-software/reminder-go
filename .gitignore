@@ -19,3 +19,8 @@
 env/
 
 /.idea
+
+# log files
+logs
+logs/
+*.log
