@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
+	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,12 +10,13 @@ import (
 )
 
 type Server struct {
-	s *http.Server
+	s      *http.Server
+	logger logging.Logger
 }
 
 // func New returns new Server. You should pass DB as a parameter
-func New() *Server {
-	return &Server{}
+func New(logger logging.Logger) *Server {
+	return &Server{logger: logger}
 }
 
 // func Run start server on IP address an PORT passed in parameters
@@ -33,7 +34,7 @@ func (server *Server) Run(ip string, port string) error {
 
 	go func() {
 		if err := server.s.ListenAndServe(); err != nil {
-			log.Fatalf("Failed to listen and : %v", err)
+			server.logger.Fatalf("Failed to listen and : %v", err)
 		}
 	}()
 
@@ -48,7 +49,7 @@ func (server *Server) Run(ip string, port string) error {
 
 	<-ctx.Done()
 
-	log.Info("Shutting down")
+	server.logger.Info("Shutting down")
 	os.Exit(0)
 
 	return server.s.Shutdown(ctx)

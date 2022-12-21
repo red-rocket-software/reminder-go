@@ -2,24 +2,19 @@ package main
 
 import (
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/pkg/utils"
+	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/server"
-	log "github.com/sirupsen/logrus"
 )
-
-func init() {
-	utils.ConfigureLogger()
-}
 
 func main() {
 	cfg := config.GetConfig()
-	log.Info(cfg.HTTP.IP)
+	logger := logging.GetLogger()
 
-	app := server.New()
+	app := server.New(logger)
 
-	log.Info("Starting server on port 8080")
+	logger.Debugf("Starting server on port %s", cfg.HTTP.Port)
 
-	if err := app.Run("localhost", "8080"); err != nil {
-		log.Fatalf("%s", err.Error())
+	if err := app.Run(cfg.HTTP.IP, cfg.HTTP.Port); err != nil {
+		logger.Fatalf("%s", err.Error())
 	}
 }
