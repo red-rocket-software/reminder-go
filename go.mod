@@ -7,6 +7,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 )
 
+
 require (
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/joho/godotenv v1.4.0 // indirect
