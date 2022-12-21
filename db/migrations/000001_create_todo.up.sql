@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS todo (
     "CreatedAt" timestamptz NOT NULL,
     "DeadlineAt" timestamptz NOT NULL,
     "FinishedAt" timestamptz,
-    "Completed" boolean NOT NULL
+    "Completed" boolean default false
 );
