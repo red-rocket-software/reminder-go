@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
 
-  todo-api:
+  reminder-api:
     container_name: todo-api
     build:
       context: .
