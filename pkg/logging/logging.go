@@ -58,6 +58,7 @@ func init() {
 		},
 		DisableColors: false,
 		FullTimestamp: true,
+		ForceColors:   true,
 	}
 
 	err := os.MkdirAll("logs", 0644)
