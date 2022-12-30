@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"github.com/gorilla/mux"
+	"github.com/red-rocket-software/reminder-go/internal/app/router"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
+
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,31 +13,31 @@ import (
 )
 
 type Server struct {
-	s      *http.Server
-	logger logging.Logger
+	S      *http.Server
+	Router *mux.Router
+	Logger logging.Logger
 }
 
 // func New returns new Server. You should pass DB as a parameter
 func New(logger logging.Logger) *Server {
-	return &Server{logger: logger}
+	return &Server{Logger: logger}
 }
 
 // func Run start server on IP address an PORT passed in parameters
 func (server *Server) Run(ip string, port string) error {
 
-	server.s = &http.Server{
+	server.S = &http.Server{
 
-		Addr: ip + ":" + port,
-		// add router here!
-		// Handler:        router,
+		Addr:           ip + ":" + port,
+		Handler:        router.ConfigureRouter(server.Logger),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
 	go func() {
-		if err := server.s.ListenAndServe(); err != nil {
-			server.logger.Fatalf("Failed to listen and : %v", err)
+		if err := server.S.ListenAndServe(); err != nil {
+			server.Logger.Fatalf("Failed to listen and : %v", err)
 		}
 	}()
 
@@ -49,8 +52,8 @@ func (server *Server) Run(ip string, port string) error {
 
 	<-ctx.Done()
 
-	server.logger.Info("Shutting down")
+	server.Logger.Info("Shutting down")
 	os.Exit(0)
 
-	return server.s.Shutdown(ctx)
+	return server.S.Shutdown(ctx)
 }
