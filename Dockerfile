@@ -29,6 +29,6 @@ COPY --from=builder /main /main
 
 WORKDIR /
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD [ "/main" ]

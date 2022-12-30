@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/red-rocket-software/reminder-go/config"
 )
 
@@ -19,7 +20,7 @@ type Client interface {
 }
 
 // NewClient Create Postgres pgx connection with attempts
-func NewClient(ctx context.Context, maxAttemps int, cfg config.Config) (con *pgx.Conn, err error) {
+func NewClient(ctx context.Context, maxAttemps int, cfg config.Config) (pool *pgxpool.Pool, err error) {
 
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", cfg.Postgres.Username, cfg.Postgres.Password, cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.Database)
 
@@ -27,17 +28,17 @@ func NewClient(ctx context.Context, maxAttemps int, cfg config.Config) (con *pgx
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		con, err = pgx.Connect(ctx, dsn)
+		pool, err = pgxpool.New(ctx, dsn)
 		if err != nil {
-			fmt.Println("failed to connect to postgesql")
+			fmt.Println("failed to connect to postgesql... Going to do the next attempt")
 			return err
 		}
 		return nil
 	}, maxAttemps, 5*time.Second)
 	if err != nil {
-		log.Fatalln("error do with tries postgresql")
+		log.Fatalln("All attempts are exceeded. Unable to connect to postgres")
 	}
-	return con, nil
+	return pool, nil
 }
 
 // DoWithTries  provide attempts to connect db
