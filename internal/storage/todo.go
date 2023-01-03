@@ -1,4 +1,4 @@
-package todo
+package storage
 
 import (
 	"context"
@@ -16,6 +16,7 @@ type StorageTodo struct {
 	logger *logging.Logger
 }
 
+// NewStorageTodo  return new SorageTodo with Postgres pool and logger
 func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo {
 	return &StorageTodo{Postgres: postgres, logger: logger}
 }
@@ -25,12 +26,13 @@ func (s *StorageTodo) GetAllReminds(ctx context.Context) ([]model.Todo, error) {
 	//TODO implement me
 }
 
-// CreateRemind  create new remind in PostgreSQL
+// CreateRemind  store new remind entity to DB PostgreSQL
 func (s *StorageTodo) CreateRemind(ctx context.Context, todo model.Todo) error {
-	const sql = `INSERT INTO todo ("Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt") 
-				 VALUES ($1, $2, $3, $4)`
-
-	_, err := s.Postgres.Exec(ctx, sql, todo.ID, todo.Description, todo.CreatedAt, todo.DeadlineAt, todo.FinishedAt)
+	var id int
+	const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt") 
+				 VALUES ($1, $2, $3) returning "Id"`
+	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.CreatedAt, todo.DeadlineAt)
+	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
 		return err

@@ -5,10 +5,15 @@ import (
 )
 
 type Todo struct {
-	ID          string    `json:"_id"`
+	ID          int       `json:"id"`
 	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
-	DeadlineAt  time.Time `json:"deadlineAt"`
-	FinishedAt  time.Time `json:"finishedAt,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	DeadlineAt  time.Time `json:"deadline_at"`
+	FinishedAt  time.Time `json:"finished_at,omitempty"`
 	Completed   bool      `json:"completed"`
+}
+
+type TodoInput struct {
+	Description string `json:"description"`
+	DeadlineAt  string `json:"deadline_at"`
 }

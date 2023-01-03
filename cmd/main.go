@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/storage/todo"
+	"github.com/red-rocket-software/reminder-go/internal/server"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
-	"github.com/red-rocket-software/reminder-go/server"
 )
 
 func main() {
@@ -22,13 +22,14 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Error create new db client:%v\n", err)
 	}
+	defer postgresClient.Close()
 
-	todo.NewStorageTodo(postgresClient, &logger)
+	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
 
-	app := server.New(logger)
+	app := server.New(logger, todoStorage, ctx)
 	logger.Debugf("Starting server on port %s", cfg.HTTP.Port)
 
-	if err := app.Run(cfg.HTTP.IP, cfg.HTTP.Port); err != nil {
+	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())
 	}
 }
