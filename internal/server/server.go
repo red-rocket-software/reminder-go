@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+
 	"github.com/gorilla/mux"
-	"github.com/red-rocket-software/reminder-go/internal/app/router"
+	"github.com/red-rocket-software/reminder-go/config"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 
 	"net/http"
@@ -13,23 +15,25 @@ import (
 )
 
 type Server struct {
-	S      *http.Server
-	Router *mux.Router
-	Logger logging.Logger
+	S           *http.Server
+	Router      *mux.Router
+	Logger      logging.Logger
+	TodoStorage *storage.StorageTodo
+	ctx         context.Context
 }
 
-// func New returns new Server. You should pass DB as a parameter
-func New(logger logging.Logger) *Server {
-	return &Server{Logger: logger}
+// func New returns new Server. You should pass logger as a parameter
+func New(logger logging.Logger, storage *storage.StorageTodo, ctx context.Context) *Server {
+	return &Server{Logger: logger, TodoStorage: storage, ctx: ctx}
 }
 
 // func Run start server on IP address an PORT passed in parameters
-func (server *Server) Run(ip string, port string) error {
+func (server *Server) Run(cfg *config.Config) error {
 
 	server.S = &http.Server{
 
-		Addr:           ip + ":" + port,
-		Handler:        router.ConfigureRouter(server.Logger),
+		Addr:           cfg.HTTP.IP + ":" + cfg.HTTP.Port,
+		Handler:        server.ConfigureRouter(),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
