@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
@@ -20,6 +22,7 @@ type TodoHandlers interface {
 	GetCurrentReminds(w http.ResponseWriter, r *http.Request)
 }
 
+// AddRemind gets remind from user input, decode and sent to DB. Simple validation - no empty field Description.
 func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -55,4 +58,57 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
+}
+
+func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	rId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	todo, err := s.TodoStorage.GetRemindByID(s.ctx, rId)
+	if err != nil {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+	utils.JsonFormat(w, http.StatusOK, todo)
+}
+
+//UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
+func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	rId, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var input model.TodoUpdate
+
+	err = json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		utils.JsonError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if input.Completed == true {
+		input.FinishedAt = time.Now()
+	}
+
+	if input.Description == "" {
+		utils.JsonError(w, http.StatusUnprocessableEntity, errors.New("description is empty"))
+		return
+	}
+
+	err = s.TodoStorage.UpdateRemind(s.ctx, rId, input)
+	if err != nil {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JsonFormat(w, http.StatusOK, "remind successfully updated")
 }

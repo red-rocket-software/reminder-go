@@ -17,3 +17,9 @@ type TodoInput struct {
 	Description string `json:"description"`
 	DeadlineAt  string `json:"deadline_at"`
 }
+
+type TodoUpdate struct {
+	Description string    `json:"description"`
+	FinishedAt  time.Time `json:"finished_at,omitempty"`
+	Completed   bool      `json:"completed"`
+}
