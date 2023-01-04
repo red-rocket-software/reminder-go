@@ -21,9 +21,27 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo
 	return &StorageTodo{Postgres: postgres, logger: logger}
 }
 
+// GetAllReminds return all todos in DB PostgreSQL
 func (s *StorageTodo) GetAllReminds(ctx context.Context) ([]model.Todo, error) {
-	return nil, nil
-	//TODO implement me
+	var reminds []model.Todo
+
+	const sql = "SELECT * FROM todo"
+	rows, err := s.Postgres.Query(ctx, sql)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var remind model.Todo
+		if err := rows.Scan(&remind); err != nil {
+			return nil, err
+		}
+		reminds = append(reminds, remind)
+	}
+
+	return reminds, nil
 }
 
 // CreateRemind  store new remind entity to DB PostgreSQL
