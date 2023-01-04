@@ -51,9 +51,30 @@ func (s *StorageTodo) GetRemindByID(ctx context.Context, id string) (model.Todo,
 	return model.Todo{}, nil
 	//TODO implement me
 }
+
+// GetComplitedReminds returns list of completed reminds and error
 func (s *StorageTodo) GetComplitedReminds(ctx context.Context) ([]model.Todo, error) {
-	return nil, nil
-	//TODO implement me
+
+	const sql = "SELECT * FROM todo WHERE completed = true"
+
+	rows, err := s.Postgres.Query(ctx, sql)
+	if err != nil {
+		s.logger.Errorf("error to select reminds: %v", err)
+		return nil, err
+	}
+
+	var remids []model.Todo
+	for rows.Next() {
+		var remind model.Todo
+
+		if err := rows.Scan(&remind); err != nil {
+			s.logger.Error(err)
+			return nil, err
+		}
+		remids = append(remids, remind)
+	}
+
+	return remids, nil
 }
 func (s *StorageTodo) GetNewReminds(ctx context.Context) ([]model.Todo, error) {
 	return nil, nil

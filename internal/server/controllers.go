@@ -56,3 +56,15 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
 }
+
+func (s *Server) GetComplitedReminds(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	reminds, err := s.TodoStorage.GetComplitedReminds(s.ctx)
+	if err != nil {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JsonFormat(w, http.StatusOK, reminds)
+}
