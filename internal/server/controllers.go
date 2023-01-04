@@ -72,11 +72,9 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	//TODO you should imolpement GetRemindByID method in storage
 	// _, err := s.TodoStorage.GetRemindByID(s.ctx, remindID)
 	// if errors.Is(err, storage.ErrCantFindRemind) {
-	// 	s.Logger.Errorf("can't find remind with such id: %d", remindID)
 	// 	utils.JsonError(w, http.StatusInternalServerError, err)
 	// 	return
 	// } else {
-	// 	s.Logger.Error(err)
 	// 	utils.JsonError(w, http.StatusInternalServerError, err)
 	// 	return
 	// }
@@ -84,11 +82,9 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	// deleting remind from db
 	if err := s.TodoStorage.DeleteRemind(s.ctx, remindID); err != nil {
 		if errors.Is(err, storage.ErrDeleteFailed) {
-			s.Logger.Errorf("delete of record: %d failed", remindID)
 			utils.JsonError(w, http.StatusInternalServerError, err)
 			return
 		} else {
-			s.Logger.Error(err)
 			utils.JsonError(w, http.StatusInternalServerError, err)
 			return
 		}
