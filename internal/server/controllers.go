@@ -3,12 +3,14 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -58,6 +60,43 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
+}
+
+func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	remindID := vars["id"]
+
+	// Check if the remind exist
+	//TODO you should imolpement GetRemindByID method in storage
+	// _, err := s.TodoStorage.GetRemindByID(s.ctx, remindID)
+	// if errors.Is(err, storage.ErrCantFindRemind) {
+	// 	s.Logger.Errorf("can't find remind with such id: %d", remindID)
+	// 	utils.JsonError(w, http.StatusInternalServerError, err)
+	// 	return
+	// } else {
+	// 	s.Logger.Error(err)
+	// 	utils.JsonError(w, http.StatusInternalServerError, err)
+	// 	return
+	// }
+
+	// deleting remind from db
+	if err := s.TodoStorage.DeleteRemind(s.ctx, remindID); err != nil {
+		if errors.Is(err, storage.ErrDeleteFailed) {
+			s.Logger.Errorf("delete of record: %d failed", remindID)
+			utils.JsonError(w, http.StatusInternalServerError, err)
+			return
+		} else {
+			s.Logger.Error(err)
+			utils.JsonError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	successMsg := fmt.Sprintf("remind with id:%s successfully deleted", remindID)
+
+	utils.JsonFormat(w, http.StatusCreated, successMsg)
 }
 
 func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {

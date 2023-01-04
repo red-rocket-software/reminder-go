@@ -2,8 +2,13 @@ package storage
 
 import (
 	"context"
-
+	"errors"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+)
+
+var (
+	ErrDeleteFailed   = errors.New("delete failed")
+	ErrCantFindRemind = errors.New("can't find remind")
 )
 
 type ReminderRepo interface {
