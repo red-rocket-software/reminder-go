@@ -66,7 +66,11 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
-	remindID := vars["id"]
+	remindID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
 
 	// Check if the remind exist
 	//TODO you should imolpement GetRemindByID method in storage
