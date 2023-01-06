@@ -25,17 +25,23 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo
 func (s *StorageTodo) GetAllReminds(ctx context.Context) ([]model.Todo, error) {
 	var reminds []model.Todo
 
-	const sql = "SELECT * FROM todo"
+	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "Completed" FROM todo`
 	rows, err := s.Postgres.Query(ctx, sql)
 
 	if err != nil {
+		s.logger.Errorf("error while querying to DB: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var remind model.Todo
-		if err := rows.Scan(&remind); err != nil {
+		if err := rows.Scan(&remind.ID,
+			&remind.Description,
+			&remind.CreatedAt,
+			&remind.DeadlineAt,
+			&remind.Completed,
+		); err != nil {
 			return nil, err
 		}
 		reminds = append(reminds, remind)
