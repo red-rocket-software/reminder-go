@@ -6,6 +6,11 @@ import (
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 )
 
+type FetchParams struct {
+	Limit  uint64
+	Cursor uint64
+}
+
 type ReminderRepo interface {
 	GetAllReminds(ctx context.Context) ([]model.Todo, error)
 	CreateRemind(ctx context.Context, todo model.Todo) error

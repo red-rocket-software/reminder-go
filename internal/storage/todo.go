@@ -22,26 +22,34 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *StorageTodo) GetAllReminds(ctx context.Context) ([]model.Todo, error) {
+func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams) (res []model.Todo, nextCursor int64, err error) {
 	var reminds []model.Todo
 
-	const sql = "SELECT * FROM todo"
-	rows, err := s.Postgres.Query(ctx, sql)
+	const sql = `SELECT * FROM todo WHERE Id > $1 LIMIT $2 ORDER BY Id DESC`
+
+	rows, err := s.Postgres.Query(ctx, sql, fetchParams.Cursor, fetchParams.Limit)
 
 	if err != nil {
-		return nil, err
+		s.logger.Errorf("error get reminds from db: ", err)
+		return nil, int64(fetchParams.Cursor), err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var remind model.Todo
+
 		if err := rows.Scan(&remind); err != nil {
-			return nil, err
+			s.logger.Errorf("error scan reminds from query: ", err)
+			return nil, int64(fetchParams.Cursor), err
 		}
 		reminds = append(reminds, remind)
 	}
 
-	return reminds, nil
+	if len(reminds) > 0 {
+		nextCursor = int64(res[len(res)-1].ID)
+	}
+
+	return reminds, nextCursor, nil
 }
 
 // CreateRemind  store new remind entity to DB PostgreSQL

@@ -3,10 +3,14 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -57,14 +61,43 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
 }
 
+// GetAllReminds makes request to DB for all reminds. Works with cursor pagination
 func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
 
-	reminds, err := s.TodoStorage.GetAllReminds(s.ctx)
-	if err != nil {
-		utils.JsonError(w, http.StatusInternalServerError, err)
+	// scan for limit in parameters
+	limitStr := vars["limit"]
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil && limitStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
 		return
 	}
+	if limit == 0 {
+		limit = 10
+	}
+
+	// scan for cursor in parameters
+	cursorStr := vars["cursor"]
+	cursor, err := strconv.Atoi(cursorStr)
+	if err != nil && cursorStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+
+	//inititalize fetchParameters
+	fetchParams := storage.FetchParams{
+		Limit:  uint64(limit),
+		Cursor: uint64(cursor),
+	}
+
+	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)
+	if err != nil && cursorStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
 }
