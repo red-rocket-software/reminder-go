@@ -94,7 +94,7 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	successMsg := fmt.Sprintf("remind with id:%s successfully deleted", remindID)
+	successMsg := fmt.Sprintf("remind with id:%d successfully deleted", remindID)
 
 	utils.JsonFormat(w, http.StatusCreated, successMsg)
 }
