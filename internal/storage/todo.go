@@ -25,12 +25,12 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo
 func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams) (res []model.Todo, nextCursor int64, err error) {
 	var reminds []model.Todo
 
-	const sql = `SELECT * FROM todo WHERE Id > $1 LIMIT $2 ORDER BY Id DESC`
+	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "Completed" FROM todo WHERE Id > $1 LIMIT $2 ORDER BY Id DESC`
 
 	rows, err := s.Postgres.Query(ctx, sql, fetchParams.Cursor, fetchParams.Limit)
 
 	if err != nil {
-		s.logger.Errorf("error get reminds from db: ", err)
+		s.logger.Errorf("error get reminds from db: %v", err)
 		return nil, int64(fetchParams.Cursor), err
 	}
 	defer rows.Close()
@@ -38,8 +38,13 @@ func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams
 	for rows.Next() {
 		var remind model.Todo
 
-		if err := rows.Scan(&remind); err != nil {
-			s.logger.Errorf("error scan reminds from query: ", err)
+		if err := rows.Scan(&remind.ID,
+			&remind.Description,
+			&remind.CreatedAt,
+			&remind.DeadlineAt,
+			&remind.Completed,
+		); err != nil {
+			s.logger.Errorf("error scan reminds from rows: %v", err)
 			return nil, int64(fetchParams.Cursor), err
 		}
 		reminds = append(reminds, remind)
