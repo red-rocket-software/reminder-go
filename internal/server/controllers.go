@@ -83,8 +83,8 @@ func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 
 	//inititalize fetchParameters
 	fetchParams := storage.FetchParams{
-		Limit:  uint64(limit),
-		Cursor: uint64(cursor),
+		Limit:  limit,
+		Cursor: cursor,
 	}
 
 	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)

@@ -7,8 +7,8 @@ import (
 )
 
 type FetchParams struct {
-	Limit  uint64
-	Cursor uint64
+	Limit  int
+	Cursor int
 }
 
 type ReminderRepo interface {
