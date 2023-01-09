@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/utils"
@@ -63,10 +62,8 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 // GetAllReminds makes request to DB for all reminds. Works with cursor pagination
 func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-
 	// scan for limit in parameters
-	limitStr := vars["limit"]
+	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil && limitStr != "" {
 		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
@@ -77,7 +74,7 @@ func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// scan for cursor in parameters
-	cursorStr := vars["cursor"]
+	cursorStr := r.URL.Query().Get("cursor")
 	cursor, err := strconv.Atoi(cursorStr)
 	if err != nil && cursorStr != "" {
 		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
@@ -92,7 +89,7 @@ func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 
 	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)
 	if err != nil && cursorStr != "" {
-		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		utils.JsonError(w, http.StatusBadRequest, err)
 		return
 	}
 
