@@ -3,12 +3,14 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -41,7 +43,7 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	var todo model.Todo
 
-	parseTime, err := time.Parse("2006-01-02", input.DeadlineAt)
+	dParseTime, err := time.Parse("2006-01-02", input.DeadlineAt)
 	if err != nil {
 		utils.JsonError(w, http.StatusBadRequest, err)
 		return
@@ -49,7 +51,7 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	todo.CreatedAt = time.Now()
 	todo.Description = input.Description
-	todo.DeadlineAt = parseTime
+	todo.DeadlineAt = dParseTime
 
 	err = s.TodoStorage.CreateRemind(s.ctx, todo)
 	if err != nil {
@@ -77,7 +79,7 @@ func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusOK, todo)
 }
 
-//UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
+// UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
 func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -95,8 +97,10 @@ func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tn := time.Now()
+
 	if input.Completed == true {
-		input.FinishedAt = time.Now()
+		input.FinishedAt = &tn
 	}
 
 	if input.Description == "" {
@@ -111,4 +115,42 @@ func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JsonFormat(w, http.StatusOK, "remind successfully updated")
+}
+
+// GetCurrentReminds handle get current reminds. First url should be like: http://localhost:8000/current?limit=5
+// the next we should write cursor from prev. headers X-Nextcursor:  http://localhost:8000/current?limit=5&cursor=33
+func (s *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
+	strLimit := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(strLimit)
+	if err != nil && strLimit != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
+		return
+	}
+
+	//if no write limit it will be 5
+	if limit == 0 {
+		limit = 5
+	}
+
+	strCursor := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(strCursor)
+	if err != nil && strCursor != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+
+	fetchParam := storage.FetchParam{
+		Limit:    limit,
+		CursorID: cursor,
+	}
+
+	reminds, nextCursor, err := s.TodoStorage.GetNewReminds(s.ctx, fetchParam)
+	if err != nil {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+
+	utils.JsonFormat(w, http.StatusOK, reminds)
 }
