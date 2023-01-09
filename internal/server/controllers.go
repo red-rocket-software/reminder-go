@@ -94,42 +94,40 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusCreated, successMsg)
 }
 
-
-// GetAllReminds makes request to DB for all reminds. Works with cursor pagination
-func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
-	// scan for limit in parameters
-	limitStr := r.URL.Query().Get("limit")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil && limitStr != "" {
-		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
+// GetCurrentReminds handle get current reminds. First url should be like: http://localhost:8000/current?limit=5
+// the next we should write cursor from prev. headers X-Nextcursor:  http://localhost:8000/current?limit=5&cursor=33
+func (s *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
+	strLimit := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(strLimit)
+	if err != nil && strLimit != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
 		return
 	}
+
+	//if no write limit it will be 5
 	if limit == 0 {
-		limit = 10
+		limit = 5
 	}
 
-	// scan for cursor in parameters
-	cursorStr := r.URL.Query().Get("cursor")
-	cursor, err := strconv.Atoi(cursorStr)
-	if err != nil && cursorStr != "" {
+	strCursor := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(strCursor)
+	if err != nil && strCursor != "" {
   		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
 		return
 	}
-  
-  	//inititalize fetchParameters
-	fetchParams := storage.FetchParams{
-		Limit:  limit,
-		Cursor: cursor,
+
+	fetchParam := storage.FetchParam{
+		Limit:    limit,
+		CursorID: cursor,
 	}
 
-	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)
-	if err != nil && cursorStr != "" {
-		utils.JsonError(w, http.StatusBadRequest, err)
+	reminds, nextCursor, err := s.TodoStorage.GetNewReminds(s.ctx, fetchParam)
+	if err != nil {
+		utils.JsonError(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
- 	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+  
+	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
 }
@@ -189,40 +187,81 @@ func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusOK, "remind successfully updated")
 }
 
-// GetCurrentReminds handle get current reminds. First url should be like: http://localhost:8000/current?limit=5
-// the next we should write cursor from prev. headers X-Nextcursor:  http://localhost:8000/current?limit=5&cursor=33
-func (s *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
-	strLimit := r.URL.Query().Get("limit")
-	limit, err := strconv.Atoi(strLimit)
-	if err != nil && strLimit != "" {
-		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
+func (s *Server) GetComplitedReminds(w http.ResponseWriter, r *http.Request) {
+	// scan for limit in parameters
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil && limitStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
 		return
 	}
-
-	//if no write limit it will be 5
 	if limit == 0 {
-		limit = 5
-	}
+  		limit = 5
+}
 
-	strCursor := r.URL.Query().Get("cursor")
-	cursor, err := strconv.Atoi(strCursor)
-	if err != nil && strCursor != "" {
+// scan for cursor in parameters
+	cursorStr := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(cursorStr)
+	if err != nil && cursorStr != "" {
   		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
 		return
 	}
 
-	fetchParam := storage.FetchParam{
-		Limit:    limit,
+	//inititalize fetchParameters
+  	fetchParams := storage.FetchParams{
+		Limit:  limit,
 		CursorID: cursor,
 	}
 
-	reminds, nextCursor, err := s.TodoStorage.GetNewReminds(s.ctx, fetchParam)
+	reminds, nextCursor, err := s.TodoStorage.GetComplitedReminds(s.ctx, fetchParams)
+
 	if err != nil {
-		utils.JsonError(w, http.StatusInternalServerError, err)
+		utils.JsonError(w, http.StatusBadRequest, err)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+  w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+
+	utils.JsonFormat(w, http.StatusOK, reminds)
+}
+
+// GetAllReminds makes request to DB for all reminds. Works with cursor pagination
+func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
+	// scan for limit in parameters
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil && limitStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
+		return
+	}
+	if limit == 0 {
+  		limit = 10
+}
+
+	// scan for cursor in parameters
+	cursorStr := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(cursorStr)
+	if err != nil && cursorStr != "" {
+  		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+
+	//inititalize fetchParameters
+  	fetchParams := storage.FetchParams{
+		Limit:  limit,
+		CursorID: cursor,
+	}
   
-	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+  	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)
+
+	if err != nil {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+  w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
 }

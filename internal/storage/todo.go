@@ -35,7 +35,7 @@ func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams
 
 	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE Id > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
 
-	rows, err := s.Postgres.Query(ctx, sql, fetchParams.Cursor, fetchParams.Limit)
+	rows, err := s.Postgres.Query(ctx, sql, fetchParams.CursorID, fetchParams.Limit)
 
 	if err != nil {
 		s.logger.Errorf("error get all reminds from db: %v", err)
@@ -147,9 +147,47 @@ func (s *StorageTodo) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 	return todo, nil
 }
 
-func (s *StorageTodo) GetComplitedReminds(ctx context.Context) ([]model.Todo, error) {
-	return nil, nil
-	//TODO implement me
+// GetComplitedReminds returns list of completed reminds and error
+func (s *StorageTodo) GetComplitedReminds(ctx context.Context, params FetchParams) ([]model.Todo, int, error) {
+
+	var sql = "SELECT * FROM todo WHERE completed = true"
+
+	if params.Cursor > 0 {
+		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
+	}
+
+	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
+
+	rows, err := s.Postgres.Query(ctx, sql)
+	if err != nil {
+		s.logger.Errorf("error to select completed reminds: %v", err)
+		return nil, 0, err
+	}
+
+	var reminds []model.Todo
+	for rows.Next() {
+		var remind model.Todo
+
+		if err := rows.Scan(
+			&remind.ID,
+			&remind.Description,
+			&remind.CreatedAt,
+			&remind.DeadlineAt,
+			&remind.FinishedAt,
+			&remind.Completed,
+		); err != nil {
+			s.logger.Errorf("remind doesn't exist: %v", err)
+			return nil, 0, err
+		}
+		reminds = append(reminds, remind)
+	}
+
+	var nextCursor int
+	if len(reminds) > 0 {
+		nextCursor = reminds[len(reminds)-1].ID
+	}
+
+	return reminds, nextCursor, nil
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
