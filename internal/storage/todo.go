@@ -29,9 +29,44 @@ type FetchParam struct {
 	CursorID int
 }
 
-func (s *StorageTodo) GetAllReminds(ctx context.Context) ([]model.Todo, error) {
-	return nil, nil
-	//TODO implement me
+// GetAllReminds return all todos in DB PostgreSQL
+func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams) ([]model.Todo, int, error) {
+	var reminds []model.Todo
+
+	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE Id > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
+
+	rows, err := s.Postgres.Query(ctx, sql, fetchParams.Cursor, fetchParams.Limit)
+
+	if err != nil {
+		s.logger.Errorf("error get all reminds from db: %v", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var remind model.Todo
+
+		if err := rows.Scan(
+			&remind.ID,
+			&remind.Description,
+			&remind.CreatedAt,
+			&remind.DeadlineAt,
+			&remind.FinishedAt,
+			&remind.Completed,
+		); err != nil {
+			s.logger.Errorf("remind doesnt exist: %v", err)
+			return nil, 0, err
+		}
+		reminds = append(reminds, remind)
+	}
+
+	var nextCursor int
+
+	if len(reminds) > 0 {
+		nextCursor = reminds[len(reminds)-1].ID
+	}
+
+	return reminds, nextCursor, nil
 }
 
 // CreateRemind  store new remind entity to DB PostgreSQL

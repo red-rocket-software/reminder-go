@@ -62,6 +62,46 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
 }
 
+// GetAllReminds makes request to DB for all reminds. Works with cursor pagination
+func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
+	// scan for limit in parameters
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil && limitStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
+		return
+	}
+	if limit == 0 {
+		limit = 10
+	}
+
+	// scan for cursor in parameters
+	cursorStr := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(cursorStr)
+	if err != nil && cursorStr != "" {
+  		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+  
+  	//inititalize fetchParameters
+	fetchParams := storage.FetchParams{
+		Limit:  limit,
+		Cursor: cursor,
+	}
+
+	reminds, nextCursor, err := s.TodoStorage.GetAllReminds(s.ctx, fetchParams)
+	if err != nil && cursorStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+ 	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+
+	utils.JsonFormat(w, http.StatusOK, reminds)
+}
+
+
 func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -135,7 +175,7 @@ func (s *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
 	strCursor := r.URL.Query().Get("cursor")
 	cursor, err := strconv.Atoi(strCursor)
 	if err != nil && strCursor != "" {
-		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+  		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
 		return
 	}
 
@@ -149,7 +189,7 @@ func (s *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
 		utils.JsonError(w, http.StatusInternalServerError, err)
 		return
 	}
-
+  
 	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
