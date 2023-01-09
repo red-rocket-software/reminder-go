@@ -8,7 +8,7 @@ import (
 
 var (
 	ErrDeleteFailed   = errors.New("delete failed")
-	ErrCantFindRemind = errors.New("can't find remind")
+	ErrCantFindRemind = errors.New("cannot get product from database")
 )
 
 type ReminderRepo interface {

@@ -63,8 +63,6 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	vars := mux.Vars(r)
 	remindID, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -73,15 +71,11 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the remind exist
-	//TODO you should imolpement GetRemindByID method in storage
-	// _, err := s.TodoStorage.GetRemindByID(s.ctx, remindID)
-	// if errors.Is(err, storage.ErrCantFindRemind) {
-	// 	utils.JsonError(w, http.StatusInternalServerError, err)
-	// 	return
-	// } else {
-	// 	utils.JsonError(w, http.StatusInternalServerError, err)
-	// 	return
-	// }
+	_, err = s.TodoStorage.GetRemindByID(s.ctx, remindID)
+	if errors.Is(err, storage.ErrCantFindRemind) {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	// deleting remind from db
 	if err := s.TodoStorage.DeleteRemind(s.ctx, remindID); err != nil {
@@ -96,6 +90,7 @@ func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 	successMsg := fmt.Sprintf("remind with id:%d successfully deleted", remindID)
 
+	w.Header().Set("Content-Type", "application/json")
 	utils.JsonFormat(w, http.StatusCreated, successMsg)
 }
 
@@ -116,7 +111,7 @@ func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusOK, todo)
 }
 
-//UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
+// UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
 func (s *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
