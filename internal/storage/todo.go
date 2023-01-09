@@ -99,9 +99,24 @@ func (s *StorageTodo) UpdateRemind(ctx context.Context, id int, input model.Todo
 
 	return nil
 }
-func (s *StorageTodo) DeleteRemind(ctx context.Context, id string) error {
+
+// DeleteRemind deletes remind from DB
+func (s *StorageTodo) DeleteRemind(ctx context.Context, id int) error {
+	const sql = `DELETE FROM todo WHERE id = $1`
+	res, err := s.Postgres.Exec(ctx, sql, id)
+
+	if err != nil {
+		s.logger.Errorf("error don't found remind: %v", err)
+		return err
+	}
+
+	rowsAffected := res.RowsAffected()
+	if rowsAffected == 0 {
+		s.logger.Errorf("Error delete remind: %v", err)
+		return ErrDeleteFailed
+	}
+
 	return nil
-	//TODO implement me
 }
 
 // GetRemindByID takes out one remind from PostgreSQL by id

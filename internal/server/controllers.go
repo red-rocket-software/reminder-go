@@ -62,6 +62,39 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JsonFormat(w, http.StatusCreated, "remind successfully created")
 }
 
+func (s *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	remindID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// Check if the remind exist
+	_, err = s.TodoStorage.GetRemindByID(s.ctx, remindID)
+	if errors.Is(err, storage.ErrCantFindRemind) {
+		utils.JsonError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// deleting remind from db
+	if err := s.TodoStorage.DeleteRemind(s.ctx, remindID); err != nil {
+		if errors.Is(err, storage.ErrDeleteFailed) {
+			utils.JsonError(w, http.StatusInternalServerError, err)
+			return
+		} else {
+			utils.JsonError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	successMsg := fmt.Sprintf("remind with id:%d successfully deleted", remindID)
+
+	w.Header().Set("Content-Type", "application/json")
+	utils.JsonFormat(w, http.StatusCreated, successMsg)
+}
+
+
 // GetAllReminds makes request to DB for all reminds. Works with cursor pagination
 func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	// scan for limit in parameters
@@ -100,7 +133,6 @@ func (s *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
 }
-
 
 func (s *Server) GetRemindById(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)

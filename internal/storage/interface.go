@@ -2,14 +2,14 @@ package storage
 
 import (
 	"context"
-
+	"errors"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 )
 
-type FetchParams struct {
-	Limit  int
-	Cursor int
-}
+var (
+	ErrDeleteFailed   = errors.New("delete failed")
+	ErrCantFindRemind = errors.New("cannot get product from database")
+)
 
 type ReminderRepo interface {
 	GetAllReminds(ctx context.Context) ([]model.Todo, error)

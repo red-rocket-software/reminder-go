@@ -14,8 +14,10 @@ func (s *Server) ConfigureRouter() *mux.Router {
 	router.HandleFunc("/remind", s.GetAllReminds).Methods("GET")
 	router.HandleFunc("/remind/{id}", s.GetRemindById).Methods("GET")
 	router.HandleFunc("/remind", s.AddRemind).Methods("POST")
-	// router.HandleFunc("/remind/{id}", controllers.DeleteRemind).Methods("DELETE")
+	router.HandleFunc("/remind/{id}", s.DeleteRemind).Methods("DELETE")
 	router.HandleFunc("/remind/{id}", s.UpdateRemind).Methods("PUT")
+	router.HandleFunc("/remind/{id}", s.DeleteRemind).Methods("DELETE")
+	// router.HandleFunc("/remind/{id}", controllers.UpdateRemind).Methods("PUT")
 	// router.HandleFunc("/completed", controllers.GetComplitedReminds).Methods("GET")
 	router.HandleFunc("/current", s.GetCurrentReminds).Methods("GET")
 
