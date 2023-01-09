@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
@@ -53,28 +54,46 @@ func (s *StorageTodo) GetRemindByID(ctx context.Context, id string) (model.Todo,
 }
 
 // GetComplitedReminds returns list of completed reminds and error
-func (s *StorageTodo) GetComplitedReminds(ctx context.Context) ([]model.Todo, error) {
+func (s *StorageTodo) GetComplitedReminds(ctx context.Context, params FetchParams) ([]model.Todo, int, error) {
 
-	const sql = "SELECT * FROM todo WHERE completed = true"
+	var sql = "SELECT * FROM todo WHERE completed = true"
+
+	if params.Cursor > 0 {
+		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
+	}
+
+	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 	if err != nil {
-		s.logger.Errorf("error to select reminds: %v", err)
-		return nil, err
+		s.logger.Errorf("error to select completed reminds: %v", err)
+		return nil, 0, err
 	}
 
-	var remids []model.Todo
+	var reminds []model.Todo
 	for rows.Next() {
 		var remind model.Todo
 
-		if err := rows.Scan(&remind); err != nil {
-			s.logger.Error(err)
-			return nil, err
+		if err := rows.Scan(
+			&remind.ID,
+			&remind.Description,
+			&remind.CreatedAt,
+			&remind.DeadlineAt,
+			&remind.FinishedAt,
+			&remind.Completed,
+		); err != nil {
+			s.logger.Errorf("remind doesn't exist: %v", err)
+			return nil, 0, err
 		}
-		remids = append(remids, remind)
+		reminds = append(reminds, remind)
 	}
 
-	return remids, nil
+	var nextCursor int
+	if len(reminds) > 0 {
+		nextCursor = reminds[len(reminds)-1].ID
+	}
+
+	return reminds, nextCursor, nil
 }
 func (s *StorageTodo) GetNewReminds(ctx context.Context) ([]model.Todo, error) {
 	return nil, nil

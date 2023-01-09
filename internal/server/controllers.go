@@ -3,10 +3,14 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
+
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -58,13 +62,39 @@ func (s *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) GetComplitedReminds(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	reminds, err := s.TodoStorage.GetComplitedReminds(s.ctx)
-	if err != nil {
-		utils.JsonError(w, http.StatusInternalServerError, err)
+	// scan for limit in parameters
+	limitStr := r.URL.Query().Get("limit")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil && limitStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("limit parameter is invalid"))
 		return
 	}
+	if limit == 0 {
+		limit = 5
+	}
+
+	// scan for cursor in parameters
+	cursorStr := r.URL.Query().Get("cursor")
+	cursor, err := strconv.Atoi(cursorStr)
+	if err != nil && cursorStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
+		return
+	}
+
+	//inititalize fetchParameters
+	fetchParams := storage.FetchParams{
+		Limit:  limit,
+		Cursor: cursor,
+	}
+
+	reminds, nextCursor, err := s.TodoStorage.GetComplitedReminds(s.ctx, fetchParams)
+	if err != nil && cursorStr != "" {
+		utils.JsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
 
 	utils.JsonFormat(w, http.StatusOK, reminds)
 }
