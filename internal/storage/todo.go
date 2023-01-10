@@ -70,17 +70,18 @@ func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams
 }
 
 // CreateRemind  store new remind entity to DB PostgreSQL
-func (s *StorageTodo) CreateRemind(ctx context.Context, todo model.Todo) error {
+func (s *StorageTodo) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
 	var id int
+
 	const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt") 
 				 VALUES ($1, $2, $3) returning "Id"`
 	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.CreatedAt, todo.DeadlineAt)
 	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
 // UpdateRemind update remind, can change Description, Completed and FihishedAt if Completed = true
@@ -220,7 +221,7 @@ func (s *StorageTodo) GetNewReminds(ctx context.Context, params FetchParam) ([]m
 			&remind.FinishedAt,
 			&remind.Completed,
 		); err != nil {
-			s.logger.Error("remind doesn't exist %v", err)
+			s.logger.Errorf("remind doesn't exist %v", err)
 			return nil, 0, err
 		}
 

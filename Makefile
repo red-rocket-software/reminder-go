@@ -21,4 +21,7 @@ exec-db:
 run:
 	go run cmd/main.go
 
-.PHONY: createdb, dropdb, migrateup, migratedown, db-run, exec-db, run
+test:
+	go test -v -cover ./...
+
+.PHONY: createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test
