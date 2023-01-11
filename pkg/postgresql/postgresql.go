@@ -46,11 +46,11 @@ func NewClient(ctx context.Context, maxAttemps int, cfg config.Config) (pool *pg
 }
 
 // DoWithTries  provide attempts to connect db
-func DoWithTries(fn func() error, attemtps int, delay time.Duration) (err error) {
-	for attemtps > 0 {
+func DoWithTries(fn func() error, attempts int, delay time.Duration) (err error) {
+	for attempts > 0 {
 		if err = fn(); err != nil {
 			time.Sleep(delay)
-			attemtps--
+			attempts--
 
 			continue
 		}

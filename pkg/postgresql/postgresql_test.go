@@ -18,10 +18,9 @@ func TestNewPGXPoolErrors(t *testing.T) {
 	cfg.Postgres.Database = "wrong"
 
 	type args struct {
-		ctx        context.Context
-		connString string
-		attempts   int
-		config     config.Config
+		ctx      context.Context
+		attempts int
+		config   config.Config
 	}
 	tests := []struct {
 		name    string

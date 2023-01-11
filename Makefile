@@ -1,4 +1,12 @@
 DB_URL=postgres://root:secret@localhost:5432/reminder?sslmode=disable
+DB_URL_TEST=postgres://root:secret@localhost:5432/test_reminder?sslmode=disable
+
+lint: format
+	golangci-lint run --enable=revive --timeout=5m --enable=misspell --enable=stylecheck --enable=goimports
+	go vet ./...
+
+format:
+	gofmt -e -d .
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root reminder
@@ -8,6 +16,9 @@ dropdb:
 
 migrateup:
 	migrate -database ${DB_URL} -path db/migrations up
+
+migrateup_test:
+	migrate -database ${DB_URL_TEST} -path db/migrations up
 
 migratedown:
 	migrate -database ${DB_URL} -path db/migrations down
@@ -24,4 +35,11 @@ run:
 test:
 	go test -v -cover ./...
 
-.PHONY: createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test
+coverage:
+	go test ./... -coverprofile=coverage.out
+
+coverage-html:
+	@$(MAKE) coverage
+	go tool cover -html=coverage.out
+
+.PHONY: lint, format, createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test, coverage, coverage-html
