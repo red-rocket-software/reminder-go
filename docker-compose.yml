@@ -16,7 +16,7 @@ services:
       - "5432:5432"
     restart: on-failure
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - ./db-data:/var/lib/postgresql/data
 
 #  app:
 #    container_name: reminder-api
