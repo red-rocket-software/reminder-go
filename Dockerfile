@@ -5,7 +5,6 @@ FROM golang:1.19-alpine as builder
 # Git is required for fetching the dependencies.
 RUN apk update && apk add --no-cache git
 
-
 # Set the current working directory inside the container
 WORKDIR /app
 
@@ -18,17 +17,18 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o /main cmd/main.go
+RUN go build -o ./reminder ./cmd/main.go
 
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
-# Copy binary and config files from /build to root folder of scratch container.
-COPY --from=builder /main /main
+WORKDIR /opt/
 
-WORKDIR /
+# Copy binary and config files from /build to root folder of scratch container.
+COPY --from=builder /app/reminder .
+COPY --from=builder /app/config.yaml .
 
 EXPOSE 8000
 
-CMD [ "/main" ]
+CMD /opt/reminder
