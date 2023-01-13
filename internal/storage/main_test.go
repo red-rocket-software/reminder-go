@@ -21,7 +21,7 @@ var (
 	ErrNoNewMigrations = errors.New("no change")
 )
 
-var testStorage *TodoStorage
+var testStorage ReminderRepo
 
 func TestMain(m *testing.M) {
 	//cfg := config.GetConfig()

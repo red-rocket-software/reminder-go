@@ -18,13 +18,15 @@ type Server struct {
 	S           *http.Server
 	Router      *mux.Router
 	Logger      logging.Logger
-	TodoStorage *storage.TodoStorage
+	TodoStorage storage.ReminderRepo
 	ctx         context.Context
 }
 
 // func New returns new Server. You should pass logger as a parameter
-func New(ctx context.Context, logger logging.Logger, storage *storage.TodoStorage) *Server {
-	return &Server{Logger: logger, TodoStorage: storage, ctx: ctx}
+func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo) *Server {
+
+	server := &Server{Logger: logger, TodoStorage: storage, ctx: ctx}
+	return server
 }
 
 // func Run start server on IP address an PORT passed in parameters

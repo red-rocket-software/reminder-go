@@ -49,17 +49,22 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo.CreatedAt = time.Now()
+	now, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+	todo.CreatedAt = now
 	todo.Description = input.Description
 	todo.DeadlineAt = dParseTime
 
-	id, err := server.TodoStorage.CreateRemind(server.ctx, todo)
+	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.JSONFormat(w, http.StatusCreated, map[string]int{"remind successfully created": id})
+	utils.JSONFormat(w, http.StatusCreated, "Remind is successfully created")
 }
 
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {

@@ -49,4 +49,8 @@ int_test:
 	docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
 	docker-compose -f docker-compose.test.yml down --volumes
 
-.PHONY: lint, format, createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test, coverage, coverage-html, int_test
+#GENERATE MOCKS
+mocks:
+	go generate ./...
+
+.PHONY: lint, format, createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test, coverage, coverage-html, int_test, mocks
