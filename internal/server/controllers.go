@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -49,17 +50,22 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todo.CreatedAt = time.Now()
+	now, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+	todo.CreatedAt = now
 	todo.Description = input.Description
 	todo.DeadlineAt = dParseTime
 
-	id, err := server.TodoStorage.CreateRemind(server.ctx, todo)
+	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.JSONFormat(w, http.StatusCreated, map[string]int{"remind successfully created": id})
+	utils.JSONFormat(w, http.StatusCreated, "Remind is successfully created")
 }
 
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
@@ -142,6 +148,10 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 
 	todo, err := server.TodoStorage.GetRemindByID(server.ctx, rID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.JSONError(w, http.StatusNotFound, err)
+			return
+		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}

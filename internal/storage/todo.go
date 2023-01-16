@@ -21,7 +21,7 @@ type TodoStorage struct {
 }
 
 // NewStorageTodo  return new SorageTodo with Postgres pool and logger
-func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *TodoStorage {
+func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo {
 	return &TodoStorage{Postgres: postgres, logger: logger}
 }
 
