@@ -27,7 +27,7 @@ func GetConfig() *Config {
 
 	c := &Config{}
 
-	if err := cleanenv.ReadConfig("config/config.yaml", c); err != nil {
+	if err := cleanenv.ReadConfig("config.yaml", c); err != nil {
 		fmt.Println("error read config")
 	}
 

@@ -24,7 +24,7 @@ func NewClient(ctx context.Context, maxAttemps int, cfg config.Config) (pool *pg
 
 	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", cfg.Postgres.Username, cfg.Postgres.Password, cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.Database)
 
-	if len(dsn) < 45 {
+	if len(dsn) < 40 {
 		return nil, fmt.Errorf("wrong connection sring")
 	}
 
