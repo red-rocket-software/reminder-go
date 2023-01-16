@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -147,6 +148,10 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 
 	todo, err := server.TodoStorage.GetRemindByID(server.ctx, rID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			utils.JSONError(w, http.StatusNotFound, err)
+			return
+		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
