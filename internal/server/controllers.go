@@ -76,18 +76,14 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if the remind exist
-	_, err = server.TodoStorage.GetRemindByID(server.ctx, remindID)
-	if errors.Is(err, storage.ErrCantFindRemind) {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
-	}
-
 	// deleting remind from db
 	if err := server.TodoStorage.DeleteRemind(server.ctx, remindID); err != nil {
 		if errors.Is(err, storage.ErrDeleteFailed) {
 			utils.JSONError(w, http.StatusInternalServerError, err)
 			return
+		}
+		if errors.Is(err, storage.ErrCantFindRemindWithID) {
+			utils.JSONError(w, http.StatusNotFound, err)
 		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return

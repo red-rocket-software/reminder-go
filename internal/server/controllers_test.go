@@ -264,3 +264,152 @@ func TestServer_GetCurrentReminds(t *testing.T) {
 		})
 	}
 }
+
+func TestControllers_GetAllReminds(t *testing.T) {
+	testCases := []struct {
+		name               string
+		params             storage.FetchParam
+		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParam)
+		expectedStatusCode int
+	}{
+		{
+			name:   "OK",
+			params: storage.FetchParam{Limit: 10},
+			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParam) {
+				store.EXPECT().GetAllReminds(gomock.Any(), params).Return([]model.Todo{{
+					ID:          1,
+					Description: "test",
+					CreatedAt:   time.Now(),
+					DeadlineAt:  time.Now(),
+					Completed:   false,
+				}}, 1, nil).Times(1)
+			},
+			expectedStatusCode: 200,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.params)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodGet, "/remind", http.NoBody)
+
+			handler := http.HandlerFunc(server.GetAllReminds)
+			handler.ServeHTTP(w, req)
+
+			// Add query parameters to request URL
+			q := req.URL.Query()
+			q.Add("cursor", fmt.Sprintf("%d", test.params.CursorID))
+			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
+			req.URL.RawQuery = q.Encode()
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
+}
+
+func Test_DeleteRemind(t *testing.T) {
+	testCases := []struct {
+		name           string
+		id             int
+		mockBehavior   func(store *mockdb.MockReminderRepo, id int)
+		expectedStatus int
+	}{
+		{
+			name: "OK",
+			id:   1,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(nil).Times(1)
+			},
+			expectedStatus: 201,
+		},
+		{
+			name: "InternalError",
+			id:   1,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(sql.ErrConnDone).Times(1)
+			},
+			expectedStatus: 500,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.id)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodDelete, "/remind", http.NoBody)
+			req = mux.SetURLVars(req, map[string]string{"id": "1"})
+
+			handler := http.HandlerFunc(server.DeleteRemind)
+			handler.ServeHTTP(w, req)
+
+			require.Equal(t, test.expectedStatus, w.Code)
+
+		})
+	}
+
+}
+
+func TestControllers_GetComplitedReminds(t *testing.T) {
+	testCases := []struct {
+		name               string
+		params             storage.FetchParam
+		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParam)
+		expectedStatusCode int
+	}{
+		{
+			name:   "OK",
+			params: storage.FetchParam{Limit: 5},
+			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParam) {
+				store.EXPECT().GetComplitedReminds(gomock.Any(), params).Return([]model.Todo{{
+					ID:          1,
+					Description: "test",
+					CreatedAt:   time.Now(),
+					DeadlineAt:  time.Now(),
+					Completed:   true,
+				}}, 1, nil).Times(1)
+			},
+			expectedStatusCode: 200,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.params)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodGet, "/completed", http.NoBody)
+
+			handler := http.HandlerFunc(server.GetComplitedReminds)
+			handler.ServeHTTP(w, req)
+
+			// Add query parameters to request URL
+			q := req.URL.Query()
+			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
+			q.Add("cursor", fmt.Sprintf("%d", test.params.CursorID))
+			req.URL.RawQuery = q.Encode()
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
+}
