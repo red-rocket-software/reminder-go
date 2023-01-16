@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,8 +12,8 @@ import (
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 )
 
-// StorageTodo handles database communication with PostgreSQL.
-type StorageTodo struct {
+// TodoStorage handles database communication with PostgreSQL.
+type TodoStorage struct {
 	// Postgres database.PGX
 	Postgres *pgxpool.Pool
 	// Logrus logger
@@ -20,8 +21,8 @@ type StorageTodo struct {
 }
 
 // NewStorageTodo  return new SorageTodo with Postgres pool and logger
-func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *StorageTodo {
-	return &StorageTodo{Postgres: postgres, logger: logger}
+func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) *TodoStorage {
+	return &TodoStorage{Postgres: postgres, logger: logger}
 }
 
 type FetchParam struct {
@@ -30,10 +31,10 @@ type FetchParam struct {
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetAllReminds(ctx context.Context, fetchParams FetchParam) ([]model.Todo, int, error) {
 	var reminds []model.Todo
 
-	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE Id > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
+	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE "Id" > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
 
 	rows, err := s.Postgres.Query(ctx, sql, fetchParams.CursorID, fetchParams.Limit)
 
@@ -70,21 +71,22 @@ func (s *StorageTodo) GetAllReminds(ctx context.Context, fetchParams FetchParams
 }
 
 // CreateRemind  store new remind entity to DB PostgreSQL
-func (s *StorageTodo) CreateRemind(ctx context.Context, todo model.Todo) error {
+func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
 	var id int
+
 	const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt") 
 				 VALUES ($1, $2, $3) returning "Id"`
 	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.CreatedAt, todo.DeadlineAt)
 	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
-		return err
+		return 0, err
 	}
-	return nil
+	return id, nil
 }
 
 // UpdateRemind update remind, can change Description, Completed and FihishedAt if Completed = true
-func (s *StorageTodo) UpdateRemind(ctx context.Context, id int, input model.TodoUpdate) error {
+func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdate) error {
 	const sql = `UPDATE todo SET "Description" = $1, "FinishedAt" = $2, "Completed" = $3 WHERE "Id" = $4`
 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.FinishedAt, input.Completed, id)
@@ -101,8 +103,8 @@ func (s *StorageTodo) UpdateRemind(ctx context.Context, id int, input model.Todo
 }
 
 // DeleteRemind deletes remind from DB
-func (s *StorageTodo) DeleteRemind(ctx context.Context, id int) error {
-	const sql = `DELETE FROM todo WHERE id = $1`
+func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
+	const sql = `DELETE FROM todo WHERE "Id" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
 
 	if err != nil {
@@ -120,7 +122,7 @@ func (s *StorageTodo) DeleteRemind(ctx context.Context, id int) error {
 }
 
 // GetRemindByID takes out one remind from PostgreSQL by id
-func (s *StorageTodo) GetRemindByID(ctx context.Context, id int) (model.Todo, error) {
+func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, error) {
 	var todo model.Todo
 
 	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "Completed", "FinishedAt" FROM todo
@@ -148,12 +150,12 @@ func (s *StorageTodo) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 }
 
 // GetComplitedReminds returns list of completed reminds and error
-func (s *StorageTodo) GetComplitedReminds(ctx context.Context, params FetchParams) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetComplitedReminds(ctx context.Context, params FetchParam) ([]model.Todo, int, error) {
 
-	var sql = "SELECT * FROM todo WHERE completed = true"
+	var sql = `SELECT * FROM todo WHERE "Completed" = true`
 
-	if params.Cursor > 0 {
-		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
+	if params.CursorID > 0 {
+		sql += fmt.Sprintf(` AND "Id" < %d`, params.CursorID)
 	}
 
 	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
@@ -191,7 +193,7 @@ func (s *StorageTodo) GetComplitedReminds(ctx context.Context, params FetchParam
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
-func (s *StorageTodo) GetNewReminds(ctx context.Context, params FetchParam) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetNewReminds(ctx context.Context, params FetchParam) ([]model.Todo, int, error) {
 	sql := `SELECT * FROM todo WHERE "Completed" = false`
 
 	//if passed cursorID we add condition to query
@@ -220,7 +222,7 @@ func (s *StorageTodo) GetNewReminds(ctx context.Context, params FetchParam) ([]m
 			&remind.FinishedAt,
 			&remind.Completed,
 		); err != nil {
-			s.logger.Error("remind doesn't exist %v", err)
+			s.logger.Errorf("remind doesn't exist %v", err)
 			return nil, 0, err
 		}
 
@@ -233,4 +235,65 @@ func (s *StorageTodo) GetNewReminds(ctx context.Context, params FetchParam) ([]m
 	}
 
 	return reminds, nextCursor, nil
+}
+
+// Truncate removes all seed data from the test database.
+func (s *TodoStorage) Truncate() error {
+	stmt := "TRUNCATE TABLE todo;"
+
+	if _, err := s.Postgres.Exec(context.Background(), stmt); err != nil {
+		return fmt.Errorf("truncate test database tables %v", err)
+	}
+
+	return nil
+}
+
+// SeedTodos seed todos for tests
+func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
+	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
+	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+
+	todos := []model.Todo{
+		{
+			Description: "tes1",
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes2",
+			CreatedAt:   now,
+			DeadlineAt:  date,
+			Completed:   true,
+		},
+		{
+			Description: "tes3",
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes4",
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes5",
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+	}
+
+	for i := range todos {
+		const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt", "Completed") 
+				 VALUES ($1, $2, $3, $4) returning "Id"`
+
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
+
+		err := row.Scan(&todos[i].ID)
+		if err != nil {
+			s.logger.Errorf("Error create remind: %v", err)
+		}
+
+	}
+
+	return todos, nil
 }

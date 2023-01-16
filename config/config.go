@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -27,7 +28,7 @@ func GetConfig() *Config {
 	c := &Config{}
 
 	if err := cleanenv.ReadConfig("config/config.yaml", c); err != nil {
-
+		fmt.Println("error read config")
 	}
 
 	return c

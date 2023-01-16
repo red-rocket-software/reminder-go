@@ -18,12 +18,12 @@ type Server struct {
 	S           *http.Server
 	Router      *mux.Router
 	Logger      logging.Logger
-	TodoStorage *storage.StorageTodo
+	TodoStorage *storage.TodoStorage
 	ctx         context.Context
 }
 
 // func New returns new Server. You should pass logger as a parameter
-func New(logger logging.Logger, storage *storage.StorageTodo, ctx context.Context) *Server {
+func New(ctx context.Context, logger logging.Logger, storage *storage.TodoStorage) *Server {
 	return &Server{Logger: logger, TodoStorage: storage, ctx: ctx}
 }
 
