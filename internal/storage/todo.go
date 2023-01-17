@@ -109,7 +109,7 @@ func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 
 	if err != nil {
 		s.logger.Errorf("error don't found remind: %v", err)
-		return err
+		return ErrCantFindRemindWithID
 	}
 
 	rowsAffected := res.RowsAffected()

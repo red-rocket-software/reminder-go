@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrDeleteFailed   = errors.New("delete failed")
-	ErrCantFindRemind = errors.New("cannot get product from database")
+	ErrDeleteFailed         = errors.New("delete failed")
+	ErrCantFindRemind       = errors.New("cannot get product from database")
+	ErrCantFindRemindWithID = errors.New("cannot find remind with such id")
 )
 
 //go:generate mockgen -source=interface.go -destination=mocks/storage.go
