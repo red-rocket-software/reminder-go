@@ -16,6 +16,7 @@ type Todo struct {
 type TodoInput struct {
 	Description string `json:"description"`
 	DeadlineAt  string `json:"deadline_at"`
+	CreatedAt   string `json:"created_at"`
 }
 
 type TodoUpdate struct {

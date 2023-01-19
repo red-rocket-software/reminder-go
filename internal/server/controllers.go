@@ -27,8 +27,6 @@ type TodoHandlers interface {
 
 // AddRemind gets remind from user input, decode and sent to DB. Simple validation - no empty field Description.
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var input model.TodoInput
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -37,27 +35,28 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Description == "" {
+	if input.Description == "" || input.DeadlineAt == "" {
 		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("nothing to save"))
 		return
 	}
 
 	var todo model.Todo
 
-	dParseTime, err := time.Parse("2006-01-02", input.DeadlineAt)
+	deadlineParseTime, err := time.Parse("2006-01-02T15:04", input.DeadlineAt)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	now, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	createParseTime, err := time.Parse("02.01.2006, 15:04:05", input.CreatedAt)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
 	}
-	todo.CreatedAt = now
+
+	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
-	todo.DeadlineAt = dParseTime
+	todo.DeadlineAt = deadlineParseTime
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
@@ -241,7 +240,7 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if limit == 0 {
-		limit = 10
+		limit = 5
 	}
 
 	// scan for cursor in parameters
