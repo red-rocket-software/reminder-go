@@ -42,20 +42,21 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	var todo model.Todo
 
-	dParseTime, err := time.Parse("2006-01-02", input.DeadlineAt)
+	deadlineParseTime, err := time.Parse("2006-01-02T15:04", input.DeadlineAt)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
 	}
 
-	now, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	createParseTime, err := time.Parse("02.01.2006, 15:04:05", input.CreatedAt)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
 	}
-	todo.CreatedAt = now
+
+	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
-	todo.DeadlineAt = dParseTime
+	todo.DeadlineAt = deadlineParseTime
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
@@ -243,7 +244,7 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if limit == 0 {
-		limit = 10
+		limit = 5
 	}
 
 	// scan for cursor in parameters
