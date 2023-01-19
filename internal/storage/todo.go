@@ -32,7 +32,7 @@ type FetchParam struct {
 
 // GetAllReminds return all todos in DB PostgreSQL
 func (s *TodoStorage) GetAllReminds(ctx context.Context, fetchParams FetchParam) ([]model.Todo, int, error) {
-	var reminds []model.Todo
+	reminds := []model.Todo{}
 
 	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE "Id" > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
 
@@ -166,7 +166,7 @@ func (s *TodoStorage) GetComplitedReminds(ctx context.Context, params FetchParam
 		return nil, 0, err
 	}
 
-	var reminds []model.Todo
+	reminds := []model.Todo{}
 	for rows.Next() {
 		var remind model.Todo
 
@@ -210,7 +210,7 @@ func (s *TodoStorage) GetNewReminds(ctx context.Context, params FetchParam) ([]m
 		return nil, 0, err
 	}
 
-	var reminds []model.Todo
+	reminds := []model.Todo{}
 
 	for rows.Next() {
 		var remind model.Todo

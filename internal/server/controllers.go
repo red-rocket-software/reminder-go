@@ -27,8 +27,6 @@ type TodoHandlers interface {
 
 // AddRemind gets remind from user input, decode and sent to DB. Simple validation - no empty field Description.
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var input model.TodoInput
 
 	err := json.NewDecoder(r.Body).Decode(&input)
@@ -37,7 +35,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Description == "" {
+	if input.Description == "" || input.DeadlineAt == "" {
 		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("nothing to save"))
 		return
 	}
