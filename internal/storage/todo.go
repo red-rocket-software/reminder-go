@@ -32,12 +32,18 @@ type FetchParam struct {
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetAllReminds(ctx context.Context, fetchParams FetchParam) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
 	reminds := []model.Todo{}
 
-	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed" FROM todo WHERE "Id" > $1  ORDER BY "CreatedAt" DESC LIMIT $2`
+	sql := `SELECT * FROM todo`
 
-	rows, err := s.Postgres.Query(ctx, sql, fetchParams.CursorID, fetchParams.Limit)
+	if params.Cursor > 0 {
+		sql += fmt.Sprintf(` WHERE "Id" < %d`, params.Cursor)
+	}
+
+	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
+
+	rows, err := s.Postgres.Query(ctx, sql)
 
 	if err != nil {
 		s.logger.Errorf("error get all reminds from db: %v", err)
@@ -167,13 +173,13 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 	return todo, nil
 }
 
-// GetComplitedReminds returns list of completed reminds and error
-func (s *TodoStorage) GetComplitedReminds(ctx context.Context, params FetchParam) ([]model.Todo, int, error) {
+// GetCompletedReminds returns list of completed reminds and error
+func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
 
-	var sql = `SELECT * FROM todo WHERE "Completed" = true`
+	sql := `SELECT * FROM todo WHERE "Completed" = true`
 
-	if params.CursorID > 0 {
-		sql += fmt.Sprintf(` AND "Id" < %d`, params.CursorID)
+	if params.Cursor > 0 {
+		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
 	}
 
 	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)

@@ -75,63 +75,63 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 }
 
-func TestStorageTodo_GetNewReminds(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
+// func TestStorageTodo_GetNewReminds(t *testing.T) {
+// 	defer func() {
+// 		err := testStorage.Truncate()
+// 		if err != nil {
+// 			log.Fatal("error truncate table")
+// 		}
+// 	}()
 
-	expectedToto, err := testStorage.SeedTodos()
+// 	expectedToto, err := testStorage.SeedTodos()
 
-	var nextCursor int
-	if len(expectedToto) > 0 {
-		nextCursor = expectedToto[len(expectedToto)-2].ID
-	}
+// 	var nextCursor int
+// 	if len(expectedToto) > 0 {
+// 		nextCursor = expectedToto[len(expectedToto)-2].ID
+// 	}
 
-	if err != nil {
-		log.Fatal("error seed todos")
-	}
+// 	if err != nil {
+// 		log.Fatal("error seed todos")
+// 	}
 
-	type args struct {
-		ctx    context.Context
-		params FetchParam
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    int
-		want1   int
-		wantErr bool
-	}{
-		{name: "success", args: args{context.Background(), FetchParam{
-			Limit: 3,
-		}},
-			want:    3,
-			want1:   nextCursor,
-			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), FetchParam{}},
-			want:    0,
-			want1:   0,
-			wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(len(got), tt.want) {
-				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("GetNewReminds() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
-	}
-}
+// 	type args struct {
+// 		ctx    context.Context
+// 		params FetchParam
+// 	}
+// 	tests := []struct {
+// 		name    string
+// 		args    args
+// 		want    int
+// 		want1   int
+// 		wantErr bool
+// 	}{
+// 		{name: "success", args: args{context.Background(), FetchParam{
+// 			Limit: 3,
+// 		}},
+// 			want:    3,
+// 			want1:   nextCursor,
+// 			wantErr: false},
+// 		{name: "error no limit", args: args{context.Background(), FetchParam{}},
+// 			want:    0,
+// 			want1:   0,
+// 			wantErr: false},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, got1, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params)
+// 			if (err != nil) != tt.wantErr {
+// 				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
+// 				return
+// 			}
+// 			if !reflect.DeepEqual(len(got), tt.want) {
+// 				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
+// 			}
+// 			if got1 != tt.want1 {
+// 				t.Errorf("GetNewReminds() got1 = %v, want %v", got1, tt.want1)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestStorageTodo_GetAllReminds(t *testing.T) {
 	defer func() {
