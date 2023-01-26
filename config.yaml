@@ -2,7 +2,7 @@
 postgresql:
   host: "localhost"
   port: "5432"
-  username: "root"
+  username: "postgres"
   password: "secret"
   database: "reminder"
 
