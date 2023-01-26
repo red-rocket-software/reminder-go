@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
+	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
 // TodoStorage handles database communication with PostgreSQL.
@@ -92,6 +93,23 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.FinishedAt, input.Completed, id)
 	if err != nil {
 		s.logger.Printf("unable to update remind %v", err)
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("remind not found")
+	}
+
+	return nil
+}
+
+// UpdateStatus update Completed field
+func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error {
+	const sql = `UPDATE todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "Id" = $3`
+
+	ct, err := s.Postgres.Exec(ctx, sql, updateInput.FinishedAt, updateInput.Completed, id)
+	if err != nil {
+		s.logger.Printf("unable to update status %v", err)
 		return err
 	}
 
@@ -193,12 +211,12 @@ func (s *TodoStorage) GetComplitedReminds(ctx context.Context, params FetchParam
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
-func (s *TodoStorage) GetNewReminds(ctx context.Context, params FetchParam) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
 	sql := `SELECT * FROM todo WHERE "Completed" = false`
 
 	//if passed cursorID we add condition to query
-	if params.CursorID > 0 {
-		sql += fmt.Sprintf(` AND "Id" < %d`, params.CursorID)
+	if params.Cursor > 0 {
+		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
 	}
 
 	//always add sort and LIMIT to query
