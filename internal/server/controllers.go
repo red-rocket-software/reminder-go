@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
+	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -20,6 +21,7 @@ type TodoHandlers interface {
 	GetRemindByID(w http.ResponseWriter, r *http.Request)
 	AddRemind(w http.ResponseWriter, r *http.Request)
 	UpdateRemind(w http.ResponseWriter, r *http.Request)
+	UpdateCompleteStatus(w http.ResponseWriter, r *http.Request)
 	DeleteRemind(w http.ResponseWriter, r *http.Request)
 	GetComplitedReminds(w http.ResponseWriter, r *http.Request)
 	GetCurrentReminds(w http.ResponseWriter, r *http.Request)
@@ -116,9 +118,9 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fetchParam := storage.FetchParam{
-		Limit:    limit,
-		CursorID: cursor,
+	fetchParam := pagination.Page{
+		Limit:  limit,
+		Cursor: cursor,
 	}
 
 	reminds, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam)
@@ -127,9 +129,17 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+	res := model.TodoResponse{
+		Todos: reminds,
+		PageInfo: pagination.PageInfo{
+			Page:       fetchParam,
+			NextCursor: nextCursor,
+		},
+	}
 
-	utils.JSONFormat(w, http.StatusOK, reminds)
+	//w.Header().Add("X-NextCursor", fmt.Sprintf("%d", nextCursor))
+
+	utils.JSONFormat(w, http.StatusOK, res)
 }
 
 func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
@@ -175,6 +185,8 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 
 	if input.Completed {
 		input.FinishedAt = &tn
+	} else {
+		input.FinishedAt = nil
 	}
 
 	if input.Description == "" {
@@ -189,6 +201,39 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONFormat(w, http.StatusOK, "remind successfully updated")
+}
+
+// UpdateCompleteStatus update Completed field to true
+func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	rID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var updateInput model.TodoUpdateStatusInput
+
+	err = json.NewDecoder(r.Body).Decode(&updateInput)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	tn := time.Now()
+
+	if updateInput.Completed {
+		updateInput.FinishedAt = &tn
+	}
+
+	err = server.TodoStorage.UpdateStatus(server.ctx, rID, updateInput)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JSONFormat(w, http.StatusOK, "remind status updated")
 }
 
 func (server *Server) GetComplitedReminds(w http.ResponseWriter, r *http.Request) {

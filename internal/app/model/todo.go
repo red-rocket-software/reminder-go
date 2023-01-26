@@ -2,6 +2,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
 type Todo struct {
@@ -23,4 +25,14 @@ type TodoUpdate struct {
 	Description string     `json:"description"`
 	FinishedAt  *time.Time `json:"finished_at,omitempty"`
 	Completed   bool       `json:"completed"`
+}
+
+type TodoResponse struct {
+	Todos    []Todo              `json:"todos"`
+	PageInfo pagination.PageInfo `json:"pageInfo"`
+}
+
+type TodoUpdateStatusInput struct {
+	Completed  bool       `json:"completed"`
+	FinishedAt *time.Time `json:"finished_at,omitempty"`
 }
