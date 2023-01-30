@@ -19,11 +19,11 @@ var (
 type ReminderRepo interface {
 	GetAllReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error)
 	CreateRemind(ctx context.Context, todo model.Todo) (int, error)
-	UpdateRemind(ctx context.Context, id int, input model.TodoUpdate) error
+	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error
 	UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error
 	DeleteRemind(ctx context.Context, id int) error
 	GetRemindByID(ctx context.Context, id int) (model.Todo, error)
-	GetCompletedReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error)
+	GetCompletedReminds(ctx context.Context, params Params) ([]model.Todo, int, error)
 	GetNewReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error)
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
