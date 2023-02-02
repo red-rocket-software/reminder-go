@@ -21,6 +21,16 @@ type TodoStorage struct {
 	logger *logging.Logger
 }
 
+type TimeRangeFilter struct {
+	StartRange string
+	EndRange   string
+}
+
+type Params struct {
+	pagination.Page
+	TimeRangeFilter
+}
+
 // NewStorageTodo  return new SorageTodo with Postgres pool and logger
 func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo {
 	return &TodoStorage{Postgres: postgres, logger: logger}
@@ -93,10 +103,10 @@ func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, e
 }
 
 // UpdateRemind update remind, can change Description, Completed and FihishedAt if Completed = true
-func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdate) error {
-	const sql = `UPDATE todo SET "Description" = $1, "FinishedAt" = $2, "Completed" = $3 WHERE "Id" = $4`
+func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
+	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4 WHERE "Id" = $5`
 
-	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.FinishedAt, input.Completed, id)
+	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, id)
 	if err != nil {
 		s.logger.Printf("unable to update remind %v", err)
 		return err
@@ -174,9 +184,13 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 }
 
 // GetCompletedReminds returns list of completed reminds and error
-func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params) ([]model.Todo, int, error) {
 
 	sql := `SELECT * FROM todo WHERE "Completed" = true`
+
+	if params.StartRange != "" {
+		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
+	}
 
 	if params.Cursor > 0 {
 		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)

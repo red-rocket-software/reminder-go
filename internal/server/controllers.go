@@ -173,7 +173,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input model.TodoUpdate
+	var input model.TodoUpdateInput
 
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -256,10 +256,20 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// scan for timeRangeValues in parameters
+	rangeStart := r.URL.Query().Get("start")
+	rangeEnd := r.URL.Query().Get("end")
+
 	//inititalize fetchParameters
-	fetchParams := pagination.Page{
-		Limit:  limit,
-		Cursor: cursor,
+	fetchParams := storage.Params{
+		Page: pagination.Page{
+			Cursor: cursor,
+			Limit:  limit,
+		},
+		TimeRangeFilter: storage.TimeRangeFilter{
+			StartRange: rangeStart,
+			EndRange:   rangeEnd,
+		},
 	}
 
 	reminds, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams)
@@ -272,7 +282,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	res := model.TodoResponse{
 		Todos: reminds,
 		PageInfo: pagination.PageInfo{
-			Page:       fetchParams,
+			Page:       fetchParams.Page,
 			NextCursor: nextCursor,
 		},
 	}
