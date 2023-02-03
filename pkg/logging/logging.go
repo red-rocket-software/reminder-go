@@ -61,20 +61,20 @@ func init() {
 		ForceColors:   true,
 	}
 
-	err := os.MkdirAll("logs", 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	allFile, err := os.OpenFile("logs/all.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		panic(err)
-	}
+	//err := os.MkdirAll("logs", 0644)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//allFile, err := os.OpenFile("logs/all.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	log.SetOutput(io.Discard) // we dont want to write anything to anywhere
 
 	log.AddHook(&writeHook{
-		Writer:    []io.Writer{allFile, os.Stdout},
+		Writer:    []io.Writer{os.Stdout},
 		LogLevels: logrus.AllLevels,
 	})
 
