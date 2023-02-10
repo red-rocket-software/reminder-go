@@ -15,13 +15,14 @@ import (
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/storage/mocks"
+	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
 
 func TestControllers_AddRemind(t *testing.T) {
-	dTime, err := time.Parse("2006-01-02", "2023-02-02")
+	dTime, err := time.Parse("2006-01-02T15:04", "2023-01-19T22:02")
 	require.NoError(t, err)
-	now, err := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+	now, err := time.Parse("02.01.2006, 15:04:05", "19.01.2023, 22:15:30")
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -34,7 +35,7 @@ func TestControllers_AddRemind(t *testing.T) {
 	}{
 		{
 			name: "OK",
-			body: `{"description":"test", "deadline_at": "2023-02-02"}`,
+			body: `{"description":"test", "deadline_at": "2023-01-19T22:02", "created_at": "19.01.2023, 22:15:30"}`,
 			inputTodo: model.Todo{
 				CreatedAt:   now,
 				Description: "test",
@@ -56,7 +57,7 @@ func TestControllers_AddRemind(t *testing.T) {
 		},
 		{
 			name: "Error - Service error",
-			body: `{"description":"test", "deadline_at": "2023-02-02"}`,
+			body: `{"description":"test", "deadline_at": "2023-01-19T22:02", "created_at": "19.01.2023, 22:15:30"}`,
 			inputTodo: model.Todo{
 				CreatedAt:   now,
 				Description: "test",
@@ -86,7 +87,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			handler := http.HandlerFunc(server.AddRemind)
 			handler.ServeHTTP(w, req)
 
-			require.Equal(t, w.Code, test.expectedStatusCode)
+			require.Equal(t, test.expectedStatusCode, w.Code)
 			require.Contains(t, w.Body.String(), test.expectedResponseBody)
 		})
 	}
@@ -167,7 +168,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdate{
+				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
 				}).Return(nil).Times(1)
 			},
@@ -184,7 +185,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdate{
+				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
 				}).Return(errors.New("something went wrong")).Times(1)
 			},
@@ -218,14 +219,14 @@ func TestServer_UpdateRemind(t *testing.T) {
 func TestServer_GetCurrentReminds(t *testing.T) {
 	testCases := []struct {
 		name               string
-		params             storage.FetchParam
-		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParam)
+		params             pagination.Page
+		mockBehavior       func(store *mockdb.MockReminderRepo, params pagination.Page)
 		expectedStatusCode int
 	}{
 		{
 			name:   "OK",
-			params: storage.FetchParam{Limit: 5},
-			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParam) {
+			params: pagination.Page{Limit: 5},
+			mockBehavior: func(store *mockdb.MockReminderRepo, params pagination.Page) {
 				store.EXPECT().GetNewReminds(gomock.Any(), params).Return([]model.Todo{{
 					ID:          1,
 					Description: "test",
@@ -257,7 +258,7 @@ func TestServer_GetCurrentReminds(t *testing.T) {
 			// Add query parameters to request URL
 			q := req.URL.Query()
 			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
-			q.Add("cursor", fmt.Sprintf("%d", test.params.CursorID))
+			q.Add("cursor", fmt.Sprintf("%d", test.params.Cursor))
 			req.URL.RawQuery = q.Encode()
 
 			require.Equal(t, test.expectedStatusCode, w.Code)
@@ -268,14 +269,14 @@ func TestServer_GetCurrentReminds(t *testing.T) {
 func TestControllers_GetAllReminds(t *testing.T) {
 	testCases := []struct {
 		name               string
-		params             storage.FetchParam
-		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParam)
+		params             pagination.Page
+		mockBehavior       func(store *mockdb.MockReminderRepo, params pagination.Page)
 		expectedStatusCode int
 	}{
 		{
 			name:   "OK",
-			params: storage.FetchParam{Limit: 10},
-			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParam) {
+			params: pagination.Page{Limit: 5},
+			mockBehavior: func(store *mockdb.MockReminderRepo, params pagination.Page) {
 				store.EXPECT().GetAllReminds(gomock.Any(), params).Return([]model.Todo{{
 					ID:          1,
 					Description: "test",
@@ -306,7 +307,7 @@ func TestControllers_GetAllReminds(t *testing.T) {
 
 			// Add query parameters to request URL
 			q := req.URL.Query()
-			q.Add("cursor", fmt.Sprintf("%d", test.params.CursorID))
+			q.Add("cursor", fmt.Sprintf("%d", test.params.Cursor))
 			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
 			req.URL.RawQuery = q.Encode()
 
@@ -364,18 +365,22 @@ func Test_DeleteRemind(t *testing.T) {
 
 }
 
-func TestControllers_GetComplitedReminds(t *testing.T) {
+func TestControllers_GetCompletedReminds(t *testing.T) {
 	testCases := []struct {
 		name               string
-		params             storage.FetchParam
-		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParam)
+		params             storage.Params
+		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.Params)
 		expectedStatusCode int
 	}{
 		{
-			name:   "OK",
-			params: storage.FetchParam{Limit: 5},
-			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParam) {
-				store.EXPECT().GetComplitedReminds(gomock.Any(), params).Return([]model.Todo{{
+			name: "OK",
+			params: storage.Params{
+				Page: pagination.Page{
+					Limit: 5,
+				},
+			},
+			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.Params) {
+				store.EXPECT().GetCompletedReminds(gomock.Any(), params).Return([]model.Todo{{
 					ID:          1,
 					Description: "test",
 					CreatedAt:   time.Now(),
@@ -400,13 +405,13 @@ func TestControllers_GetComplitedReminds(t *testing.T) {
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodGet, "/completed", http.NoBody)
 
-			handler := http.HandlerFunc(server.GetComplitedReminds)
+			handler := http.HandlerFunc(server.GetCompletedReminds)
 			handler.ServeHTTP(w, req)
 
 			// Add query parameters to request URL
 			q := req.URL.Query()
 			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
-			q.Add("cursor", fmt.Sprintf("%d", test.params.CursorID))
+			q.Add("cursor", fmt.Sprintf("%d", test.params.Cursor))
 			req.URL.RawQuery = q.Encode()
 
 			require.Equal(t, test.expectedStatusCode, w.Code)

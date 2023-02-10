@@ -36,11 +36,6 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 	return &TodoStorage{Postgres: postgres, logger: logger}
 }
 
-type FetchParam struct {
-	Limit    int
-	CursorID int
-}
-
 // GetAllReminds return all todos in DB PostgreSQL
 func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
 	reminds := []model.Todo{}
