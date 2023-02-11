@@ -19,6 +19,11 @@ type Config struct {
 		Port     string `env-default:"5432" env-required:"true" yaml:"port" env:"DB_PORT"`
 		Database string `env-default:"test_remind" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 	} `yaml:"postgresql"`
+	Auth struct {
+		GoogleAuthClientId     string `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
+		GoogleAuthClientSecret string `env-required:"true" yaml:"google_auth_client_secret" env:"GOOGLE_AUTH_CLIENT_SECRET"`
+		GoogleAuthRedirectUrl  string `env-required:"true" yaml:"  google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
+	} `yaml:"auth"`
 }
 
 func GetConfig() *Config {

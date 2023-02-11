@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -97,7 +98,7 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetCurrentReminds handle get current reminds. First url should be like: http://localhost:8000/current?limit=5
-// the next we should write cursor from prev. headers X-Nextcursor:  http://localhost:8000/current?limit=5&cursor=33
+// the next we should write cursor from prev.   http://localhost:8000/current?limit=5&cursor=33
 func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
 	strLimit := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(strLimit)
@@ -241,7 +242,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil && limitStr != "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, shoukd be positive integer"))
+		utils.JSONError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
 		return
 	}
 	if limit == 0 {
@@ -260,7 +261,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	rangeStart := r.URL.Query().Get("start")
 	rangeEnd := r.URL.Query().Get("end")
 
-	//inititalize fetchParameters
+	//initialize fetchParameters
 	fetchParams := storage.Params{
 		Page: pagination.Page{
 			Cursor: cursor,
@@ -313,7 +314,7 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//inititalize fetchParameters
+	//initialize fetchParameters
 	fetchParams := pagination.Page{
 		Limit:  limit,
 		Cursor: cursor,
@@ -335,4 +336,39 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)
+}
+
+func (server *Server) SignUpUser( (w http.ResponseWriter, r *http.Request) {
+	var payload model.RegisterUserInput
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	now := time.Now()
+
+	newUser := model.User{
+		Name:      payload.Name,
+		Email:     strings.ToLower(payload.Email),
+		Password:  payload.Password,
+		Verified:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	err = model.Validate(newUser, "")
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	_, err := server.TodoStorage.SaveUser(server.ctx, newUser)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JSONFormat(w, http.StatusCreated, "User is successfully created")
 }
