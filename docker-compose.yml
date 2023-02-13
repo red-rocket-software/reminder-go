@@ -11,25 +11,28 @@ services:
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=test_reminder
+      - POSTGRES_DB=reminder
     ports:
       - "5432:5432"
     restart: on-failure
     volumes:
       - ./db-data:/var/lib/postgresql/data
 
-#  app:
-#    container_name: reminder-api
-#    build:
-#      context: .
-#      dockerfile: ./Dockerfile
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - db
-#    restart: on-failure
-#    volumes:
-#      - api:/usr/src/app/
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reminder-api
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=reminder
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
 
 
 

@@ -24,7 +24,7 @@ services:
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=reminder
+      - POSTGRES_DB=test_reminder
     ports:
       - "5432:5432"
     expose:

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
 
@@ -75,63 +76,63 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 }
 
-// func TestStorageTodo_GetNewReminds(t *testing.T) {
-// 	defer func() {
-// 		err := testStorage.Truncate()
-// 		if err != nil {
-// 			log.Fatal("error truncate table")
-// 		}
-// 	}()
+func TestStorageTodo_GetNewReminds(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
 
-// 	expectedToto, err := testStorage.SeedTodos()
+	expectedToto, err := testStorage.SeedTodos()
 
-// 	var nextCursor int
-// 	if len(expectedToto) > 0 {
-// 		nextCursor = expectedToto[len(expectedToto)-2].ID
-// 	}
+	var nextCursor int
+	if len(expectedToto) > 0 {
+		nextCursor = expectedToto[len(expectedToto)-2].ID
+	}
 
-// 	if err != nil {
-// 		log.Fatal("error seed todos")
-// 	}
+	if err != nil {
+		log.Fatal("error seed todos")
+	}
 
-// 	type args struct {
-// 		ctx    context.Context
-// 		params FetchParam
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		want    int
-// 		want1   int
-// 		wantErr bool
-// 	}{
-// 		{name: "success", args: args{context.Background(), FetchParam{
-// 			Limit: 3,
-// 		}},
-// 			want:    3,
-// 			want1:   nextCursor,
-// 			wantErr: false},
-// 		{name: "error no limit", args: args{context.Background(), FetchParam{}},
-// 			want:    0,
-// 			want1:   0,
-// 			wantErr: false},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, got1, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params)
-// 			if (err != nil) != tt.wantErr {
-// 				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(len(got), tt.want) {
-// 				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
-// 			}
-// 			if got1 != tt.want1 {
-// 				t.Errorf("GetNewReminds() got1 = %v, want %v", got1, tt.want1)
-// 			}
-// 		})
-// 	}
-// }
+	type args struct {
+		ctx    context.Context
+		params pagination.Page
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int
+		want1   int
+		wantErr bool
+	}{
+		{name: "success", args: args{context.Background(), pagination.Page{
+			Limit: 3,
+		}},
+			want:    3,
+			want1:   nextCursor,
+			wantErr: false},
+		{name: "error no limit", args: args{context.Background(), pagination.Page{}},
+			want:    0,
+			want1:   0,
+			wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(len(got), tt.want) {
+				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("GetNewReminds() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
 
 func TestStorageTodo_GetAllReminds(t *testing.T) {
 	defer func() {
@@ -153,7 +154,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 
 	type args struct {
 		ctx         context.Context
-		fetchParams FetchParam
+		fetchParams pagination.Page
 	}
 	tests := []struct {
 		name    string
@@ -162,14 +163,14 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 		want1   int
 		wantErr bool
 	}{
-		{name: "success", args: args{context.Background(), FetchParam{
+		{name: "success", args: args{context.Background(), pagination.Page{
 			Limit: 2,
 		}},
 			want:    []model.Todo{expectedTodo[1], expectedTodo[0]},
 			want1:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), FetchParam{}},
-			want:    nil,
+		{name: "error no limit", args: args{context.Background(), pagination.Page{}},
+			want:    []model.Todo{},
 			want1:   0,
 			wantErr: false},
 	}
@@ -190,7 +191,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 	}
 }
 
-func TestStorageTodo_GetComplitedReminds(t *testing.T) {
+func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 	defer func() {
 		err := testStorage.Truncate()
 		if err != nil {
@@ -210,7 +211,7 @@ func TestStorageTodo_GetComplitedReminds(t *testing.T) {
 
 	type args struct {
 		ctx    context.Context
-		params FetchParam
+		params Params
 	}
 	tests := []struct {
 		name    string
@@ -219,20 +220,25 @@ func TestStorageTodo_GetComplitedReminds(t *testing.T) {
 		want1   int
 		wantErr bool
 	}{
-		{name: "success", args: args{context.Background(), FetchParam{
-			Limit: 5,
+		{name: "success", args: args{context.Background(), Params{
+			Page: pagination.Page{
+				Limit: 5,
+			},
+			TimeRangeFilter: TimeRangeFilter{},
 		}},
 			want:    []model.Todo{expectedTodo[1]},
 			want1:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), FetchParam{}},
-			want:    nil,
+		{name: "error no limit", args: args{context.Background(), Params{
+			Page: pagination.Page{},
+		}},
+			want:    []model.Todo{},
 			want1:   0,
 			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := testStorage.GetComplitedReminds(tt.args.ctx, tt.args.params)
+			got, got1, err := testStorage.GetCompletedReminds(tt.args.ctx, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetComplitedReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -279,10 +285,12 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 		log.Fatal("error seed reminds")
 	}
 
-	updateInput := model.TodoUpdate{
+	tn := time.Now()
+	updateInput := model.TodoUpdateInput{
 		Description: "New text",
-		FinishedAt:  nil,
+		FinishedAt:  &tn,
 		Completed:   true,
+		DeadlineAt:  "2023-01-26T17:05:00Z",
 	}
 
 	err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
