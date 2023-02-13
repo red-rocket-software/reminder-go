@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -17,7 +16,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
-type TodoHandlers interface {
+type RemindHandlers interface {
 	GetAllReminds(w http.ResponseWriter, r *http.Request)
 	GetRemindByID(w http.ResponseWriter, r *http.Request)
 	AddRemind(w http.ResponseWriter, r *http.Request)
@@ -336,39 +335,4 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)
-}
-
-func (server *Server) SignUpUser( (w http.ResponseWriter, r *http.Request) {
-	var payload model.RegisterUserInput
-
-	err := json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil {
-		utils.JSONError(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	now := time.Now()
-
-	newUser := model.User{
-		Name:      payload.Name,
-		Email:     strings.ToLower(payload.Email),
-		Password:  payload.Password,
-		Verified:  true,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-
-	err = model.Validate(newUser, "")
-	if err != nil {
-		utils.JSONError(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-
-	_, err := server.TodoStorage.SaveUser(server.ctx, newUser)
-	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	utils.JSONFormat(w, http.StatusCreated, "User is successfully created")
 }

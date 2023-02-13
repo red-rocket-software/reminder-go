@@ -20,12 +20,13 @@ type Server struct {
 	Logger      logging.Logger
 	TodoStorage storage.ReminderRepo
 	ctx         context.Context
+	config      config.Config
 }
 
 // func New returns new Server. You should pass logger as a parameter
-func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo) *Server {
+func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
 
-	server := &Server{Logger: logger, TodoStorage: storage, ctx: ctx}
+	server := &Server{ctx: ctx, Logger: logger, TodoStorage: storage, config: cfg}
 	return server
 }
 

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -20,9 +21,12 @@ type Config struct {
 		Database string `env-default:"test_remind" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 	} `yaml:"postgresql"`
 	Auth struct {
-		GoogleAuthClientId     string `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
-		GoogleAuthClientSecret string `env-required:"true" yaml:"google_auth_client_secret" env:"GOOGLE_AUTH_CLIENT_SECRET"`
-		GoogleAuthRedirectUrl  string `env-required:"true" yaml:"  google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
+		GoogleAuthClientId     string        `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
+		GoogleAuthClientSecret string        `env-required:"true" yaml:"google_auth_client_secret" env:"GOOGLE_AUTH_CLIENT_SECRET"`
+		GoogleAuthRedirectUrl  string        `env-required:"true" yaml:"  google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
+		JwtSecret              string        `env-required:"true" yaml:"jwt-secret" env:"JWT_SECRET"`
+		TokenExpiredIn         time.Duration `env-required:"true" yaml:"token-expired-in" env:"TOKEN_EXPIRED_IN"`
+		TokenMaxAge            int           `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
 	} `yaml:"auth"`
 }
 

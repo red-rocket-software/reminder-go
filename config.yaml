@@ -12,8 +12,8 @@ http:
 
 auth:
   jwt-secret: "my_ultra_secure_secret"
-  token-expired-in: "60"
-  token-maxage:  "60"
+  token-expired-in: "60m"
+  token-maxage:  60
 
   google_auth_client_id: "791945691797-st6cigpu7pl7m1o7po05kqdapm7uahpm.apps.googleusercontent.com"
   google_auth_client_secret: "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"
