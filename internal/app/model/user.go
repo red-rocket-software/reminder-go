@@ -25,15 +25,14 @@ type UserResponse struct {
 }
 
 type User struct {
-	ID       int
-	Name     string
-	Email    string
-	Password string
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 
-	Verified  bool
-	Provider  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Provider  string    `json:"provider"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type LoginUserInput struct {

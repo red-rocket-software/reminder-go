@@ -27,6 +27,7 @@ type Config struct {
 		JwtSecret              string        `env-required:"true" yaml:"jwt-secret" env:"JWT_SECRET"`
 		TokenExpiredIn         time.Duration `env-required:"true" yaml:"token-expired-in" env:"TOKEN_EXPIRED_IN"`
 		TokenMaxAge            int           `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
+		FrontendOrigin         string        `env-required:"true" yaml:"frontend_origin" env:"FRONTEND_ORIGIN"`
 	} `yaml:"auth"`
 }
 

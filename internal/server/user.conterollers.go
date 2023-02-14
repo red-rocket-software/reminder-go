@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
-	"github.com/red-rocket-software/reminder-go/internal/server/auth"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -68,7 +67,7 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -87,14 +86,16 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, "Successful logIn")
 }
 
-func LogoutUser(w http.ResponseWriter, r *http.Request) {
+func (server *Server) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{}
+	cookie.Name = "token"
 	cookie.Value = ""
 	cookie.Path = "/"
 	cookie.Domain = "localhost"
 	cookie.MaxAge = -1
 	cookie.Secure = false
 	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
 
 	utils.JSONFormat(w, http.StatusOK, "Success")
 }
