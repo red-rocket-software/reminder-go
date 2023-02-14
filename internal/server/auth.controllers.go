@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 
-	var pathURL string = "/"
+	var pathURL = "/"
 
 	if r.URL.Query().Get("state") != "" {
 		pathURL = r.URL.Query().Get("state")
@@ -46,17 +47,26 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		Email:     email,
 		Password:  "",
 		Provider:  "Google",
+		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err != nil {
-		server.TodoStorage.CreateUser(server.ctx, dataUser)
+	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
+		if err != nil {
+			utils.JSONError(w, http.StatusBadRequest, err)
+			return
+		}
 	}
 
-	user := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
 
-	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.Id.String(), server.config.Auth.JwtSecret)
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
@@ -72,15 +82,123 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	cookie.HttpOnly = true
 	http.SetCookie(w, &cookie)
 
-	http.Redirect(w, r, server.config.Auth.FrontendOrigin, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
+}
+
+func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
+	var payload model.RegisterUserInput
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	if len(payload.Password) < 6 {
+		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("password should be more then 6"))
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(payload.Password)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	now := time.Now()
+
+	newUser := model.User{
+		Name:      payload.Name,
+		Email:     strings.ToLower(payload.Email),
+		Password:  hashedPassword,
+		Verified:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	err = model.Validate(newUser, "")
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	id, err := server.TodoStorage.CreateUser(server.ctx, newUser)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JSONFormat(w, http.StatusCreated, fmt.Sprintf("User is successfully created id:%d", id))
+}
+
+func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
+	var payload model.LoginUserInput
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, payload.Email)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf("invalid email or Password %v", err))
+		return
+	}
+
+	err = utils.CheckPassword(payload.Password, user.Password)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if user.Provider == "Google" {
+		utils.JSONFormat(w, http.StatusUnauthorized, fmt.Sprintf("Use %v OAuth instead", user.Provider))
+		return
+	}
+
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = server.config.Auth.TokenMaxAge
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	utils.JSONFormat(w, http.StatusCreated, "Successful logIn")
+}
+
+func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = ""
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = -1
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	utils.JSONFormat(w, http.StatusOK, "Success")
 }
 
 func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		cookie, err := r.Cookie("token")
-		if err != nil {
-			utils.JSONError(w, http.StatusUnauthorized, errors.New("error occurred while reading cookie"))
+		if errors.Is(err, http.ErrNoCookie) {
+			utils.JSONError(w, http.StatusBadRequest, errors.New("cookie not found"))
+		} else {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+
 		}
 
 		authorizationHeader := r.Header.Get("Authorization")
@@ -103,9 +221,12 @@ func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		user := server.TodoStorage.GetUserByEmail(server.ctx, fmt.Sprint(sub))
+		user, err := server.TodoStorage.GetUserById(server.ctx, int(sub.(float64)))
+		if err != nil {
+			utils.JSONError(w, http.StatusBadRequest, err)
+		}
 		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }

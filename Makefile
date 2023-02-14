@@ -1,4 +1,4 @@
-DB_URL=postgres://postgres:secret@localhost:5432/reminder?sslmode=disable
+DB_URL=postgres://root:secret@localhost:5432/reminder?sslmode=disable
 DB_URL_TEST=postgres://root:secret@localhost:5432/test_reminder?sslmode=disable
 
 lint: format

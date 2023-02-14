@@ -82,13 +82,13 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page)
 	return reminds, nextCursor, nil
 }
 
-// CreateRemind  store new remind entity to DB PostgreSQL
+// CreateRemind  store new remind entity to DB PostgresSQL
 func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
 	var id int
 
-	const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt") 
-				 VALUES ($1, $2, $3) returning "Id"`
-	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.CreatedAt, todo.DeadlineAt)
+	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt") 
+				 VALUES ($1, $2, $3, $4) returning "ID"`
+	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt)
 	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
@@ -99,7 +99,7 @@ func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, e
 
 // UpdateRemind update remind, can change Description, Completed and FihishedAt if Completed = true
 func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
-	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4 WHERE "Id" = $5`
+	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4 WHERE "ID" = $5`
 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, id)
 	if err != nil {
@@ -116,7 +116,7 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 
 // UpdateStatus update Completed field
 func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error {
-	const sql = `UPDATE todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "Id" = $3`
+	const sql = `UPDATE todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "ID" = $3`
 
 	ct, err := s.Postgres.Exec(ctx, sql, updateInput.FinishedAt, updateInput.Completed, id)
 	if err != nil {
@@ -133,7 +133,7 @@ func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput mode
 
 // DeleteRemind deletes remind from DB
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
-	const sql = `DELETE FROM todo WHERE "Id" = $1`
+	const sql = `DELETE FROM todo WHERE "ID" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
 
 	if err != nil {
@@ -317,7 +317,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 
 	for i := range todos {
 		const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt", "Completed") 
-				 VALUES ($1, $2, $3, $4) returning "Id"`
+				 VALUES ($1, $2, $3, $4) returning "ID"`
 
 		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
 

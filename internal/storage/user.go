@@ -11,9 +11,10 @@ import (
 func (s *TodoStorage) CreateUser(ctx context.Context, user model.User) (int, error) {
 	var id int
 
-	const sql = `INSERT INTO users ("Name", "Email", "Password", "Provider", "CreatedAt")`
+	const sql = `INSERT INTO users ("Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt")
+				VALUES ($1, $2, $3, $4, $5, $6) RETURNING "ID"`
 
-	row := s.Postgres.QueryRow(ctx, sql, user.Name, user.Email, user.Password, user.Provider, user.CreatedAt)
+	row := s.Postgres.QueryRow(ctx, sql, user.Name, user.Email, user.Password, user.Provider, user.CreatedAt, user.UpdatedAt)
 
 	err := row.Scan(&id)
 
@@ -41,11 +42,11 @@ func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.U
 		&user.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return model.User{}, err
+		return model.User{}, errors.New("no rows in result set")
 	}
 
 	if err != nil {
-		s.logger.Printf("cannot get user from database: %v\n", err)
+		s.logger.Errorf("cannot get user from database: %v\n", err)
 		return model.User{}, ErrCantGetUserFromDB
 	}
 	return user, nil
@@ -57,7 +58,7 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Name, input.Email, input.Password, input.Provider, input.CreatedAt, input.UpdatedAt)
 
 	if err != nil {
-		s.logger.Printf("unable to update user %v", err)
+		s.logger.Errorf("unable to update user %v", err)
 		return err
 	}
 
@@ -66,4 +67,31 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 	}
 
 	return nil
+}
+
+func (s *TodoStorage) GetUserById(ctx context.Context, id int) (model.User, error) {
+	var user model.User
+
+	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt" FROM users WHERE "ID" = $1 LIMIT 1`
+
+	row := s.Postgres.QueryRow(ctx, sql, id)
+
+	err := row.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Provider,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.User{}, errors.New("no rows in result set")
+	}
+
+	if err != nil {
+		s.logger.Printf("cannot get user from database: %v\n", err)
+		return model.User{}, ErrCantGetUserFromDB
+	}
+	return user, nil
 }

@@ -11,7 +11,7 @@ import (
 type RegisterUserInput struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 type UserResponse struct {
@@ -30,6 +30,7 @@ type User struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 
+	Verified  bool      `json:"verified"`
 	Provider  string    `json:"provider"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

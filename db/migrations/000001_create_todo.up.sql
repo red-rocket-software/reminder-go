@@ -13,12 +13,13 @@ CREATE INDEX ON "todo" ("User");
 CREATE TABLE IF NOT EXISTS "users" (
   "ID" serial PRIMARY KEY,
   "Name" varchar NOT NULL,
-  "Email" varchar NOT NULL,
+  "Email" varchar NOT NULL UNIQUE ,
   "Password" varchar NOT NULL,
   "Provider" varchar NOT NULL,
+  "Verified" bool DEFAULT false,
   "CreatedAt" timestamp NOT NULL,
   "UpdatedAt" timestamp
 );
 
 
-ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users" ("ID");
+ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users" ("ID") ON DELETE CASCADE;

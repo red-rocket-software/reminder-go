@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -42,6 +43,35 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var token string
+	cookie, err := r.Cookie("token")
+	if errors.Is(err, http.ErrNoCookie) {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("cookie not found"))
+	} else {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+
+	}
+
+	authorizationHeader := r.Header.Get("Authorization")
+	fields := strings.Fields(authorizationHeader)
+
+	if len(fields) != 0 && fields[0] == "Bearer" {
+		token = fields[1]
+	} else if err == nil {
+		token = cookie.Value
+	}
+
+	if token == "" {
+		utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
+		return
+	}
+
+	sub, err := utils.ValidateToken(token, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnauthorized, err)
+		return
+	}
+
 	var todo model.Todo
 
 	deadlineParseTime, err := time.Parse("2006-01-02T15:04", input.DeadlineAt)
@@ -59,6 +89,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
 	todo.DeadlineAt = deadlineParseTime
+	todo.UserID = int(sub.(float64))
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {

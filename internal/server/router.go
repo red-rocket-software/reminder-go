@@ -25,7 +25,7 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	authGroup := router.PathPrefix("/auth").Subrouter()
 	authGroup.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	authGroup.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
-	authGroup.HandleFunc("/logout", server.AuthMiddleware(server.LogoutUser)).Methods("POST", "OPTIONS")
+	authGroup.HandleFunc("/logout", server.AuthMiddleware(server.LogOutUser)).Methods("GET", "OPTIONS")
 
 	return router
 
