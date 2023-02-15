@@ -194,12 +194,6 @@ func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		cookie, err := r.Cookie("token")
-		if errors.Is(err, http.ErrNoCookie) {
-			utils.JSONError(w, http.StatusBadRequest, errors.New("cookie not found"))
-		} else {
-			utils.JSONError(w, http.StatusInternalServerError, err)
-
-		}
 
 		authorizationHeader := r.Header.Get("Authorization")
 		fields := strings.Fields(authorizationHeader)
