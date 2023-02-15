@@ -3,15 +3,15 @@ package server
 import (
 	"context"
 
-	"github.com/gorilla/mux"
-	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/storage"
-	"github.com/red-rocket-software/reminder-go/pkg/logging"
-
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/red-rocket-software/reminder-go/config"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
+	"github.com/red-rocket-software/reminder-go/pkg/logging"
 )
 
 type Server struct {
@@ -23,14 +23,19 @@ type Server struct {
 	config      config.Config
 }
 
-// func New returns new Server. You should pass logger as a parameter
+// New returns new Server.
 func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
 
-	server := &Server{ctx: ctx, Logger: logger, TodoStorage: storage, config: cfg}
+	server := &Server{
+		ctx:         ctx,
+		Logger:      logger,
+		TodoStorage: storage,
+		config:      cfg,
+	}
 	return server
 }
 
-// func Run start server on IP address an PORT passed in parameters
+// Run start server on IP address an PORT passed in parameters
 func (server *Server) Run(cfg *config.Config) error {
 
 	server.S = &http.Server{
@@ -53,7 +58,7 @@ func (server *Server) Run(cfg *config.Config) error {
 
 	<-quit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 
 	defer cancel()
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -43,28 +42,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var token string
-	cookie, err := r.Cookie("token")
-
-	authorizationHeader := r.Header.Get("Authorization")
-	fields := strings.Fields(authorizationHeader)
-
-	if len(fields) != 0 && fields[0] == "Bearer" {
-		token = fields[1]
-	} else if err == nil {
-		token = cookie.Value
-	}
-
-	if token == "" {
-		utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
-		return
-	}
-
-	sub, err := utils.ValidateToken(token, server.config.Auth.JwtSecret)
-	if err != nil {
-		utils.JSONError(w, http.StatusUnauthorized, err)
-		return
-	}
+	user := r.Context().Value("currentUser").(model.User)
 
 	var todo model.Todo
 
@@ -83,7 +61,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
 	todo.DeadlineAt = deadlineParseTime
-	todo.UserID = int(sub.(float64))
+	todo.UserID = user.ID
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {

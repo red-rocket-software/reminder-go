@@ -19,17 +19,18 @@ type UserResponse struct {
 	Name      string    `json:"name,omitempty"`
 	Email     string    `json:"email,omitempty"`
 	Provider  string    `json:"provider,omitempty"`
+	Photo     string    `json:"photo"`
 	Verified  bool      `json:"verified,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	Photo     string    `json:"photo"`
 	Verified  bool      `json:"verified"`
 	Provider  string    `json:"provider"`
 	CreatedAt time.Time `json:"created_at"`

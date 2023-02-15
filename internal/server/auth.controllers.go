@@ -13,6 +13,8 @@ import (
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
+var randomState = "random"
+
 func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 
@@ -111,6 +113,7 @@ func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 		Name:      payload.Name,
 		Email:     strings.ToLower(payload.Email),
 		Password:  hashedPassword,
+		Provider:  "local",
 		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,

@@ -61,6 +61,7 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page)
 
 		if err := rows.Scan(
 			&remind.ID,
+			&remind.UserID,
 			&remind.Description,
 			&remind.CreatedAt,
 			&remind.DeadlineAt,
@@ -205,6 +206,7 @@ func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params) ([
 
 		if err := rows.Scan(
 			&remind.ID,
+			&remind.UserID,
 			&remind.Description,
 			&remind.CreatedAt,
 			&remind.DeadlineAt,
@@ -249,6 +251,7 @@ func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page)
 		var remind model.Todo
 
 		if err := rows.Scan(&remind.ID,
+			&remind.UserID,
 			&remind.Description,
 			&remind.CreatedAt,
 			&remind.DeadlineAt,

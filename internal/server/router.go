@@ -20,12 +20,12 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	router.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET")
 	router.HandleFunc("/current", server.GetCurrentReminds).Methods("GET")
 
-	router.HandleFunc("/auth/google/callback", server.GoogleAuth).Methods("GET")
-
 	authGroup := router.PathPrefix("/auth").Subrouter()
 	authGroup.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	authGroup.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
 	authGroup.HandleFunc("/logout", server.AuthMiddleware(server.LogOutUser)).Methods("GET", "OPTIONS")
+
+	authGroup.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
 
 	return router
 

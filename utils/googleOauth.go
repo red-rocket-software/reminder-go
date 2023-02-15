@@ -13,6 +13,8 @@ import (
 	"github.com/red-rocket-software/reminder-go/config"
 )
 
+const OAuthStateCookieName string = "oauthstate"
+
 type GoogleOauthToken struct {
 	AccessToken string
 	IdToken     string
@@ -77,10 +79,11 @@ type GoogleUserResult struct {
 	GivenName     string
 	FamilyName    string
 	Locale        string
+	Picture       string
 }
 
 func GetGoogleUser(accessToken, idToken string) (*GoogleUserResult, error) {
-	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=%s", accessToken)
+	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v2/userinfo?access_token=%s", accessToken)
 
 	req, err := http.NewRequest("GET", rootUrl, nil)
 	if err != nil {
@@ -119,9 +122,27 @@ func GetGoogleUser(accessToken, idToken string) (*GoogleUserResult, error) {
 		Email:         GoogleUserRes["email"].(string),
 		VerifiedEmail: GoogleUserRes["verified_email"].(bool),
 		Name:          GoogleUserRes["name"].(string),
+		Picture:       GoogleUserRes["picture"].(string),
 		GivenName:     GoogleUserRes["given_name"].(string),
 		Locale:        GoogleUserRes["locale"].(string),
 	}
 
 	return userBody, nil
 }
+
+//func GenerateStateOauthCookie(w http.ResponseWriter, maxAge int, path, domain string) string {
+//	b := make([]byte, 16)
+//	rand.Read(b)
+//	state := base64.URLEncoding.EncodeToString(b)
+//	cookie := http.Cookie{}
+//	cookie.Name = OAuthStateCookieName
+//	cookie.Value = state
+//	cookie.Path = path
+//	cookie.Domain = domain
+//	cookie.MaxAge = maxAge
+//	cookie.Secure = false
+//	cookie.HttpOnly = true
+//	http.SetCookie(w, &cookie)
+//
+//	return state
+//}
