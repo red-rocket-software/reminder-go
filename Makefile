@@ -11,6 +11,9 @@ format:
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root reminder
 
+create_testdb:
+	docker exec -it postgres createdb --username=root --owner=root test_reminder
+
 dropdb:
 	docker exec -it postgres dropdb --username=root reminder
 

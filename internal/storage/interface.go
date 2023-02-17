@@ -28,6 +28,7 @@ type ReminderRepo interface {
 	GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error)
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
+	SeedUser() (int, error)
 
 	// user methods
 	CreateUser(ctx context.Context, input model.User) (int, error)

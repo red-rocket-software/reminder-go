@@ -189,6 +189,21 @@ func (mr *MockReminderRepoMockRecorder) SeedTodos() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedTodos", reflect.TypeOf((*MockReminderRepo)(nil).SeedTodos))
 }
 
+// SeedUser mocks base method.
+func (m *MockReminderRepo) SeedUser() (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SeedUser")
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SeedUser indicates an expected call of SeedUser.
+func (mr *MockReminderRepoMockRecorder) SeedUser() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedUser", reflect.TypeOf((*MockReminderRepo)(nil).SeedUser))
+}
+
 // Truncate mocks base method.
 func (m *MockReminderRepo) Truncate() error {
 	m.ctrl.T.Helper()

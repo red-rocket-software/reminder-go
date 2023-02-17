@@ -20,6 +20,8 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 		}
 	}()
 
+	userID, _ := testStorage.SeedUser()
+
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 
 	type args struct {
@@ -35,6 +37,7 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 			context.Background(),
 			model.Todo{
 				Description: "test text",
+				UserID:      userID,
 				DeadlineAt:  date,
 				CreatedAt:   time.Now(),
 			},
@@ -59,8 +62,11 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 
+	userID, _ := testStorage.SeedUser()
+
 	insertTodo := model.Todo{
 		Description: "test",
+		UserID:      userID,
 		DeadlineAt:  date,
 		CreatedAt:   time.Now(),
 	}
@@ -302,6 +308,13 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 }
 
 func TestStorageTodo_SeedTodos(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
 	todos, err := testStorage.SeedTodos()
 
 	require.NoError(t, err)
