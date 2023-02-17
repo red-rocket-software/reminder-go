@@ -126,7 +126,9 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		Cursor: cursor,
 	}
 
-	reminds, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam)
+	user := r.Context().Value("currentUser").(model.User)
+
+	reminds, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -275,7 +277,9 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 		},
 	}
 
-	reminds, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams)
+	user := r.Context().Value("currentUser").(model.User)
+
+	reminds, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
 
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
@@ -322,7 +326,9 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		Cursor: cursor,
 	}
 
-	reminds, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams)
+	user := r.Context().Value("currentUser").(model.User)
+
+	reminds, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
 
 	res := model.TodoResponse{
 		Todos: reminds,
