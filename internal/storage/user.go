@@ -73,7 +73,7 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 	return nil
 }
 
-func (s *TodoStorage) GetUserById(ctx context.Context, id int) (model.User, error) {
+func (s *TodoStorage) GetUserByID(ctx context.Context, id int) (model.User, error) {
 	var user model.User
 
 	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt" FROM users WHERE "ID" = $1 LIMIT 1`
