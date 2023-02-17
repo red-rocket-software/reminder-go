@@ -26,6 +26,7 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	authGroup.HandleFunc("/logout", server.AuthMiddleware(server.LogOutUser)).Methods("GET", "OPTIONS")
 
 	authGroup.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
+	authGroup.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET")
 
 	return router
 
