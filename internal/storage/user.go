@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
@@ -19,6 +20,9 @@ func (s *TodoStorage) CreateUser(ctx context.Context, user model.User) (int, err
 	err := row.Scan(&id)
 
 	if err != nil {
+		if strings.Contains(err.Error(), "23505") {
+			return 0, err
+		}
 		s.logger.Errorf("Error create user: %v", err)
 		return 0, err
 	}

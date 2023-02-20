@@ -11,22 +11,29 @@ func (server *Server) ConfigureRouter() *mux.Router {
 
 	router.Use(middlewares.CorsMiddleware)
 
-	router.HandleFunc("/remind", server.GetAllReminds).Methods("GET")
-	router.HandleFunc("/remind/{id}", server.GetRemindByID).Methods("GET")
-	router.HandleFunc("/remind", server.AuthMiddleware(server.AddRemind)).Methods("POST", "OPTIONS")
-	router.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
-	router.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
-	router.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET")
-	router.HandleFunc("/current", server.GetCurrentReminds).Methods("GET")
+	// private routes
+	privateRoute := router.PathPrefix("").Subrouter()
+	privateRoute.Use(server.AuthMiddleware)
 
-	authGroup := router.PathPrefix("/auth").Subrouter()
-	authGroup.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
-	authGroup.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
-	authGroup.HandleFunc("/logout", server.AuthMiddleware(server.LogOutUser)).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/remind", server.GetAllReminds).Methods("GET")
+	privateRoute.HandleFunc("/remind/{id}", server.GetRemindByID).Methods("GET")
+	privateRoute.HandleFunc("/remind", server.AddRemind).Methods("POST", "OPTIONS")
+	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
+	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
+	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
+	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET")
+	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET")
 
-	authGroup.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
+	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
+
+	// public routes
+	publicRoute := router.PathPrefix("").Subrouter()
+
+	publicRoute.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
+	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
+
+	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
+	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET")
 
 	return router
-
 }

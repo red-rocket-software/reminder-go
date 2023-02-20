@@ -97,11 +97,11 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if code == "" {
-		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
+  		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
 		return
 	}
-
-	tokenRes, err := utils.GetGithubOuathToken(code, server.config)
+  
+  tokenRes, err := utils.GetGithubOuathToken(code, server.config)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadGateway, err)
 		return
@@ -117,6 +117,72 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 		Email:     email,
 		Password:  "",
 		Provider:  "Github",
+    		Verified:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
+		if err != nil {
+			utils.JSONError(w, http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = server.config.Auth.TokenMaxAge * 60
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
+}
+
+func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
+	var pathURL = "/"
+
+	state := r.FormValue("state")
+
+	if randomState != state {
+		utils.JSONError(w, http.StatusBadRequest, errors.New(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
+		return
+	}
+
+	if r.FormValue("code") == "" {
+  
+	tokenRes, err := utils.GetLinkedinOauthToken(r.FormValue("code"), server.config)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	linkedinUser, err := utils.GetLinkedinUser(server.config, tokenRes)
+
+	now := time.Now()
+	email := strings.ToLower(linkedinUser.Email)
+
+	dataUser := model.User{
+		Name:      linkedinUser.FirstName,
+		Email:     email,
+		Password:  "",
+		Provider:  "Linkedin",
 		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -195,6 +261,10 @@ func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := server.TodoStorage.CreateUser(server.ctx, newUser)
 	if err != nil {
+		if strings.Contains(err.Error(), "23505") {
+			utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("user with this email is already existing"))
+			return
+		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -261,8 +331,8 @@ func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, "Success")
 }
 
-func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		cookie, err := r.Cookie("token")
 
@@ -293,5 +363,5 @@ func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	}
+	})
 }
