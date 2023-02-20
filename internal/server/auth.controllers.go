@@ -87,6 +87,74 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
 }
 
+func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+
+	var pathURL = "/"
+
+	if r.URL.Query().Get("state") != "" {
+		pathURL = r.URL.Query().Get("state")
+	}
+
+	if code == "" {
+		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
+		return
+	}
+
+	tokenRes, err := utils.GetGithubOuathToken(code, server.config)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadGateway, err)
+		return
+	}
+
+	githubUser, err := utils.GetGithubUser(tokenRes)
+
+	now := time.Now()
+	email := strings.ToLower(githubUser.Email)
+
+	dataUser := model.User{
+		Name:      githubUser.Name,
+		Email:     email,
+		Password:  "",
+		Provider:  "Github",
+		Verified:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
+		if err != nil {
+			utils.JSONError(w, http.StatusBadRequest, err)
+			return
+		}
+	}
+
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = server.config.Auth.TokenMaxAge * 60
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
+}
+
 func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 	var payload model.RegisterUserInput
 

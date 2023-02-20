@@ -19,4 +19,9 @@ auth:
   google_auth_client_secret: "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"
   google_auth_redirect_url: "https://localhost:8000/auth/google/callback"
 
+# github credentials
+  github_auth_client_id: "b3917efaf2a75a02749b"
+  github_auth_client_secret: "G6ac64ff5097e897f1bd69d9ee5a8ded4823fb278"
+  github_auth_redirect_url: "https://localhost:8000/auth/google/github"
+  
   frontend_origin: "http://localhost:3000"
