@@ -12,6 +12,15 @@ jobs:
         with:
           go-version: '1.17'
 
+      - name: Install golang-migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.14.1/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate.linux-amd64 /usr/bin/migrate
+          which migrate
+
+      - name: Run migrations
+        run: make migrateup
+
       - name: run test
         run: make int_test
 
@@ -22,11 +31,8 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.17
-      - uses: actions/checkout@v3
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
-          version: v1.29
+      - name: Install golangci-lint
+        run: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.42.1
       - name: run lint
         run: make lint
