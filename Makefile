@@ -6,7 +6,7 @@ lint: format
 	go vet ./...
 
 format:
-	gofmt -e -d .
+	gofmt -d .
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root reminder

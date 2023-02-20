@@ -29,9 +29,9 @@ type Config struct {
 		TokenMaxAge            int           `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
 		FrontendOrigin         string        `env-required:"true" yaml:"frontend_origin" env:"FRONTEND_ORIGIN"`
 
-		LinkedinAuthClientId     string `env-require: "true" yaml: "linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
+		LinkedinAuthClientID     string `env-require: "true" yaml: "linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
 		LinkedinAuthClientSecret string `env-require: "true" yaml: "linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
-		LinkedinAuthRedirectUrl  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
+		LinkedinAuthRedirectURL  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
 	} `yaml:"auth"`
 }
 
