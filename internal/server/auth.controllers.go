@@ -97,11 +97,11 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if code == "" {
-  		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
+		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
 		return
 	}
-  
-  tokenRes, err := utils.GetGithubOuathToken(code, server.config)
+
+	tokenRes, err := utils.GetGithubOuathToken(code, server.config)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadGateway, err)
 		return
@@ -117,7 +117,7 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 		Email:     email,
 		Password:  "",
 		Provider:  "Github",
-    		Verified:  true,
+		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -161,12 +161,15 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 
 	if randomState != state {
-		utils.JSONError(w, http.StatusBadRequest, errors.New(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
+		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
 		return
 	}
 
 	if r.FormValue("code") == "" {
-  
+		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
+		return
+	}
+
 	tokenRes, err := utils.GetLinkedinOauthToken(r.FormValue("code"), server.config)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
