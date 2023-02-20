@@ -196,6 +196,10 @@ func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := server.TodoStorage.CreateUser(server.ctx, newUser)
 	if err != nil {
+		if strings.Contains(err.Error(), "23505") {
+			utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("user with this email is already existing"))
+			return
+		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -262,8 +266,8 @@ func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, "Success")
 }
 
-func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		cookie, err := r.Cookie("token")
 
@@ -294,5 +298,5 @@ func (server *Server) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	}
+	})
 }

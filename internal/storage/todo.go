@@ -37,10 +37,10 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error) {
 	reminds := []model.Todo{}
 
-	sql := `SELECT * FROM todo`
+	sql := fmt.Sprintf(`SELECT * FROM todo WHERE "User" = %d`, userID)
 
 	if params.Cursor > 0 {
 		sql += fmt.Sprintf(` WHERE "Id" < %d`, params.Cursor)
@@ -180,9 +180,9 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 }
 
 // GetCompletedReminds returns list of completed reminds and error
-func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params) ([]model.Todo, int, error) {
+func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, userID int) ([]model.Todo, int, error) {
 
-	sql := `SELECT * FROM todo WHERE "Completed" = true`
+	sql := fmt.Sprintf(`SELECT * FROM todo WHERE "Completed" = true AND "User" = %d`, userID)
 
 	if params.StartRange != "" {
 		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
@@ -228,8 +228,8 @@ func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params) ([
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
-func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page) ([]model.Todo, int, error) {
-	sql := `SELECT * FROM todo WHERE "Completed" = false`
+func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error) {
+	sql := fmt.Sprintf(`SELECT * FROM todo WHERE "Completed" = false AND "User" = %d`, userID)
 
 	//if passed cursorID we add condition to query
 	if params.Cursor > 0 {
