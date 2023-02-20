@@ -1,0 +1,22 @@
+---
+postgresql:
+  host: "localhost"
+  port: "5432"
+  username: "root"
+  password: "secret"
+  database: "reminder"
+
+http:
+  ip: "localhost"
+  port: "8000"
+
+auth:
+  jwt-secret: secret
+  token-expired-in: "60m"
+  token-maxage:  60
+
+  google_auth_client_id: secret
+  google_auth_client_secret: secret
+  google_auth_redirect_url: secret
+
+  frontend_origin: "http://localhost:3000"

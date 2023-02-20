@@ -13,8 +13,6 @@ import (
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
-var randomState = "random"
-
 func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 
@@ -35,7 +33,7 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	googleUser, err := utils.GetGoogleUser(tokenRes.AccessToken, tokenRes.IdToken)
+	googleUser, err := utils.GetGoogleUser(tokenRes.AccessToken, tokenRes.IDToken)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadGateway, err)
 		return
@@ -54,7 +52,8 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err.Error() == "no rows in result set" {
 		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
 		if err != nil {
 			utils.JSONError(w, http.StatusBadRequest, err)
@@ -62,7 +61,7 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err = server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
@@ -160,6 +159,8 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 
+	var randomState = "random"
+
 	if randomState != state {
 		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
 		return
@@ -222,6 +223,7 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
+
 }
 
 func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
@@ -359,11 +361,13 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := server.TodoStorage.GetUserById(server.ctx, int(sub.(float64)))
+		user, err := server.TodoStorage.GetUserByID(server.ctx, int(sub.(float64)))
 		if err != nil {
 			utils.JSONError(w, http.StatusBadRequest, err)
 		}
-		ctx := context.WithValue(r.Context(), "currentUser", user)
+
+		var ctxKey = "currentUser"
+		ctx := context.WithValue(r.Context(), &ctxKey, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -8,6 +8,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Config describes all app configuration
 type Config struct {
 	HTTP struct {
 		IP   string `env-required:"true" yaml:"ip" env:"APP_IP"`
@@ -21,22 +22,20 @@ type Config struct {
 		Database string `env-default:"test_remind" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 	} `yaml:"postgresql"`
 	Auth struct {
-		GoogleAuthClientId     string        `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
+		GoogleAuthClientID     string        `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
 		GoogleAuthClientSecret string        `env-required:"true" yaml:"google_auth_client_secret" env:"GOOGLE_AUTH_CLIENT_SECRET"`
-		GoogleAuthRedirectUrl  string        `env-required:"true" yaml:"google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
+		GoogleAuthRedirectURL  string        `env-required:"true" yaml:"google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
 		JwtSecret              string        `env-required:"true" yaml:"jwt-secret" env:"JWT_SECRET"`
 		TokenExpiredIn         time.Duration `env-required:"true" yaml:"token-expired-in" env:"TOKEN_EXPIRED_IN"`
 		TokenMaxAge            int           `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
 		FrontendOrigin         string        `env-required:"true" yaml:"frontend_origin" env:"FRONTEND_ORIGIN"`
 
-
-		GithubAuthClientID     string `env-required:"true" yaml:"github_auth_client_id" env:"GITHUB_AUTH_CLIENT_ID"`
-		GithubAuthClientSecret string `env-required:"true" yaml:"github_auth_client_secret" env:"GITHUB_AUTH_CLIENT_SECRET"`
-		GithubAuthRedirectURL  string `env-required:"true" yaml:"github_auth_redirect_url" env:"GITHUB_AUTH_REDIRECT_URL"`
-		LinkedinAuthClientID     string `env-require: "true" yaml: "linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
-		LinkedinAuthClientSecret string `env-require: "true" yaml: "linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
+		GithubAuthClientID       string `env-required:"true" yaml:"github_auth_client_id" env:"GITHUB_AUTH_CLIENT_ID"`
+		GithubAuthClientSecret   string `env-required:"true" yaml:"github_auth_client_secret" env:"GITHUB_AUTH_CLIENT_SECRET"`
+		GithubAuthRedirectURL    string `env-required:"true" yaml:"github_auth_redirect_url" env:"GITHUB_AUTH_REDIRECT_URL"`
+		LinkedinAuthClientID     string `env-require:"true" yaml:"linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
+		LinkedinAuthClientSecret string `env-require:"true" yaml:"linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
 		LinkedinAuthRedirectURL  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
-
 	} `yaml:"auth"`
 }
 

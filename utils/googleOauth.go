@@ -17,22 +17,22 @@ const OAuthStateCookieName string = "oauthstate"
 
 type GoogleOauthToken struct {
 	AccessToken string
-	IdToken     string
+	IDToken     string
 }
 
 func GetGoogleOuathToken(code string, cfg config.Config) (*GoogleOauthToken, error) {
-	const rootURl = "https://oauth2.googleapis.com/token"
+	const rootURL = "https://oauth2.googleapis.com/token"
 
 	values := url.Values{}
 	values.Add("grant_type", "authorization_code")
 	values.Add("code", code)
-	values.Add("client_id", cfg.Auth.GoogleAuthClientId)
+	values.Add("client_id", cfg.Auth.GoogleAuthClientID)
 	values.Add("client_secret", cfg.Auth.GoogleAuthClientSecret)
-	values.Add("redirect_uri", cfg.Auth.GoogleAuthRedirectUrl)
+	values.Add("redirect_uri", cfg.Auth.GoogleAuthRedirectURL)
 
 	query := values.Encode()
 
-	req, err := http.NewRequest("POST", rootURl, bytes.NewBufferString(query))
+	req, err := http.NewRequest("POST", rootURL, bytes.NewBufferString(query))
 	if err != nil {
 		return nil, err
 	}
@@ -65,14 +65,14 @@ func GetGoogleOuathToken(code string, cfg config.Config) (*GoogleOauthToken, err
 
 	tokenBody := &GoogleOauthToken{
 		AccessToken: GoogleOauthTokenRes["access_token"].(string),
-		IdToken:     GoogleOauthTokenRes["id_token"].(string),
+		IDToken:     GoogleOauthTokenRes["id_token"].(string),
 	}
 
 	return tokenBody, nil
 }
 
 type GoogleUserResult struct {
-	Id            string
+	ID            string
 	Email         string
 	VerifiedEmail bool
 	Name          string
@@ -83,9 +83,9 @@ type GoogleUserResult struct {
 }
 
 func GetGoogleUser(accessToken, idToken string) (*GoogleUserResult, error) {
-	rootUrl := fmt.Sprintf("https://www.googleapis.com/oauth2/v2/userinfo?access_token=%s", accessToken)
+	rootURL := fmt.Sprintf("https://www.googleapis.com/oauth2/v2/userinfo?access_token=%s", accessToken)
 
-	req, err := http.NewRequest("GET", rootUrl, nil)
+	req, err := http.NewRequest("GET", rootURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func GetGoogleUser(accessToken, idToken string) (*GoogleUserResult, error) {
 	}
 
 	userBody := &GoogleUserResult{
-		Id:            GoogleUserRes["id"].(string),
+		ID:            GoogleUserRes["id"].(string),
 		Email:         GoogleUserRes["email"].(string),
 		VerifiedEmail: GoogleUserRes["verified_email"].(bool),
 		Name:          GoogleUserRes["name"].(string),

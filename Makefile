@@ -2,7 +2,7 @@ DB_URL=postgres://root:secret@localhost:5432/reminder?sslmode=disable
 DB_URL_TEST=postgres://root:secret@localhost:5432/test_reminder?sslmode=disable
 
 lint: format
-	golangci-lint run --enable=revive --timeout=5m --enable=misspell --enable=stylecheck --enable=goimports
+	golangci-lint run
 	go vet ./...
 
 format:
@@ -10,6 +10,9 @@ format:
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root reminder
+
+create_testdb:
+	docker exec -it postgres createdb --username=root --owner=root test_reminder
 
 dropdb:
 	docker exec -it postgres dropdb --username=root reminder
@@ -53,4 +56,4 @@ int_test:
 mocks:
 	go generate ./...
 
-.PHONY: lint, format, createdb, dropdb, migrateup, migratedown, db-run, exec-db, run, test, coverage, coverage-html, int_test, mocks
+.PHONY: lint, format, createdb, dropdb, migrateup, migrateup_test, migratedown, db-run, exec-db, run, test, coverage, coverage-html, int_test, mocks

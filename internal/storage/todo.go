@@ -155,8 +155,8 @@ func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, error) {
 	var todo model.Todo
 
-	const sql = `SELECT "Id", "Description", "CreatedAt", "DeadlineAt", "Completed", "FinishedAt" FROM todo
-    WHERE "Id" = $1 LIMIT 1`
+	const sql = `SELECT "ID", "Description", "CreatedAt", "DeadlineAt", "Completed", "FinishedAt" FROM todo
+    WHERE "ID" = $1 LIMIT 1`
 
 	row := s.Postgres.QueryRow(ctx, sql, id)
 
@@ -275,7 +275,7 @@ func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page,
 
 // Truncate removes all seed data from the test database.
 func (s *TodoStorage) Truncate() error {
-	stmt := "TRUNCATE TABLE todo;"
+	stmt := "TRUNCATE TABLE todo, users;"
 
 	if _, err := s.Postgres.Exec(context.Background(), stmt); err != nil {
 		return fmt.Errorf("truncate test database tables %v", err)
@@ -289,40 +289,50 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 	now := time.Now().Truncate(1 * time.Millisecond).UTC()
 
+	userID, err := s.SeedUser()
+	if err != nil {
+		s.logger.Errorf("error seed user: %v", err)
+	}
+
 	todos := []model.Todo{
 		{
 			Description: "tes1",
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes2",
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 			Completed:   true,
 		},
 		{
 			Description: "tes3",
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes4",
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes5",
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "CreatedAt", "DeadlineAt", "Completed") 
-				 VALUES ($1, $2, $3, $4) returning "ID"`
+		const sql = `INSERT INTO todo ("Description", "User", "CreatedAt", "DeadlineAt", "Completed") 
+				 VALUES ($1, $2, $3, $4, $5) returning "ID"`
 
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
 
 		err := row.Scan(&todos[i].ID)
 		if err != nil {
@@ -332,4 +342,22 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	}
 
 	return todos, nil
+}
+
+// SeedUser seed user for tests
+func (s *TodoStorage) SeedUser() (int, error) {
+	var id int
+
+	const sql = `INSERT INTO users ("Name", "CreatedAt", "Email", "Password", "Provider") 
+				 VALUES ('test', '2023-02-15T02:13:34Z', 'test@gmail.com', 'test', 'test' ) returning "ID"`
+
+	row := s.Postgres.QueryRow(context.Background(), sql)
+
+	err := row.Scan(&id)
+	if err != nil {
+		s.logger.Errorf("Error create user: %v", err)
+		return 0, err
+	}
+
+	return id, nil
 }
