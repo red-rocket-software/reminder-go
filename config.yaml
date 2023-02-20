@@ -20,3 +20,8 @@ auth:
   google_auth_redirect_url: "https://localhost:8000/auth/google/callback"
 
   frontend_origin: "http://localhost:3000"
+
+  # linkedin credentials
+  linkedin_auth_client_id: "782o06m0ota65t"
+  linkedin_auth_client_secret: "CFmRUQWqyIsGm3z3"
+  linkedin_auth_redirect_url: "http://localhost:8080/callback-linkedin"

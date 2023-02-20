@@ -33,6 +33,7 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
 
 	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
+	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET")
 
 	return router
 }
