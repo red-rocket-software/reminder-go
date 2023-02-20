@@ -289,7 +289,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 	now := time.Now().Truncate(1 * time.Millisecond).UTC()
 
-	user_id, err := s.SeedUser()
+	userID, err := s.SeedUser()
 	if err != nil {
 		s.logger.Errorf("error seed user: %v", err)
 	}
@@ -297,32 +297,32 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	todos := []model.Todo{
 		{
 			Description: "tes1",
-			UserID:      user_id,
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes2",
-			UserID:      user_id,
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 			Completed:   true,
 		},
 		{
 			Description: "tes3",
-			UserID:      user_id,
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes4",
-			UserID:      user_id,
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},
 		{
 			Description: "tes5",
-			UserID:      user_id,
+			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
 		},

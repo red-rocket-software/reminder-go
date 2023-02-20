@@ -8,6 +8,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Config describes all app configuration
 type Config struct {
 	HTTP struct {
 		IP   string `env-required:"true" yaml:"ip" env:"APP_IP"`
