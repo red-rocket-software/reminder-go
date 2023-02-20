@@ -33,8 +33,8 @@ type Config struct {
 		GithubAuthClientID       string `env-required:"true" yaml:"github_auth_client_id" env:"GITHUB_AUTH_CLIENT_ID"`
 		GithubAuthClientSecret   string `env-required:"true" yaml:"github_auth_client_secret" env:"GITHUB_AUTH_CLIENT_SECRET"`
 		GithubAuthRedirectURL    string `env-required:"true" yaml:"github_auth_redirect_url" env:"GITHUB_AUTH_REDIRECT_URL"`
-		LinkedinAuthClientID     string `env-require: "true" yaml: "linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
-		LinkedinAuthClientSecret string `env-require: "true" yaml: "linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
+		LinkedinAuthClientID     string `env-require:"true" yaml:"linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
+		LinkedinAuthClientSecret string `env-require:"true" yaml:"linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
 		LinkedinAuthRedirectURL  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
 	} `yaml:"auth"`
 }
