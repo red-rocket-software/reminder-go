@@ -26,12 +26,12 @@ type GithubUserResult struct {
 }
 
 const (
-	rootTokenUrl = "https://github.com/login/oauth/access_token"
-	rootUserUrl  = "https://api.github.com/user"
+	rootTokenURL = "https://github.com/login/oauth/access_token"
+	rootUserURL  = "https://api.github.com/user"
 )
 
 func GetGithubOuathToken(code string, cfg config.Config) (*GithubAccessToken, error) {
-	clientID := cfg.Auth.GithubAuthClientId
+	clientID := cfg.Auth.GithubAuthClientID
 
 	clientSecret := cfg.Auth.GithubAuthClientSecret
 
@@ -39,7 +39,7 @@ func GetGithubOuathToken(code string, cfg config.Config) (*GithubAccessToken, er
 
 	requestJSON, _ := json.Marshal(requestBodyMap)
 
-	req, err := http.NewRequest("POST", rootTokenUrl, bytes.NewBuffer(requestJSON))
+	req, err := http.NewRequest("POST", rootTokenURL, bytes.NewBuffer(requestJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func GetGithubOuathToken(code string, cfg config.Config) (*GithubAccessToken, er
 }
 
 func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
-	req, err := http.NewRequest("GET", rootUserUrl, nil)
+	req, err := http.NewRequest("GET", rootUserURL, nil)
 
 	if err != nil {
 		return nil, err

@@ -29,9 +29,9 @@ type Config struct {
 		TokenMaxAge            int           `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
 		FrontendOrigin         string        `env-required:"true" yaml:"frontend_origin" env:"FRONTEND_ORIGIN"`
 
-		GithubAuthClientId     string `env-required:"true" yaml:"github_auth_client_id" env:"GITHUB_AUTH_CLIENT_ID"`
+		GithubAuthClientID     string `env-required:"true" yaml:"github_auth_client_id" env:"GITHUB_AUTH_CLIENT_ID"`
 		GithubAuthClientSecret string `env-required:"true" yaml:"github_auth_client_secret" env:"GITHUB_AUTH_CLIENT_SECRET"`
-		GithubAuthRedirectUrl  string `env-required:"true" yaml:"github_auth_redirect_url" env:"GITHUB_AUTH_REDIRECT_URL"`
+		GithubAuthRedirectURL  string `env-required:"true" yaml:"github_auth_redirect_url" env:"GITHUB_AUTH_REDIRECT_URL"`
 	} `yaml:"auth"`
 }
 
