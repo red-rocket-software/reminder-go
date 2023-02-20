@@ -19,7 +19,7 @@ type GithubAccessToken struct {
 }
 
 type GithubUserResult struct {
-	Id      string
+	ID      string
 	Name    string
 	Email   string
 	Picture string
@@ -97,7 +97,7 @@ func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
 	}
 
 	userBody := &GithubUserResult{
-		Id:      GithubUserRes["id"].(string),
+		ID:      GithubUserRes["id"].(string),
 		Email:   GithubUserRes["email"].(string),
 		Name:    GithubUserRes["name"].(string),
 		Picture: GithubUserRes["avatar_url"].(string),

@@ -159,6 +159,8 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 
+	var randomState = "random"
+
 	if randomState != state {
 		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
 		return
@@ -221,6 +223,7 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
+
 }
 
 func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {

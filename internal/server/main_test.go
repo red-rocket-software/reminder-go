@@ -12,9 +12,10 @@ import (
 
 func newTestServer(store storage.ReminderRepo) *Server {
 	logger := logging.GetLogger()
-	cfg := config.GetConfig()
+	//cfg := config.GetConfig()
+	cfg := config.Config{}
 
-	server := New(context.Background(), logger, store, *cfg)
+	server := New(context.Background(), logger, store, cfg)
 
 	return server
 }
