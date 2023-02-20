@@ -4,6 +4,22 @@ name: CI
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: test_reminder
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v3
 
@@ -19,7 +35,7 @@ jobs:
           which migrate
 
       - name: Run migrations
-        run: make migrateup
+        run: make migrateup_test
 
       - name: run test
         run: make int_test
@@ -35,4 +51,4 @@ jobs:
         run: |
             curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.42.1
       - name: run lint
-        run: make lint
+        run: golangci-lint run --enable=revive --timeout=5m --enable=misspell --enable=stylecheck --enable=goimports
