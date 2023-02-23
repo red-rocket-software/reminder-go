@@ -2,6 +2,7 @@ DB_URL=postgres://root:secret@localhost:5432/reminder?sslmode=disable
 DB_URL_TEST=postgres://root:secret@localhost:5432/test_reminder?sslmode=disable
 
 lint:
+	gofmt -w .
 	golangci-lint run
 	go vet ./...
 

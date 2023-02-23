@@ -21,10 +21,10 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
 	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
-	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET")
-	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET")
+	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET", "OPTIONS")
 
-	privateRoute.HandleFunc("/me", server.GetMe).Methods("GET")
+	privateRoute.HandleFunc("/me", server.GetMe).Methods("GET", "OPTIONS")
 
 	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
 
