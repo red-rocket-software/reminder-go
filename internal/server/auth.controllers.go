@@ -366,8 +366,8 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			utils.JSONError(w, http.StatusBadRequest, err)
 		}
 
-		var ctxKey = "currentUser"
-		ctx := context.WithValue(r.Context(), &ctxKey, user)
+		//var ctxKey = "currentUser"
+		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

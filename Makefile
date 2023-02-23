@@ -1,12 +1,9 @@
 DB_URL=postgres://root:secret@localhost:5432/reminder?sslmode=disable
 DB_URL_TEST=postgres://root:secret@localhost:5432/test_reminder?sslmode=disable
 
-lint: format
+lint:
 	golangci-lint run
 	go vet ./...
-
-format:
-	gofmt -d .
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root reminder

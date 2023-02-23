@@ -24,6 +24,8 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET")
 	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET")
 
+	privateRoute.HandleFunc("/me", server.GetMe).Methods("GET")
+
 	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
 
 	// public routes
