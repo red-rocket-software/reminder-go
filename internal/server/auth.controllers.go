@@ -319,7 +319,7 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 	cookie.HttpOnly = true
 	http.SetCookie(w, &cookie)
 
-	utils.JSONFormat(w, http.StatusCreated, "Successful logIn")
+	utils.JSONFormat(w, http.StatusCreated, user)
 }
 
 func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
