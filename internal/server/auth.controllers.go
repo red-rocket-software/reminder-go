@@ -274,7 +274,25 @@ func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.JSONFormat(w, http.StatusCreated, fmt.Sprintf("User is successfully created id:%d", id))
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, id, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = server.config.Auth.TokenMaxAge
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	newUser.ID = id
+
+	utils.JSONFormat(w, http.StatusCreated, newUser)
 }
 
 func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
@@ -298,7 +316,7 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Provider == "Google" {
+	if user.Provider == "Google" || user.Provider == "Github" || user.Provider == "Linkedin" {
 		utils.JSONFormat(w, http.StatusUnauthorized, fmt.Sprintf("Use %v OAuth instead", user.Provider))
 		return
 	}
