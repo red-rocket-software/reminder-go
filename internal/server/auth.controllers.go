@@ -155,23 +155,20 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+
 	var pathURL = "/"
 
-	state := r.FormValue("state")
-
-	var randomState = "random"
-
-	if randomState != state {
-		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
-		return
+	if r.URL.Query().Get("state") != "" {
+		pathURL = r.URL.Query().Get("state")
 	}
 
-	if r.FormValue("code") == "" {
+	if code == "" {
 		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
 		return
 	}
 
-	tokenRes, err := utils.GetLinkedinOauthToken(r.FormValue("code"), server.config)
+	tokenRes, err := utils.GetLinkedinOauthToken(code, server.config)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
