@@ -108,6 +108,11 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 
 	githubUser, err := utils.GetGithubUser(tokenRes)
 
+	if err != nil {
+		utils.JSONError(w, http.StatusBadGateway, err)
+		return
+	}
+
 	now := time.Now()
 	email := strings.ToLower(githubUser.Email)
 
@@ -121,7 +126,8 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err.Error() == "no rows in result set" {
 		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
 		if err != nil {
 			utils.JSONError(w, http.StatusBadRequest, err)
@@ -129,7 +135,7 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err = server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return

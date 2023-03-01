@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/red-rocket-software/reminder-go/config"
 )
@@ -19,7 +20,6 @@ type GithubAccessToken struct {
 }
 
 type GithubUserResult struct {
-	ID      string
 	Name    string
 	Email   string
 	Picture string
@@ -31,38 +31,59 @@ const (
 )
 
 func GetGithubOuathToken(code string, cfg config.Config) (*GithubAccessToken, error) {
-	clientID := cfg.Auth.GithubAuthClientID
+	values := url.Values{}
 
-	clientSecret := cfg.Auth.GithubAuthClientSecret
+	values.Add("code", code)
+	values.Add("client_id", cfg.Auth.GithubAuthClientID)
+	values.Add("client_secret", cfg.Auth.GithubAuthClientSecret)
+	values.Add("redirect_uri", cfg.Auth.GithubAuthRedirectURL)
 
-	requestBodyMap := map[string]string{"client_id": clientID, "client_secret": clientSecret, "code": code}
+	query := values.Encode()
 
-	requestJSON, _ := json.Marshal(requestBodyMap)
+	queryString := fmt.Sprintf("%s?%s", rootTokenURL, bytes.NewBufferString(query))
 
-	req, err := http.NewRequest("POST", rootTokenURL, bytes.NewBuffer(requestJSON))
+	req, err := http.NewRequest("POST", queryString, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	client := http.Client{
+		Timeout: time.Second * 30,
+	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := client.Do(req)
+
 	if err != nil {
 		return nil, err
 	}
 
-	respBody, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("could not retrieve token")
+	}
+
+	var resBody bytes.Buffer
+	_, err = io.Copy(&resBody, res.Body)
+
 	if err != nil {
 		return nil, err
 	}
 
-	var token GithubAccessToken
+	parsedQuery, err := url.ParseQuery(resBody.String())
 
-	json.Unmarshal(respBody, &token)
+	if err != nil {
+		return nil, err
+	}
 
-	return &token, nil
+	token := &GithubAccessToken{
+		AccessToken: parsedQuery["access_token"][0],
+		TokenType:   parsedQuery["token_type"][0],
+		Scope:       parsedQuery["scope"][0],
+	}
 
+	return token, nil
 }
 
 func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
@@ -72,13 +93,19 @@ func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
 		return nil, err
 	}
 
-	authorizationHeaderValue := fmt.Sprintf("token %s", token.AccessToken)
+	authorizationHeaderValue := fmt.Sprintf("Bearer %s", token.AccessToken)
 	req.Header.Set("Authorization", authorizationHeaderValue)
 
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{
+		Timeout: time.Second * 30,
+	}
+
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New("could not retrieve user")
@@ -92,12 +119,13 @@ func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
 
 	var GithubUserRes map[string]interface{}
 
-	if err := json.Unmarshal(resBody.Bytes(), &GithubUserRes); err != nil {
+	err = json.Unmarshal(resBody.Bytes(), &GithubUserRes)
+	if err != nil {
+		fmt.Println("Error:", err)
 		return nil, err
 	}
 
 	userBody := &GithubUserResult{
-		ID:      GithubUserRes["id"].(string),
 		Email:   GithubUserRes["email"].(string),
 		Name:    GithubUserRes["name"].(string),
 		Picture: GithubUserRes["avatar_url"].(string),
