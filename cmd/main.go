@@ -17,7 +17,7 @@ import (
 //	@host		localhost:8000
 //	@BasePath	/
 
-//	@securityDefinitions.basic	BasicAuth
+// @securityDefinitions.basic	BasicAuth
 func main() {
 	cfg := config.GetConfig()
 	logger := logging.GetLogger()
@@ -40,4 +40,5 @@ func main() {
 	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())
 	}
+
 }

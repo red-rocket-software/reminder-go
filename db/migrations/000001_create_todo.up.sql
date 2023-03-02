@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS "todo" (
   "CreatedAt" timestamp NOT NULL,
   "DeadlineAt" timestamp NOT NULL,
   "FinishedAt" timestamp,
-  "Completed" boolean NOT NULL DEFAULT false
+  "Completed" boolean NOT NULL DEFAULT false,
+  "Notificated" boolean NOT NULL DEFAULT false
 );
 
 CREATE INDEX ON "todo" ("User");

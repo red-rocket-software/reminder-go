@@ -144,6 +144,21 @@ func (mr *MockReminderRepoMockRecorder) GetRemindByID(ctx, id interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindByID", reflect.TypeOf((*MockReminderRepo)(nil).GetRemindByID), ctx, id)
 }
 
+// GetRemindsForNotification mocks base method.
+func (m *MockReminderRepo) GetRemindsForNotification(ctx context.Context, days int) ([]model.NotificationRemind, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRemindsForNotification", ctx, days)
+	ret0, _ := ret[0].([]model.NotificationRemind)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRemindsForNotification indicates an expected call of GetRemindsForNotification.
+func (mr *MockReminderRepoMockRecorder) GetRemindsForNotification(ctx, days interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindsForNotification", reflect.TypeOf((*MockReminderRepo)(nil).GetRemindsForNotification), ctx, days)
+}
+
 // GetUserByEmail mocks base method.
 func (m *MockReminderRepo) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	m.ctrl.T.Helper()
