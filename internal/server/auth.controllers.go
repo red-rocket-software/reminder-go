@@ -46,6 +46,7 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		Name:      googleUser.Name,
 		Email:     email,
 		Password:  "",
+		Photo:     googleUser.Picture,
 		Provider:  "Google",
 		Verified:  true,
 		CreatedAt: now,
@@ -182,6 +183,11 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 
 	linkedinUser, err := utils.GetLinkedinUser(server.config, tokenRes)
 
+	if err != nil {
+		utils.JSONError(w, http.StatusBadGateway, err)
+		return
+	}
+
 	now := time.Now()
 	email := strings.ToLower(linkedinUser.Email)
 
@@ -189,13 +195,15 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 		Name:      linkedinUser.FirstName,
 		Email:     email,
 		Password:  "",
+		Photo:     linkedinUser.Picture,
 		Provider:  "Linkedin",
 		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err.Error() == "no rows in result set" {
 		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
 		if err != nil {
 			utils.JSONError(w, http.StatusBadRequest, err)
@@ -203,7 +211,7 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err = server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return

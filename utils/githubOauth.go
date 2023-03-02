@@ -121,7 +121,6 @@ func GetGithubUser(token *GithubAccessToken) (*GithubUserResult, error) {
 
 	err = json.Unmarshal(resBody.Bytes(), &GithubUserRes)
 	if err != nil {
-		fmt.Println("Error:", err)
 		return nil, err
 	}
 
