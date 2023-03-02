@@ -29,11 +29,16 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	// public routes
 	publicRoute := router.PathPrefix("").Subrouter()
 
+	// login handlers
+
 	publicRoute.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
+	// publicRoute.HandleFunc("/login/github", server.GithubHandler).Methods("POST", "OPTIONS")
 
-	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
-	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET")
+	// login callbacks
+	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET", "OPTIONS")
+	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET", "OPTIONS")
+	publicRoute.HandleFunc("/github/callback", server.GithubAuth).Methods("GET", "OPTIONS")
 
 	return router
 }
