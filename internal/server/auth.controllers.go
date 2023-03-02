@@ -54,11 +54,13 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
-	if err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
@@ -128,11 +130,13 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
-	if err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
@@ -203,11 +207,13 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
-	if err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
@@ -377,7 +383,6 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			utils.JSONError(w, http.StatusBadRequest, err)
 		}
 
-		//var ctxKey = "currentUser"
 		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

@@ -13,8 +13,6 @@ import (
 
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/tidwall/gjson"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/linkedin"
 )
 
 type ProfileInfo struct {
@@ -36,16 +34,6 @@ var (
 	userInfoURL          = "https://api.linkedin.com/v2/me"
 	userPicURL           = "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))"
 )
-
-func GetLinkedInConfig(cfg config.Config) *oauth2.Config {
-	return &oauth2.Config{
-		RedirectURL:  cfg.Auth.LinkedinAuthRedirectURL,
-		ClientID:     cfg.Auth.LinkedinAuthClientID,
-		ClientSecret: cfg.Auth.LinkedinAuthClientSecret,
-		Scopes:       []string{"r_emailaddress", "r_liteprofile"},
-		Endpoint:     linkedin.Endpoint,
-	}
-}
 
 func GetLinkedinOauthToken(code string, cfg config.Config) (*LinkedinAccessToken, error) {
 	values := url.Values{}
