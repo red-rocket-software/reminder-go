@@ -388,3 +388,9 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (server *Server) GetMe(w http.ResponseWriter, r *http.Request) {
+	currentUser := r.Context().Value("currentUser").(model.User)
+
+	utils.JSONFormat(w, http.StatusOK, currentUser)
+}
