@@ -46,6 +46,7 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		Name:      googleUser.Name,
 		Email:     email,
 		Password:  "",
+		Photo:     googleUser.Picture,
 		Provider:  "Google",
 		Verified:  true,
 		CreatedAt: now,
@@ -53,11 +54,13 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
-	if err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
@@ -108,6 +111,11 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 
 	githubUser, err := utils.GetGithubUser(tokenRes)
 
+	if err != nil {
+		utils.JSONError(w, http.StatusBadGateway, err)
+		return
+	}
+
 	now := time.Now()
 	email := strings.ToLower(githubUser.Email)
 
@@ -121,15 +129,18 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
-	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err = server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
@@ -155,29 +166,31 @@ func (server *Server) GithubAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+
 	var pathURL = "/"
 
-	state := r.FormValue("state")
-
-	var randomState = "random"
-
-	if randomState != state {
-		utils.JSONError(w, http.StatusBadRequest, fmt.Errorf(fmt.Sprintf("wrong state string: expected: %s, got: %s", randomState, state)))
-		return
+	if r.URL.Query().Get("state") != "" {
+		pathURL = r.URL.Query().Get("state")
 	}
 
-	if r.FormValue("code") == "" {
+	if code == "" {
 		utils.JSONError(w, http.StatusUnauthorized, errors.New("authorization code not provided"))
 		return
 	}
 
-	tokenRes, err := utils.GetLinkedinOauthToken(r.FormValue("code"), server.config)
+	tokenRes, err := utils.GetLinkedinOauthToken(code, server.config)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
 	}
 
 	linkedinUser, err := utils.GetLinkedinUser(server.config, tokenRes)
+
+	if err != nil {
+		utils.JSONError(w, http.StatusBadGateway, err)
+		return
+	}
 
 	now := time.Now()
 	email := strings.ToLower(linkedinUser.Email)
@@ -186,21 +199,25 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 		Name:      linkedinUser.FirstName,
 		Email:     email,
 		Password:  "",
+		Photo:     linkedinUser.Picture,
 		Provider:  "Linkedin",
 		Verified:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
-	if server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email); err.Error() == "no rows in result set" {
-		_, err := server.TodoStorage.CreateUser(server.ctx, dataUser)
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-			return
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			_, err = server.TodoStorage.CreateUser(server.ctx, dataUser)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
 		}
 	}
 
-	user, err := server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
+	user, err = server.TodoStorage.GetUserByEmail(server.ctx, dataUser.Email)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
@@ -402,9 +419,14 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			utils.JSONError(w, http.StatusBadRequest, err)
 		}
 
-		//var ctxKey = "currentUser"
 		ctx := context.WithValue(r.Context(), "currentUser", user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (server *Server) GetMe(w http.ResponseWriter, r *http.Request) {
+	currentUser := r.Context().Value("currentUser").(model.User)
+
+	utils.JSONFormat(w, http.StatusOK, currentUser)
 }
