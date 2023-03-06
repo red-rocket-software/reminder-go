@@ -10,7 +10,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/worker/mail"
 )
 
-const notificationDays = 1
+const notificationDays = 2
 
 type Worker struct {
 	db  storage.ReminderRepo
@@ -26,16 +26,17 @@ func NewWorker(ctx context.Context, db storage.ReminderRepo, cfg config.Config) 
 	}
 }
 
-func (w *Worker) Processor() error {
+func (w *Worker) Process() error {
 	remindsToNotify, err := w.db.GetRemindsForNotification(w.ctx, notificationDays)
 	if err != nil {
-		return fmt.Errorf("erorr to get remonds to notification, err: %v", err)
+		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
 
 	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
 
+	var user model.User
 	for _, remind := range remindsToNotify {
-		user, err := w.db.GetUserByID(w.ctx, remind.UserID)
+		user, err = w.db.GetUserByID(w.ctx, remind.UserID)
 		if err != nil {
 			return fmt.Errorf("erorr to get user, err: %v", err)
 		}
@@ -52,7 +53,7 @@ func (w *Worker) Processor() error {
 			return fmt.Errorf("failed to send verify email: %w", err)
 		}
 
-		err = w.db.UpdateRemind(w.ctx, remind.UserID, model.TodoUpdateInput{Notificated: true})
+		err = w.db.UpdateNotification(w.ctx, remind.ID, model.NotificationDAO{Notificated: true})
 		if err != nil {
 			return fmt.Errorf("failed to update notificated status: %w", err)
 		}

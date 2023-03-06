@@ -42,7 +42,12 @@ type TodoUpdateStatusInput struct {
 }
 
 type NotificationRemind struct {
-	Description string `json:"description"`
-	DeadlineAt  string `json:"deadline_at"`
-	UserID      int    `json:"user_id"`
+	ID          int       `json:"id"`
+	Description string    `json:"description"`
+	DeadlineAt  time.Time `json:"deadline_at"`
+	UserID      int       `json:"user_id"`
+}
+
+type NotificationDAO struct {
+	Notificated bool
 }

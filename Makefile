@@ -31,7 +31,10 @@ exec-db:
 	docker exec -it postgres psql -U root reminder
 
 run:
-	go run cmd/main.go
+	go run cmd/api/main.go
+
+run-worker:
+	go run cmd/worker/main.go
 
 compose-up:
 	docker-compose -f docker-compose.yml up --build

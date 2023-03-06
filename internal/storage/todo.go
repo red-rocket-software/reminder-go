@@ -116,6 +116,24 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 	return nil
 }
 
+// UpdateNotification update Notificated field
+func (s *TodoStorage) UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error {
+
+	sql := `UPDATE todo SET "Notificated" = $1 WHERE "ID" = $2`
+
+	ct, err := s.Postgres.Exec(ctx, sql, dao.Notificated, id)
+	if err != nil {
+		s.logger.Printf("unable to update notificated status %v", err)
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("remind not found")
+	}
+
+	return nil
+}
+
 // UpdateStatus update Completed field
 func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error {
 	const sql = `UPDATE todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "ID" = $3`
@@ -370,7 +388,7 @@ func (s *TodoStorage) GetRemindsForNotification(ctx context.Context, days int) (
 	t := time.Now().AddDate(0, 0, days).Format("2006-01-02 15:04:05")
 	tn := time.Now().Format("2006-01-02 15:04:05")
 
-	sql := fmt.Sprintf("SELECT 'Description', 'DeadlineAt', 'User' from todo WHERE 'DeadlineAt' BETWEEN '%s' AND '%s' AND 'Completed' = false", tn, t)
+	sql := fmt.Sprintf(`SELECT "ID", "Description", "DeadlineAt", "User" from todo WHERE "DeadlineAt" BETWEEN '%s' AND '%s' AND "Completed" = false AND "Notificated" = false`, tn, t)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 	if err != nil {
@@ -383,6 +401,7 @@ func (s *TodoStorage) GetRemindsForNotification(ctx context.Context, days int) (
 		var remind model.NotificationRemind
 
 		if err := rows.Scan(
+			&remind.ID,
 			&remind.Description,
 			&remind.DeadlineAt,
 			&remind.UserID,
