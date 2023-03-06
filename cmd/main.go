@@ -10,6 +10,14 @@ import (
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
 )
 
+//	@title			Reminder App API
+//	@version		1.0
+//	@description	API Server for Reminder Application
+
+//	@host		localhost:8000
+//	@BasePath	/
+
+//	@securityDefinitions.basic	BasicAuth
 func main() {
 	cfg := config.GetConfig()
 	logger := logging.GetLogger()

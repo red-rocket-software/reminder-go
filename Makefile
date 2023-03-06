@@ -54,4 +54,8 @@ int_test:
 mocks:
 	go generate ./...
 
+#GENERATE SWAGGER DOCS
+swag_gen:
+	swag init -g cmd/main.go
+
 .PHONY: lint, format, createdb, dropdb, migrateup, migrateup_test, migratedown, db-run, exec-db, run, test, coverage, coverage-html, int_test, mocks

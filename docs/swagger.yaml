@@ -1,0 +1,518 @@
+basePath: /
+definitions:
+  model.LoginUserInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  model.RegisterUserInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  model.Todo:
+    properties:
+      completed:
+        type: boolean
+      created_at:
+        type: string
+      deadline_at:
+        type: string
+      description:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  model.TodoInput:
+    properties:
+      created_at:
+        type: string
+      deadline_at:
+        type: string
+      description:
+        type: string
+    type: object
+  model.TodoResponse:
+    properties:
+      pageInfo:
+        $ref: '#/definitions/pagination.PageInfo'
+      todos:
+        items:
+          $ref: '#/definitions/model.Todo'
+        type: array
+    type: object
+  model.TodoUpdateInput:
+    properties:
+      completed:
+        type: boolean
+      deadline_at:
+        type: string
+      description:
+        type: string
+      finished_at:
+        type: string
+    type: object
+  model.TodoUpdateStatusInput:
+    properties:
+      completed:
+        type: boolean
+      finished_at:
+        type: string
+    type: object
+  model.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      password:
+        type: string
+      photo:
+        type: string
+      provider:
+        type: string
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  pagination.Page:
+    properties:
+      cursor:
+        description: Cursor describes the position in the database to start from
+        type: integer
+      limit:
+        description: Limit describes the number of records per request
+        type: integer
+    type: object
+  pagination.PageInfo:
+    properties:
+      nextCursor:
+        description: NextCursor describes the position of the next page
+        type: integer
+      page:
+        allOf:
+        - $ref: '#/definitions/pagination.Page'
+        description: Page describes original request
+    type: object
+  utils.HTTPError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: API Server for Reminder Application
+  title: Reminder App API
+  version: "1.0"
+paths:
+  /completed:
+    get:
+      consumes:
+      - application/json
+      description: GetCompletedReminds
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: cursor
+        in: query
+        name: cursor
+        required: true
+        type: string
+      - description: start of time range
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: end of time range
+        in: query
+        name: end
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TodoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: return a list of completed reminds
+      tags:
+      - reminds
+  /current:
+    get:
+      consumes:
+      - application/json
+      description: GetCurrentReminds
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: cursor
+        in: query
+        name: cursor
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TodoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: return a list of current reminds
+      tags:
+      - reminds
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: auth user, return user and save token to cookie
+      parameters:
+      - description: user email and password
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      summary: SignInUser
+      tags:
+      - auth
+  /logout:
+    get:
+      description: logout user and remove cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+      security:
+      - BasicAuth: []
+      summary: LogOutUser
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: create user account
+      parameters:
+      - description: user info
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterUserInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'User is successfully created id: 1'
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      summary: SignUpUser
+      tags:
+      - auth
+  /remind:
+    get:
+      consumes:
+      - application/json
+      description: GetAllReminds
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: cursor
+        in: query
+        name: cursor
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.TodoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: return a list of all reminds
+      tags:
+      - reminds
+    post:
+      consumes:
+      - application/json
+      description: AddRemind
+      parameters:
+      - description: remind info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.TodoInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Remind is successfully created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: create a new remind
+      tags:
+      - reminds
+  /remind/{id}:
+    get:
+      consumes:
+      - application/json
+      description: GetRemindByID
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Todo'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: return a remind by id
+      tags:
+      - reminds
+    put:
+      consumes:
+      - application/json
+      description: UpdateRemind
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: update info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.TodoUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: remind successfully updated
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: update remind with given fields
+      tags:
+      - reminds
+  /remind{id}:
+    delete:
+      consumes:
+      - application/json
+      description: DeleteRemind
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: remind with id:1 successfully deleted
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: delete remind
+      tags:
+      - reminds
+  /status/{id}:
+    put:
+      consumes:
+      - application/json
+      description: UpdateCompleteStatus
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: update info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/model.TodoUpdateStatusInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: remind status updated
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - BasicAuth: []
+      summary: update remind's field "completed"
+      tags:
+      - reminds
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

@@ -243,6 +243,18 @@ func (server *Server) LinkedinAuth(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// SignUpUser godoc
+//
+//	@Summary		SignUpUser
+//	@Tags			auth
+//	@Description	create user account
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		model.RegisterUserInput	true	"user info"
+//	@Success		201		{string}	string					"User is successfully created id: 1"
+//	@Failure		422		{object}	utils.HTTPError
+//	@Failure		500		{object}	utils.HTTPError
+//	@Router			/register [post]
 func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 	var payload model.RegisterUserInput
 
@@ -294,6 +306,19 @@ func (server *Server) SignUpUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, fmt.Sprintf("User is successfully created id:%d", id))
 }
 
+// SignInUser godoc
+//
+//	@Summary		SignInUser
+//	@Tags			auth
+//	@Description	auth user, return user and save token to cookie
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		model.LoginUserInput	true	"user email and password"
+//	@Success		201		{object}	model.User
+//	@Failure		422		{object}	utils.HTTPError
+//	@Failure		401		{object}	utils.HTTPError
+//	@Failure		500		{object}	utils.HTTPError
+//	@Router			/login [post]
 func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 	var payload model.LoginUserInput
 
@@ -339,6 +364,17 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, user)
 }
 
+// LogOutUser godoc
+//
+//	@Summary		LogOutUser
+//	@Tags			auth
+//	@Description	logout user and remove cookie
+//	@Produce		json
+//	@Success		200	{string}	string "Success"
+//
+//	@Security		BasicAuth
+//
+//	@Router			/logout [get]
 func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
 	cookie := http.Cookie{}
 	cookie.Name = "token"

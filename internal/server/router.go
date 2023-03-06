@@ -2,7 +2,9 @@ package server
 
 import (
 	"github.com/gorilla/mux"
+	_ "github.com/red-rocket-software/reminder-go/docs"
 	"github.com/red-rocket-software/reminder-go/pkg/middlewares"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // ConfigureRouter returns router with routes from controllers
@@ -38,6 +40,8 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET", "OPTIONS")
 	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET", "OPTIONS")
 	publicRoute.HandleFunc("/github/callback", server.GithubAuth).Methods("GET", "OPTIONS")
+
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
 	return router
 }

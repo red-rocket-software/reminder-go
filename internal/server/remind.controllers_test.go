@@ -70,7 +70,7 @@ func TestControllers_AddRemind(t *testing.T) {
 				store.EXPECT().CreateRemind(gomock.Any(), input).Return(0, errors.New("something went wrong"))
 			},
 			expectedStatusCode:   500,
-			expectedResponseBody: `"error":"something went wrong"`,
+			expectedResponseBody: `"something went wrong"`,
 		},
 	}
 
@@ -352,7 +352,7 @@ func Test_DeleteRemind(t *testing.T) {
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
 				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(nil).Times(1)
 			},
-			expectedStatus: 201,
+			expectedStatus: 204,
 		},
 		{
 			name: "InternalError",

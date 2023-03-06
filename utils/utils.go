@@ -18,14 +18,19 @@ func JSONFormat(w http.ResponseWriter, statusCode int, data interface{}) {
 
 func JSONError(w http.ResponseWriter, statusCode int, err error) {
 	if err != nil {
-		JSONFormat(w, statusCode, struct {
-			Error string `json:"error"`
-		}{
-			Error: err.Error(),
+		JSONFormat(w, statusCode, HTTPError{
+			Code:    statusCode,
+			Message: err.Error(),
 		})
 		return
 	}
 	JSONFormat(w, http.StatusBadRequest, nil)
+}
+
+// HTTPError response
+type HTTPError struct {
+	Code    int    `json:"code" example:"400"`
+	Message string `json:"message" example:"status bad request"`
 }
 
 // HashPassword returns the bcrypt hash of the password
