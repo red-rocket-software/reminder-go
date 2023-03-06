@@ -233,6 +233,20 @@ func (mr *MockReminderRepoMockRecorder) Truncate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Truncate", reflect.TypeOf((*MockReminderRepo)(nil).Truncate))
 }
 
+// UpdateNotification mocks base method.
+func (m *MockReminderRepo) UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNotification", ctx, id, dao)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNotification indicates an expected call of UpdateNotification.
+func (mr *MockReminderRepoMockRecorder) UpdateNotification(ctx, id, dao interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotification", reflect.TypeOf((*MockReminderRepo)(nil).UpdateNotification), ctx, id, dao)
+}
+
 // UpdateRemind mocks base method.
 func (m *MockReminderRepo) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
 	m.ctrl.T.Helper()
