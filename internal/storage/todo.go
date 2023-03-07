@@ -43,7 +43,7 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page,
 	sql := fmt.Sprintf(`SELECT * FROM todo WHERE "User" = %d`, userID)
 
 	if params.Cursor > 0 {
-		sql += fmt.Sprintf(` WHERE "Id" < %d`, params.Cursor)
+		sql += fmt.Sprintf(` AND "ID" < %d`, params.Cursor)
 	}
 
 	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
@@ -210,7 +210,7 @@ func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, us
 	}
 
 	if params.Cursor > 0 {
-		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
+		sql += fmt.Sprintf(` AND "ID" < %d`, params.Cursor)
 	}
 
 	sql += fmt.Sprintf(` ORDER BY "CreatedAt" DESC LIMIT %d`, params.Limit)
@@ -255,7 +255,7 @@ func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page,
 
 	//if passed cursorID we add condition to query
 	if params.Cursor > 0 {
-		sql += fmt.Sprintf(` AND "Id" < %d`, params.Cursor)
+		sql += fmt.Sprintf(` AND "ID" < %d`, params.Cursor)
 	}
 
 	//always add sort and LIMIT to query

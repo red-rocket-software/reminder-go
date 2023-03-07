@@ -27,15 +27,19 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET", "OPTIONS")
 
 	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/fetchMe", server.GetMe).Methods("GET", "OPTIONS")
 
 	// public routes
 	publicRoute := router.PathPrefix("").Subrouter()
 
+	// login handlers
 	publicRoute.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
 
-	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET")
-	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET")
+	// login callbacks
+	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET", "OPTIONS")
+	publicRoute.HandleFunc("/linkedin/callback", server.LinkedinAuth).Methods("GET", "OPTIONS")
+	publicRoute.HandleFunc("/github/callback", server.GithubAuth).Methods("GET", "OPTIONS")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
