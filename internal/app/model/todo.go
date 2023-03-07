@@ -14,6 +14,7 @@ type Todo struct {
 	DeadlineAt  time.Time  `json:"deadline_at"`
 	FinishedAt  *time.Time `json:"finished_at,omitempty"`
 	Completed   bool       `json:"completed"`
+	Notificated bool       `json:"notificated"`
 }
 
 type TodoInput struct {
@@ -26,6 +27,7 @@ type TodoUpdateInput struct {
 	Description string     `json:"description"`
 	FinishedAt  *time.Time `json:"finished_at,omitempty"`
 	Completed   bool       `json:"completed"`
+	Notificated bool       `json:"notificated"`
 	DeadlineAt  string     `json:"deadline_at"`
 }
 
@@ -37,4 +39,15 @@ type TodoResponse struct {
 type TodoUpdateStatusInput struct {
 	Completed  bool       `json:"completed"`
 	FinishedAt *time.Time `json:"finished_at,omitempty"`
+}
+
+type NotificationRemind struct {
+	ID          int       `json:"id"`
+	Description string    `json:"description"`
+	DeadlineAt  time.Time `json:"deadline_at"`
+	UserID      int       `json:"user_id"`
+}
+
+type NotificationDAO struct {
+	Notificated bool
 }

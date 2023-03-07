@@ -15,6 +15,9 @@ create_testdb:
 dropdb:
 	docker exec -it postgres dropdb --username=root reminder
 
+drop_test_db:
+	docker exec -it postgres dropdb --username=root test_reminder
+
 migrateup:
 	migrate -database ${DB_URL} -path db/migrations up
 
@@ -31,7 +34,10 @@ exec-db:
 	docker exec -it postgres psql -U root reminder
 
 run:
-	go run cmd/main.go
+	go run cmd/api/main.go
+
+run-worker:
+	go run cmd/worker/main.go
 
 compose-up:
 	docker-compose -f docker-compose.yml up --build

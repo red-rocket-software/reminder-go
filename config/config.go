@@ -37,6 +37,11 @@ type Config struct {
 		LinkedinAuthClientSecret string `env-require:"true" yaml:"linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
 		LinkedinAuthRedirectURL  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
 	} `yaml:"auth"`
+	Email struct {
+		EmailSenderName     string `env-required:"true" yaml:"email_sender_name" env:"EMAIL_SENDER_NAME"`
+		EmailSenderAddress  string `env-required:"true" yaml:"email_sender_address" env:"EMAIL_SENDER_ADDRESS"`
+		EmailSenderPassword string `env-required:"true" yaml:"email_sender_password" env:"EMAIL_SENDER_PASSWORD"`
+	} `yaml:"email"`
 }
 
 func GetConfig() *Config {

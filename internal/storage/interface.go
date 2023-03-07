@@ -22,6 +22,7 @@ type ReminderRepo interface {
 	CreateRemind(ctx context.Context, todo model.Todo) (int, error)
 	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error
 	UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error
+	UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error
 	DeleteRemind(ctx context.Context, id int) error
 	GetRemindByID(ctx context.Context, id int) (model.Todo, error)
 	GetCompletedReminds(ctx context.Context, params Params, userID int) ([]model.Todo, int, error)
@@ -29,6 +30,7 @@ type ReminderRepo interface {
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
 	SeedUser() (int, error)
+	GetRemindsForNotification(ctx context.Context, days int) ([]model.NotificationRemind, error)
 
 	// user methods
 	CreateUser(ctx context.Context, input model.User) (int, error)
