@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS "users" (
   "Provider" varchar NOT NULL,
   "Verified" bool DEFAULT false,
   "CreatedAt" timestamp NOT NULL,
-  "UpdatedAt" timestamp
+  "UpdatedAt" timestamp,
+  "Notification" bool DEFAULT false
 );
 
 

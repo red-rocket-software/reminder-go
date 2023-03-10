@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -57,9 +58,26 @@ func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.U
 }
 
 func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) error {
-	const sql = `UPDATE users SET "Name" = $1, "Email" = $2, "Password" = $3, "Provider" = $4, "CreatedAt" = $5, "UpdatedAt" = $6`
+	const sql = `UPDATE users SET "Name" = $1, "Email" = $2, "Password" = $3, "Provider" = $4, "CreatedAt" = $5, "UpdatedAt" = $6, "Notification" = $7 WHERE "ID" = $8`
 
-	ct, err := s.Postgres.Exec(ctx, sql, input.Name, input.Email, input.Password, input.Provider, input.CreatedAt, input.UpdatedAt)
+	ct, err := s.Postgres.Exec(ctx, sql, input.Name, input.Email, input.Password, input.Provider, input.CreatedAt, input.UpdatedAt, input.Notification, id)
+
+	if err != nil {
+		s.logger.Errorf("unable to update user %v", err)
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
+func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, status bool) error {
+	var sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%v' WHERE "ID" = '%d'`, status, id)
+
+	ct, err := s.Postgres.Exec(ctx, sql)
 
 	if err != nil {
 		s.logger.Errorf("unable to update user %v", err)

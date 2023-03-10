@@ -28,6 +28,7 @@ func (server *Server) ConfigureRouter() *mux.Router {
 
 	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/fetchMe", server.GetMe).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/user/{id}", server.UpdateUserNotification).Methods("PUT", "OPTIONS")
 
 	// public routes
 	publicRoute := router.PathPrefix("").Subrouter()
