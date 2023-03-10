@@ -43,6 +43,10 @@ type LoginUserInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type NotificationUserInput struct {
+	Notification bool `json:"notification"`
+}
+
 func Validate(u User, action string) error {
 	switch strings.ToLower(action) {
 	case "update":

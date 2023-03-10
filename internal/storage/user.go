@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -74,9 +75,9 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 }
 
 func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, status bool) error {
-	const sql = `UPDATE users SET "Notification" = $1 WHERE "ID" = $2`
+	var sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%v' WHERE "ID" = '%d'`, status, id)
 
-	ct, err := s.Postgres.Exec(ctx, sql, status, id)
+	ct, err := s.Postgres.Exec(ctx, sql)
 
 	if err != nil {
 		s.logger.Errorf("unable to update user %v", err)
