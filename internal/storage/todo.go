@@ -389,7 +389,12 @@ func (s *TodoStorage) GetRemindsForNotification(ctx context.Context, days int) (
 	t := time.Now().AddDate(0, 0, days).Format("2006-01-02 15:04:05")
 	tn := time.Now().Format("2006-01-02 15:04:05")
 
-	sql := fmt.Sprintf(`SELECT "ID", "Description", "DeadlineAt", "User" from todo WHERE "DeadlineAt" BETWEEN '%s' AND '%s' AND "Completed" = false AND "Notificated" = false`, tn, t)
+	sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."DeadlineAt", t."User" from todo t 
+INNER JOIN users u on u."ID" = t."User" 
+WHERE t."DeadlineAt" BETWEEN '%s' AND '%s' 
+AND t."Completed" = false 
+AND t."Notificated" = false
+AND u."Notification" = true`, tn, t)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 	if err != nil {
