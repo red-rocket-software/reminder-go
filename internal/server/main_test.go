@@ -15,7 +15,7 @@ func newTestServer(store storage.ReminderRepo) *Server {
 	//cfg := config.GetConfig()
 	cfg := config.Config{}
 
-	server := New(context.Background(), logger, store, cfg)
+	server, _ := New(context.Background(), logger, store, cfg)
 
 	return server
 }

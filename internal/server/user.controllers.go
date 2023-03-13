@@ -25,6 +25,16 @@ import (
 func (server *Server) GetMe(w http.ResponseWriter, r *http.Request) {
 	currentUser := r.Context().Value("currentUser").(model.User)
 
+	cacheKey := r.URL.String()
+	byteUser, marshalErr := json.Marshal(currentUser)
+	if marshalErr == nil {
+		err := server.cache.Set(server.ctx, cacheKey, string(byteUser))
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
 	utils.JSONFormat(w, http.StatusOK, currentUser)
 }
 
@@ -69,4 +79,34 @@ func (server *Server) UpdateUserNotification(w http.ResponseWriter, r *http.Requ
 	}
 
 	utils.JSONFormat(w, http.StatusOK, "user notification status successfully updated")
+}
+
+func (server *Server) cacheFetchMeMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cacheKey := r.URL.String()
+
+		var user model.User
+
+		exist, err := server.cache.IfExistsInCache(server.ctx, cacheKey)
+		if err != nil {
+			return
+		}
+		if exist {
+			result, err := server.cache.Get(server.ctx, cacheKey)
+			if err != nil {
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+			unmarshalErr := json.Unmarshal([]byte(result), &user)
+			if unmarshalErr != nil {
+				utils.JSONError(w, http.StatusInternalServerError, unmarshalErr)
+				return
+			}
+			server.Logger.Println("Serving fetchMe from cache ...")
+			utils.JSONFormat(w, http.StatusOK, user)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
 }

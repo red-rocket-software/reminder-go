@@ -453,7 +453,56 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 
 	user := r.Context().Value("currentUser").(model.User)
 
-	reminds, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
+	var reminds []model.Todo
+	var nextCursor int
+
+	cacheRemindsKey := fmt.Sprintf("All reminds for user:%d", user.ID)
+	cacheCursorKey := "All reminds cursor"
+	exist, _ := server.cache.IfExistsInCache(server.ctx, cacheRemindsKey)
+	if exist {
+		cachedReminds, err := server.cache.Get(server.ctx, cacheRemindsKey)
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		unmarshalErr := json.Unmarshal([]byte(cachedReminds), &reminds)
+		if unmarshalErr != nil {
+			utils.JSONError(w, http.StatusInternalServerError, unmarshalErr)
+			return
+		}
+
+		cachedCursor, err := server.cache.Get(server.ctx, cacheCursorKey)
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		nextCursor, _ = strconv.Atoi(cachedCursor)
+
+		server.Logger.Println("Serving All reminds from cache ...")
+	} else {
+		reminds, nextCursor, err = server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		byteUsers, marshalErr := json.Marshal(reminds)
+		if marshalErr == nil {
+			err := server.cache.Set(server.ctx, cacheRemindsKey, string(byteUsers))
+			if err != nil {
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+		err := server.cache.Set(server.ctx, cacheCursorKey, strconv.Itoa(nextCursor))
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
 
 	res := model.TodoResponse{
 		Todos: reminds,
@@ -461,11 +510,6 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 			Page:       fetchParams,
 			NextCursor: nextCursor,
 		},
-	}
-
-	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)

@@ -3,6 +3,7 @@ version: "3.9"
 volumes:
   db-data:
   api:
+  redis_data:
 
 services:
   db:
@@ -33,6 +34,14 @@ services:
       - "8000:8000"
     depends_on:
       - db
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
 
 
 
