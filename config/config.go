@@ -42,6 +42,15 @@ type Config struct {
 		EmailSenderAddress  string `env-required:"true" yaml:"email_sender_address" env:"EMAIL_SENDER_ADDRESS"`
 		EmailSenderPassword string `env-required:"true" yaml:"email_sender_password" env:"EMAIL_SENDER_PASSWORD"`
 	} `yaml:"email"`
+	Redis struct {
+		Password                string `yaml:"password"`
+		Addrs                   string `yaml:"addrs"`
+		ExpirationHour          int64  `yaml:"expirationHour"`
+		MinIdleConn             int    `yaml:"minIdleConn"`
+		PoolSize                int    `yaml:"poolSize"`
+		ReadTimeoutMilliSecond  int64  `yaml:"readTimeoutMilliSecond"`
+		WriteTimeoutMilliSecond int64  `yaml:"writeTimeoutMilliSecond"`
+	} `yaml:"redis"`
 }
 
 func GetConfig() *Config {

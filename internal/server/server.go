@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
+	"github.com/red-rocket-software/reminder-go/pkg/redis"
 )
 
 type Server struct {
@@ -21,18 +23,23 @@ type Server struct {
 	TodoStorage storage.ReminderRepo
 	ctx         context.Context
 	config      config.Config
+	cache       redis.CacheRedis
 }
 
 // New returns new Server.
-func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
-
+func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) (*Server, error) {
+	cache, err := redis.NewCacheConn(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("error get redis connection")
+	}
 	server := &Server{
 		ctx:         ctx,
 		Logger:      logger,
 		TodoStorage: storage,
 		config:      cfg,
+		cache:       cache,
 	}
-	return server
+	return server, nil
 }
 
 // Run start server on IP address an PORT passed in parameters

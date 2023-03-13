@@ -34,7 +34,10 @@ func main() {
 
 	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
 
-	app := server.New(ctx, logger, todoStorage, *cfg)
+	app, err := server.New(ctx, logger, todoStorage, *cfg)
+	if err != nil {
+		logger.Fatal("error get new server", err)
+	}
 	logger.Debugf("Starting server on port %s", cfg.HTTP.Port)
 
 	if err := app.Run(cfg); err != nil {
