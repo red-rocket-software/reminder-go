@@ -33,7 +33,7 @@ func (s *TodoStorage) CreateUser(ctx context.Context, user model.User) (int, err
 func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 
-	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt" FROM users WHERE "Email" = $1 LIMIT 1`
+	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt", "Period" FROM users WHERE "Email" = $1 LIMIT 1`
 
 	row := s.Postgres.QueryRow(ctx, sql, email)
 
@@ -45,6 +45,7 @@ func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.U
 		&user.Provider,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Period,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return model.User{}, errors.New("no rows in result set")
@@ -74,8 +75,8 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 	return nil
 }
 
-func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, status bool) error {
-	var sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%v' WHERE "ID" = '%d'`, status, id)
+func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, status bool, period int) error {
+	var sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%t', "Period" = '%d' WHERE "ID" = '%d'`, status, period, id)
 
 	ct, err := s.Postgres.Exec(ctx, sql)
 
@@ -116,4 +117,23 @@ func (s *TodoStorage) GetUserByID(ctx context.Context, id int) (model.User, erro
 		return model.User{}, ErrCantGetUserFromDB
 	}
 	return user, nil
+}
+
+// DeleteUser deletes user from DB
+func (s *TodoStorage) DeleteUser(ctx context.Context, id int) error {
+	const sql = `DELETE FROM users WHERE "ID" = $1`
+	res, err := s.Postgres.Exec(ctx, sql, id)
+
+	if err != nil {
+		s.logger.Errorf("error don't found user: %v", err)
+		return ErrCantFindRemindWithID
+	}
+
+	rowsAffected := res.RowsAffected()
+	if rowsAffected == 0 {
+		s.logger.Errorf("Error delete user: %v", err)
+		return ErrDeleteFailed
+	}
+
+	return nil
 }

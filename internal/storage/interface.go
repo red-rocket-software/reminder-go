@@ -30,12 +30,14 @@ type ReminderRepo interface {
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
 	SeedUser() (int, error)
-	GetRemindsForNotification(ctx context.Context, days int) ([]model.NotificationRemind, error)
+	GetRemindsForNotification(ctx context.Context) ([]model.NotificationRemind, error)
+	GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, error)
 
 	// user methods
 	CreateUser(ctx context.Context, input model.User) (int, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	UpdateUser(ctx context.Context, id int, input model.User) error
 	GetUserByID(ctx context.Context, id int) (model.User, error)
-	UpdateUserNotification(ctx context.Context, id int, status bool) error
+	UpdateUserNotification(ctx context.Context, id int, status bool, period int) error
+	DeleteUser(ctx context.Context, id int) error
 }

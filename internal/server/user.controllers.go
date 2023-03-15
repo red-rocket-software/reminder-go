@@ -2,11 +2,14 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	"github.com/red-rocket-software/reminder-go/internal/storage"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
 
@@ -62,11 +65,53 @@ func (server *Server) UpdateUserNotification(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = server.TodoStorage.UpdateUserNotification(server.ctx, uID, input.Notification)
+	err = server.TodoStorage.UpdateUserNotification(server.ctx, uID, input.Notification, input.Period)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	utils.JSONFormat(w, http.StatusOK, "user notification status successfully updated")
+}
+
+// DeleteUser godoc
+//
+//	@Description	DeleteUser
+//	@Summary		delete user
+//	@Tags			user
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int		true	"id"
+//	@Success		204	{string}	string	"user with id:1 successfully deleted"
+//
+//	@Failure		400	{object}	utils.HTTPError
+//	@Failure		500	{object}	utils.HTTPError
+//
+//	@Security		BasicAuth
+//	@Router			/user{id} [delete]
+func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		utils.JSONError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// deleting remind from db
+	if err := server.TodoStorage.DeleteUser(server.ctx, userID); err != nil {
+		if errors.Is(err, storage.ErrDeleteFailed) {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if errors.Is(err, storage.ErrCantFindRemindWithID) {
+			utils.JSONError(w, http.StatusNotFound, err)
+		}
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	successMsg := fmt.Sprintf("user with id:%d successfully deleted", userID)
+
+	w.Header().Set("Content-Type", "application/json")
+	utils.JSONFormat(w, http.StatusNoContent, successMsg)
 }

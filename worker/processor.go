@@ -10,8 +10,6 @@ import (
 	"github.com/red-rocket-software/reminder-go/worker/mail"
 )
 
-const notificationDays = 2
-
 type Worker struct {
 	db  storage.ReminderRepo
 	ctx context.Context
@@ -26,8 +24,8 @@ func NewWorker(ctx context.Context, db storage.ReminderRepo, cfg config.Config) 
 	}
 }
 
-func (w *Worker) Process() error {
-	remindsToNotify, err := w.db.GetRemindsForNotification(w.ctx, notificationDays)
+func (w *Worker) ProcessSendNotification() error {
+	remindsToNotify, err := w.db.GetRemindsForNotification(w.ctx)
 	if err != nil {
 		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
@@ -58,6 +56,39 @@ func (w *Worker) Process() error {
 			return fmt.Errorf("failed to update notificated status: %w", err)
 		}
 		fmt.Println("Email sent successful")
+	}
+
+	return nil
+}
+
+func (w *Worker) ProcessSendDeadlineNotification() error {
+	remindsToNotify, err := w.db.GetRemindsForDeadlineNotification(w.ctx)
+	if err != nil {
+		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
+	}
+
+	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
+
+	var user model.User
+	for _, remind := range remindsToNotify {
+		user, err = w.db.GetUserByID(w.ctx, remind.UserID)
+		if err != nil {
+			return fmt.Errorf("erorr to get user, err: %v", err)
+		}
+
+		subject := "Reminder notification"
+		content := fmt.Sprintf(`Hello %s,<br/>
+	I wont to remember that you have a deadline in two hours <br/>
+	%s, deadline to %s<br/>
+	`, user.Name, remind.Description, remind.DeadlineAt)
+		to := []string{user.Email}
+
+		err = mailer.SendEmail(subject, content, to, nil, nil, nil)
+		if err != nil {
+			return fmt.Errorf("failed to send verify email: %w", err)
+		}
+
+		fmt.Println("Deadline notification Email sent successful")
 	}
 
 	return nil
