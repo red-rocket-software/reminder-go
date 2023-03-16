@@ -43,9 +43,14 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				err = worker.Process()
+				err = worker.ProcessSendNotification()
 				if err != nil {
-					logger.Errorf("error to process worker: %v", err)
+					logger.Errorf("error to process worker send notification: %v", err)
+					return
+				}
+				err = worker.ProcessSendDeadlineNotification()
+				if err != nil {
+					logger.Errorf("error to process worker send deadline notification: %v", err)
 					return
 				}
 			case <-stop:

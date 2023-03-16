@@ -7,28 +7,31 @@ import (
 )
 
 type Todo struct {
-	ID          int        `json:"id"`
-	Description string     `json:"description"`
-	UserID      int        `json:"user_id"`
-	CreatedAt   time.Time  `json:"created_at"`
-	DeadlineAt  time.Time  `json:"deadline_at"`
-	FinishedAt  *time.Time `json:"finished_at,omitempty"`
-	Completed   bool       `json:"completed"`
-	Notificated bool       `json:"notificated"`
+	ID             int        `json:"id"`
+	Description    string     `json:"description"`
+	UserID         int        `json:"user_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	DeadlineAt     time.Time  `json:"deadline_at"`
+	FinishedAt     *time.Time `json:"finished_at,omitempty"`
+	Completed      bool       `json:"completed"`
+	Notificated    bool       `json:"notificated"`
+	DeadlineNotify *bool      `json:"deadline_notify"`
 }
 
 type TodoInput struct {
-	Description string `json:"description"`
-	DeadlineAt  string `json:"deadline_at"`
-	CreatedAt   string `json:"created_at"`
+	Description    string `json:"description"`
+	DeadlineAt     string `json:"deadline_at"`
+	CreatedAt      string `json:"created_at"`
+	DeadlineNotify *bool  `json:"deadline_notify"`
 }
 
 type TodoUpdateInput struct {
-	Description string     `json:"description"`
-	FinishedAt  *time.Time `json:"finished_at,omitempty"`
-	Completed   bool       `json:"completed"`
-	Notificated bool       `json:"notificated"`
-	DeadlineAt  string     `json:"deadline_at"`
+	Description    string     `json:"description"`
+	FinishedAt     *time.Time `json:"finished_at,omitempty"`
+	Completed      bool       `json:"completed"`
+	Notificated    bool       `json:"notificated"`
+	DeadlineAt     string     `json:"deadline_at"`
+	DeadlineNotify *bool      `json:"deadline_notify"`
 }
 
 type TodoResponse struct {

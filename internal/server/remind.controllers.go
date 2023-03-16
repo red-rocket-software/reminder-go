@@ -77,6 +77,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.Description = input.Description
 	todo.DeadlineAt = deadlineParseTime
 	todo.UserID = user.ID
+	todo.DeadlineNotify = input.DeadlineNotify
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
