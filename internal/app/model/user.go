@@ -45,9 +45,8 @@ type LoginUserInput struct {
 }
 
 type NotificationUserInput struct {
-	Notification         bool  `json:"notification"`
-	Period               int   `json:"period"`
-	DeadlineNotification *bool `json:"deadlineNotification"`
+	Notification *bool `json:"notification,omitempty"`
+	Period       int   `json:"period"`
 }
 
 func Validate(u User, action string) error {

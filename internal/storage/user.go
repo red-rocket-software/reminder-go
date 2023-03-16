@@ -33,7 +33,7 @@ func (s *TodoStorage) CreateUser(ctx context.Context, user model.User) (int, err
 func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 
-	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt", "Period" FROM users WHERE "Email" = $1 LIMIT 1`
+	const sql = `SELECT * FROM users WHERE "Email" = $1 LIMIT 1`
 
 	row := s.Postgres.QueryRow(ctx, sql, email)
 
@@ -43,8 +43,10 @@ func (s *TodoStorage) GetUserByEmail(ctx context.Context, email string) (model.U
 		&user.Email,
 		&user.Password,
 		&user.Provider,
+		&user.Verified,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Notification,
 		&user.Period,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -75,8 +77,13 @@ func (s *TodoStorage) UpdateUser(ctx context.Context, id int, input model.User) 
 	return nil
 }
 
-func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, status bool, period int) error {
-	var sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%t', "Period" = '%d' WHERE "ID" = '%d'`, status, period, id)
+func (s *TodoStorage) UpdateUserNotification(ctx context.Context, id int, input model.NotificationUserInput) error {
+	var sql string
+	if input.Notification != nil {
+		sql = fmt.Sprintf(`UPDATE users SET "Notification" = '%t', "Period" = '%d' WHERE "ID" = '%d'`, *input.Notification, input.Period, id)
+	} else {
+		sql = fmt.Sprintf(`UPDATE users SET "Period" = '%d' WHERE "ID" = '%d'`, input.Period, id)
+	}
 
 	ct, err := s.Postgres.Exec(ctx, sql)
 

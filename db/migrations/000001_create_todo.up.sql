@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "users" (
   "Verified" bool DEFAULT false,
   "CreatedAt" timestamp NOT NULL,
   "UpdatedAt" timestamp,
-  "Notification" bool DEFAULT false,
+  "Notification" bool NOT NULL DEFAULT false,
   "Period" INT
 );
 
