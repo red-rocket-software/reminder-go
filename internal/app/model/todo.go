@@ -19,9 +19,10 @@ type Todo struct {
 }
 
 type TodoInput struct {
-	Description string `json:"description"`
-	DeadlineAt  string `json:"deadline_at"`
-	CreatedAt   string `json:"created_at"`
+	Description    string `json:"description"`
+	DeadlineAt     string `json:"deadline_at"`
+	CreatedAt      string `json:"created_at"`
+	DeadlineNotify *bool  `json:"deadline_notify"`
 }
 
 type TodoUpdateInput struct {

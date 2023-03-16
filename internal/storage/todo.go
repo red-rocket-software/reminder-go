@@ -89,9 +89,9 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page,
 func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
 	var id int
 
-	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt") 
-				 VALUES ($1, $2, $3, $4) returning "ID"`
-	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt)
+	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify") 
+				 VALUES ($1, $2, $3, $4, $5) returning "ID"`
+	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt, todo.DeadlineNotify)
 	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
@@ -100,11 +100,11 @@ func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, e
 	return id, nil
 }
 
-// UpdateRemind update remind, can change Description, Completed and FihishedAt if Completed = true
+// UpdateRemind update remind, can change Description, Completed and FinishedAt if Completed = true
 func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
-	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4 WHERE "ID" = $5`
+	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4, "DeadlineNotify" = $5 WHERE "ID" = $6`
 
-	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, id)
+	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, input.DeadlineNotify, id)
 	if err != nil {
 		s.logger.Printf("unable to update remind %v", err)
 		return err

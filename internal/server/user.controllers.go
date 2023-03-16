@@ -109,6 +109,15 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = ""
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = -1
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
 
 	successMsg := fmt.Sprintf("user with id:%d successfully deleted", userID)
 
