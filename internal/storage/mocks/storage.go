@@ -319,15 +319,15 @@ func (mr *MockReminderRepoMockRecorder) UpdateUser(ctx, id, input interface{}) *
 }
 
 // UpdateUserNotification mocks base method.
-func (m *MockReminderRepo) UpdateUserNotification(ctx context.Context, id int, status bool, period int) error {
+func (m *MockReminderRepo) UpdateUserNotification(ctx context.Context, id int, input model.NotificationUserInput) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserNotification", ctx, id, status, period)
+	ret := m.ctrl.Call(m, "UpdateUserNotification", ctx, id, input)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateUserNotification indicates an expected call of UpdateUserNotification.
-func (mr *MockReminderRepoMockRecorder) UpdateUserNotification(ctx, id, status, period interface{}) *gomock.Call {
+func (mr *MockReminderRepoMockRecorder) UpdateUserNotification(ctx, id, input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserNotification", reflect.TypeOf((*MockReminderRepo)(nil).UpdateUserNotification), ctx, id, status, period)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserNotification", reflect.TypeOf((*MockReminderRepo)(nil).UpdateUserNotification), ctx, id, input)
 }

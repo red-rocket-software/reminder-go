@@ -38,6 +38,6 @@ type ReminderRepo interface {
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	UpdateUser(ctx context.Context, id int, input model.User) error
 	GetUserByID(ctx context.Context, id int) (model.User, error)
-	UpdateUserNotification(ctx context.Context, id int, status bool, period int) error
+	UpdateUserNotification(ctx context.Context, id int, input model.NotificationUserInput) error
 	DeleteUser(ctx context.Context, id int) error
 }
