@@ -88,6 +88,13 @@ func (w *Worker) ProcessSendDeadlineNotification() error {
 			return fmt.Errorf("failed to send verify email: %w", err)
 		}
 
+		var updateDeadlineStatus model.TodoUpdateInput
+		*updateDeadlineStatus.DeadlineNotify = false
+		err := w.db.UpdateRemind(w.ctx, remind.ID, updateDeadlineStatus)
+		if err != nil {
+			return fmt.Errorf("failed to update deadline notification status")
+		}
+
 		fmt.Println("Deadline notification Email sent successful")
 	}
 
