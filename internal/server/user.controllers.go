@@ -59,14 +59,14 @@ func (server *Server) UpdateUserNotification(w http.ResponseWriter, r *http.Requ
 
 	var input model.NotificationUserInput
 
-	if input.Period == 0 {
-		input.Period = 2
-	}
-
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		utils.JSONError(w, http.StatusUnprocessableEntity, err)
 		return
+	}
+
+	if input.Period == 0 {
+		input.Period = 2
 	}
 
 	err = server.TodoStorage.UpdateUserNotification(server.ctx, uID, input)
