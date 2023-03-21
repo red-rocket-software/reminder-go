@@ -61,7 +61,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	var todo model.Todo
 
-	deadlineParseTime, err := time.Parse("2006-01-02T15:04", input.DeadlineAt)
+	deadlineParseTime, err := time.Parse(time.RFC3339, input.DeadlineAt)
 	if err != nil {
 		utils.JSONError(w, http.StatusBadRequest, err)
 		return
@@ -73,11 +73,33 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	np := make([]time.Time, len(input.NotifyPeriod))
+
+	if len(input.NotifyPeriod) > 0 {
+		for _, period := range input.NotifyPeriod {
+			periodParseTime, err := time.Parse(time.RFC3339, period)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, err)
+				return
+			}
+			if periodParseTime.After(deadlineParseTime) {
+				utils.JSONError(w, http.StatusBadRequest, errors.New("time to deadline notification can't be more than deadline time"))
+				return
+			}
+			if periodParseTime.Before(deadlineParseTime.AddDate(0, 0, -2)) {
+				utils.JSONError(w, http.StatusBadRequest, errors.New("time to deadline notification can't be less than 2 days to deadline time"))
+				return
+			}
+			np = append(np, periodParseTime.Truncate(time.Minute))
+		}
+	}
+
 	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
-	todo.DeadlineAt = deadlineParseTime
+	todo.DeadlineAt = deadlineParseTime.Truncate(time.Minute)
 	todo.UserID = user.ID
 	todo.DeadlineNotify = input.DeadlineNotify
+	todo.NotifyPeriod = np
 
 	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {

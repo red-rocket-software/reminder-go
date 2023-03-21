@@ -159,12 +159,13 @@ func (mr *MockReminderRepoMockRecorder) GetRemindByID(ctx, id interface{}) *gomo
 }
 
 // GetRemindsForDeadlineNotification mocks base method.
-func (m *MockReminderRepo) GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, error) {
+func (m *MockReminderRepo) GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRemindsForDeadlineNotification", ctx)
 	ret0, _ := ret[0].([]model.NotificationRemind)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetRemindsForDeadlineNotification indicates an expected call of GetRemindsForDeadlineNotification.
@@ -274,6 +275,20 @@ func (m *MockReminderRepo) UpdateNotification(ctx context.Context, id int, dao m
 func (mr *MockReminderRepoMockRecorder) UpdateNotification(ctx, id, dao interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotification", reflect.TypeOf((*MockReminderRepo)(nil).UpdateNotification), ctx, id, dao)
+}
+
+// UpdateNotifyPeriod mocks base method.
+func (m *MockReminderRepo) UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNotifyPeriod", ctx, id, timeToDelete)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNotifyPeriod indicates an expected call of UpdateNotifyPeriod.
+func (mr *MockReminderRepoMockRecorder) UpdateNotifyPeriod(ctx, id, timeToDelete interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifyPeriod", reflect.TypeOf((*MockReminderRepo)(nil).UpdateNotifyPeriod), ctx, id, timeToDelete)
 }
 
 // UpdateRemind mocks base method.
