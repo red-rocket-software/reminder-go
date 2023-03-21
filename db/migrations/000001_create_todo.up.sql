@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS "todo" (
   "FinishedAt" timestamp,
   "Completed" boolean NOT NULL DEFAULT false,
   "Notificated" boolean NOT NULL DEFAULT false,
-  "DeadlineNotify" bool
+  "DeadlineNotify" bool,
+  "NotifyPeriod" timestamp []
 );
 
 CREATE INDEX ON "todo" ("User");
@@ -24,6 +25,5 @@ CREATE TABLE IF NOT EXISTS "users" (
   "Notification" bool NOT NULL DEFAULT false,
   "Period" INT
 );
-
 
 ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users" ("ID") ON DELETE CASCADE;

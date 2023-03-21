@@ -69,6 +69,7 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page,
 			&remind.Completed,
 			&remind.Notificated,
 			&remind.DeadlineNotify,
+			&remind.NotifyPeriod,
 		); err != nil {
 			s.logger.Errorf("remind doesnt exist: %v", err)
 			return nil, 0, err
@@ -89,9 +90,9 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page,
 func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
 	var id int
 
-	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify") 
-				 VALUES ($1, $2, $3, $4, $5) returning "ID"`
-	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt, todo.DeadlineNotify)
+	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod") 
+				 VALUES ($1, $2, $3, $4, $5, $6) returning "ID"`
+	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt, todo.DeadlineNotify, todo.NotifyPeriod)
 	err := row.Scan(&id)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
@@ -102,9 +103,9 @@ func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, e
 
 // UpdateRemind update remind, can change Description, Completed and FinishedAt if Completed = true
 func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
-	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4, "DeadlineNotify" = $5 WHERE "ID" = $6`
+	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4, "DeadlineNotify" = $5, "NotifyPeriod" = $6 WHERE "ID" = $7`
 
-	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, input.DeadlineNotify, id)
+	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, input.DeadlineNotify, input.NotifyPeriod, id)
 	if err != nil {
 		s.logger.Printf("unable to update remind %v", err)
 		return err
@@ -236,6 +237,7 @@ func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, us
 			&remind.Completed,
 			&remind.Notificated,
 			&remind.DeadlineNotify,
+			&remind.NotifyPeriod,
 		); err != nil {
 			s.logger.Errorf("remind doesn't exist: %v", err)
 			return nil, 0, err
@@ -283,6 +285,7 @@ func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page,
 			&remind.Completed,
 			&remind.Notificated,
 			&remind.DeadlineNotify,
+			&remind.NotifyPeriod,
 		); err != nil {
 			s.logger.Errorf("remind doesn't exist %v", err)
 			return nil, 0, err
@@ -429,22 +432,21 @@ AND u."Period" = %d`, tn, t, i)
 	return reminds, nil
 }
 
-func (s *TodoStorage) GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, error) {
+func (s *TodoStorage) GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, string, error) {
 	var reminds []model.NotificationRemind
-	t := time.Now().Add(2 * time.Hour).Format("2006-01-02 15:04:05")
-	tn := time.Now().Format("2006-01-02 15:04:05")
+	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
 
 	sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."DeadlineAt", t."User" from todo t 
 INNER JOIN users u on u."ID" = t."User" 
-WHERE t."DeadlineAt" BETWEEN '%s' AND '%s' 
+WHERE t."NotifyPeriod" @> ARRAY['%s']::TIMESTAMP[] 
 AND t."Completed" = false 
 AND t."DeadlineNotify" = true
-AND u."Notification" = true`, tn, t)
+AND u."Notification" = true`, tn)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 	if err != nil {
 		s.logger.Errorf("error to select deadline reminds for notification: %v", err)
-		return nil, err
+		return nil, "", err
 	}
 
 	for rows.Next() {
@@ -457,10 +459,27 @@ AND u."Notification" = true`, tn, t)
 			&remind.UserID,
 		); err != nil {
 			s.logger.Errorf("remind doesn't exist: %v", err)
-			return nil, err
+			return nil, "", err
 		}
 		reminds = append(reminds, remind)
 	}
 
-	return reminds, nil
+	return reminds, tn, nil
+}
+
+func (s *TodoStorage) UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error {
+	sql := fmt.Sprintf(`UPDATE todo SET "NotifyPeriod" = array_remove("NotifyPeriod", '%s')
+WHERE "ID" = '%d'`, timeToDelete, id)
+
+	ct, err := s.Postgres.Exec(ctx, sql)
+	if err != nil {
+		s.logger.Printf("unable to update remind notify period %v", err)
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("remind not found")
+	}
+
+	return nil
 }
