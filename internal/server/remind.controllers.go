@@ -101,13 +101,13 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.DeadlineNotify = input.DeadlineNotify
 	todo.NotifyPeriod = np
 
-	_, err = server.TodoStorage.CreateRemind(server.ctx, todo)
+	remind, err := server.TodoStorage.CreateRemind(server.ctx, todo)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.JSONFormat(w, http.StatusCreated, "Remind is successfully created")
+	utils.JSONFormat(w, http.StatusCreated, remind)
 }
 
 // DeleteRemind godoc
@@ -297,13 +297,13 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.TodoStorage.UpdateRemind(server.ctx, rID, input)
+	remind, err := server.TodoStorage.UpdateRemind(server.ctx, rID, input)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	utils.JSONFormat(w, http.StatusOK, "remind successfully updated")
+	utils.JSONFormat(w, http.StatusOK, remind)
 }
 
 // UpdateCompleteStatus update Completed field to true

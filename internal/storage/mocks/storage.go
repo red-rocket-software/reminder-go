@@ -38,10 +38,10 @@ func (m *MockReminderRepo) EXPECT() *MockReminderRepoMockRecorder {
 }
 
 // CreateRemind mocks base method.
-func (m *MockReminderRepo) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
+func (m *MockReminderRepo) CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateRemind", ctx, todo)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(model.Todo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -292,11 +292,12 @@ func (mr *MockReminderRepoMockRecorder) UpdateNotifyPeriod(ctx, id, timeToDelete
 }
 
 // UpdateRemind mocks base method.
-func (m *MockReminderRepo) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
+func (m *MockReminderRepo) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRemind", ctx, id, input)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(model.Todo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateRemind indicates an expected call of UpdateRemind.
