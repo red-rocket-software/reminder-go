@@ -178,7 +178,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
-				}).Return(nil).Times(1)
+				}).Return(model.Todo{Description: "new test"}, nil).Times(1)
 			},
 			expectedStatusCode: 200,
 		},
@@ -195,7 +195,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
-				}).Return(errors.New("something went wrong")).Times(1)
+				}).Return(model.Todo{}, errors.New("something went wrong")).Times(1)
 			},
 			expectedStatusCode: 500,
 		},

@@ -87,35 +87,68 @@ func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page,
 }
 
 // CreateRemind  store new remind entity to DB PostgresSQL
-func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (int, error) {
-	var id int
+func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error) {
+	var createdTodo model.Todo
 
 	const sql = `INSERT INTO todo ("Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod") 
-				 VALUES ($1, $2, $3, $4, $5, $6) returning "ID"`
+				 VALUES ($1, $2, $3, $4, $5, $6) returning "ID", "Description", "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod"`
 	row := s.Postgres.QueryRow(ctx, sql, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt, todo.DeadlineNotify, todo.NotifyPeriod)
-	err := row.Scan(&id)
+	err := row.Scan(
+		&createdTodo.ID,
+		&createdTodo.Description,
+		&createdTodo.UserID,
+		&createdTodo.CreatedAt,
+		&createdTodo.DeadlineAt,
+		&createdTodo.DeadlineNotify,
+		&createdTodo.NotifyPeriod,
+	)
 	if err != nil {
 		s.logger.Errorf("Error create remind: %v", err)
-		return 0, err
+		return model.Todo{}, err
 	}
-	return id, nil
+	return createdTodo, nil
 }
 
 // UpdateRemind update remind, can change Description, Completed and FinishedAt if Completed = true
-func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error {
+func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error) {
 	const sql = `UPDATE todo SET "Description" = $1, "DeadlineAt"=$2, "FinishedAt" = $3, "Completed" = $4, "DeadlineNotify" = $5, "NotifyPeriod" = $6 WHERE "ID" = $7`
 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, input.DeadlineNotify, input.NotifyPeriod, id)
 	if err != nil {
 		s.logger.Printf("unable to update remind %v", err)
-		return err
+		return model.Todo{}, err
 	}
 
 	if ct.RowsAffected() == 0 {
-		return errors.New("remind not found")
+		return model.Todo{}, errors.New("remind not found")
 	}
 
-	return nil
+	parseDeadline, err := time.Parse(time.RFC3339, input.DeadlineAt)
+	if err != nil {
+		return model.Todo{}, err
+	}
+
+	var deadlinePeriodNotify []time.Time
+	if len(input.NotifyPeriod) > 0 {
+		for _, i := range input.NotifyPeriod {
+			parseDeadlineNotifyPeriod, err := time.Parse(time.RFC3339, i)
+			if err != nil {
+				return model.Todo{}, err
+			}
+			deadlinePeriodNotify = append(deadlinePeriodNotify, parseDeadlineNotifyPeriod)
+		}
+	}
+
+	var todo model.Todo
+	todo.ID = id
+	todo.Description = input.Description
+	todo.DeadlineAt = parseDeadline
+	todo.FinishedAt = input.FinishedAt
+	todo.Completed = input.Completed
+	todo.DeadlineNotify = input.DeadlineNotify
+	todo.NotifyPeriod = deadlinePeriodNotify
+
+	return todo, nil
 }
 
 // UpdateNotification update Notificated field
