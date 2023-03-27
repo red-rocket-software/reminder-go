@@ -71,9 +71,9 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	id, _ := testStorage.CreateRemind(context.Background(), insertTodo)
+	remind, _ := testStorage.CreateRemind(context.Background(), insertTodo)
 
-	got, err := testStorage.GetRemindByID(context.Background(), id)
+	got, err := testStorage.GetRemindByID(context.Background(), remind.ID)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
@@ -306,7 +306,7 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 		DeadlineAt:  "2023-01-26T17:05:00Z",
 	}
 
-	err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
+	_, err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
 	require.NoError(t, err)
 
 	newTodo, _ := testStorage.GetRemindByID(context.Background(), expectedTodo[1].ID)

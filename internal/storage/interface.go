@@ -19,8 +19,8 @@ var (
 
 type ReminderRepo interface {
 	GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error)
-	CreateRemind(ctx context.Context, todo model.Todo) (int, error)
-	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) error
+	CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error)
+	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error)
 	UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error
 	UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error
 	DeleteRemind(ctx context.Context, id int) error
