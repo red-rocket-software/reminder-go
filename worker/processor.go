@@ -41,8 +41,8 @@ func (w *Worker) ProcessSendNotification() error {
 
 		subject := "Reminder notification"
 		content := fmt.Sprintf(`Hello %s,<br/>
-	I wont to remember that you have something to do...<br/>
-	%s, deadline to %s<br/>
+	I wont to remember that you have something to do...<br/><p style="color: red">
+	%s <p/>, deadline to %s<br/>
 	`, user.Name, remind.Description, remind.DeadlineAt)
 		to := []string{user.Email}
 
@@ -78,8 +78,8 @@ func (w *Worker) ProcessSendDeadlineNotification() error {
 
 		subject := "Reminder notification"
 		content := fmt.Sprintf(`Hello %s,<br/>
-	I wont to remember that you have a deadline in two hours <br/>
-	%s, deadline to %s<br/>
+	I wont to remember that you have a deadline in two hours <br/> <p style="color: red">
+	%s <p/>, deadline to %s<br/>
 	`, user.Name, remind.Description, remind.DeadlineAt)
 		to := []string{user.Email}
 
