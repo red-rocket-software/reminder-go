@@ -389,6 +389,102 @@ func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, "Success")
 }
 
+func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
+	var payload model.LoginUserInput
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	user, err := server.TodoStorage.GetUserByEmail(server.ctx, payload.Email)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+
+			hashedPassword, err := utils.HashPassword(payload.Password)
+			if err != nil {
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			now := time.Now()
+
+			newUser := model.User{
+				Name:      "",
+				Email:     strings.ToLower(payload.Email),
+				Password:  hashedPassword,
+				Provider:  "local",
+				Verified:  true,
+				CreatedAt: now,
+				UpdatedAt: now,
+			}
+
+			err = model.Validate(newUser, "login")
+			if err != nil {
+				utils.JSONError(w, http.StatusUnprocessableEntity, err)
+				return
+			}
+
+			_, err = server.TodoStorage.CreateUser(server.ctx, newUser)
+			if err != nil {
+				if strings.Contains(err.Error(), "23505") {
+					utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("user with this email is already existing"))
+					return
+				}
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			createdUser, err := server.TodoStorage.GetUserByEmail(server.ctx, payload.Email)
+			if err != nil {
+				utils.JSONError(w, http.StatusBadRequest, fmt.Errorf("invalid email or Password %v", err))
+				return
+			}
+
+			token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, createdUser.ID, server.config.Auth.JwtSecret)
+			if err != nil {
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+
+			cookie := http.Cookie{}
+			cookie.Name = "token"
+			cookie.Value = token
+			cookie.Path = "/"
+			cookie.Domain = "localhost"
+			cookie.MaxAge = server.config.Auth.TokenMaxAge
+			cookie.Secure = false
+			cookie.HttpOnly = true
+			http.SetCookie(w, &cookie)
+
+			utils.JSONFormat(w, http.StatusCreated, createdUser)
+			return
+		} else {
+			utils.JSONError(w, http.StatusBadRequest, fmt.Errorf("invalid email or Password %v", err))
+			return
+		}
+	}
+
+	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	cookie := http.Cookie{}
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Path = "/"
+	cookie.Domain = "localhost"
+	cookie.MaxAge = server.config.Auth.TokenMaxAge
+	cookie.Secure = false
+	cookie.HttpOnly = true
+	http.SetCookie(w, &cookie)
+
+	utils.JSONFormat(w, http.StatusCreated, user)
+}
+
 func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
