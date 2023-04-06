@@ -37,6 +37,7 @@ func (server *Server) ConfigureRouter() *mux.Router {
 	// login handlers
 	publicRoute.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
+	publicRoute.HandleFunc("/login-or-register", server.SignInOrSignUp).Methods("POST", "OPTIONS")
 
 	// login callbacks
 	publicRoute.HandleFunc("/google/callback", server.GoogleAuth).Methods("GET", "OPTIONS")

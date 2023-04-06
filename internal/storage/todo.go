@@ -473,8 +473,7 @@ func (s *TodoStorage) GetRemindsForDeadlineNotification(ctx context.Context) ([]
 INNER JOIN users u on u."ID" = t."User" 
 WHERE t."NotifyPeriod" @> ARRAY['%s']::TIMESTAMP[] 
 AND t."Completed" = false 
-AND t."DeadlineNotify" = true
-AND u."Notification" = true`, tn)
+AND t."DeadlineNotify" = true`, tn)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 	if err != nil {
