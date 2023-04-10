@@ -14,7 +14,6 @@ func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey string) 
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["sub"] = payload
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	claims["iat"] = now.Unix()
 	claims["nbf"] = now.Unix()
 
