@@ -453,12 +453,13 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 			cookie.Value = token
 			cookie.Path = "/"
 			cookie.Domain = "localhost"
-			cookie.MaxAge = server.config.Auth.TokenMaxAge
 			cookie.Secure = false
 			cookie.HttpOnly = true
 			http.SetCookie(w, &cookie)
 
-			utils.JSONFormat(w, http.StatusCreated, createdUser)
+			resUser := model.ToResponseUser(createdUser)
+
+			utils.JSONFormat(w, http.StatusCreated, resUser)
 			return
 		} else {
 			utils.JSONError(w, http.StatusBadRequest, fmt.Errorf("invalid email or Password %v", err))
@@ -477,12 +478,13 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 	cookie.Value = token
 	cookie.Path = "/"
 	cookie.Domain = "localhost"
-	cookie.MaxAge = server.config.Auth.TokenMaxAge
 	cookie.Secure = false
 	cookie.HttpOnly = true
 	http.SetCookie(w, &cookie)
 
-	utils.JSONFormat(w, http.StatusCreated, user)
+	resUser := model.ToResponseUser(user)
+
+	utils.JSONFormat(w, http.StatusCreated, resUser)
 }
 
 func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
