@@ -15,14 +15,13 @@ type RegisterUserInput struct {
 }
 
 type UserResponse struct {
-	ID        string    `json:"id,omitempty"`
-	Name      string    `json:"name,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Provider  string    `json:"provider,omitempty"`
-	Photo     string    `json:"photo"`
-	Verified  bool      `json:"verified,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           int       `json:"id,omitempty"`
+	Name         string    `json:"name,omitempty"`
+	Email        string    `json:"email,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Notification bool      `json:"notification"`
+	Period       *int      `json:"period"`
 }
 
 type User struct {
@@ -93,4 +92,18 @@ func Validate(u User, action string) error {
 		}
 		return nil
 	}
+}
+
+func ToResponseUser(user User) UserResponse {
+	userResponse := UserResponse{
+		ID:           user.ID,
+		Name:         user.Name,
+		Email:        user.Email,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Period:       user.Period,
+		Notification: user.Notification,
+	}
+
+	return userResponse
 }
