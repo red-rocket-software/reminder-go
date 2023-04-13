@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS "todo" (
   "ID" serial PRIMARY KEY,
   "User" serial NOT NULL,
+  "Title" varchar NOT NULL,
   "Description" varchar NOT NULL,
   "CreatedAt" timestamp NOT NULL,
   "DeadlineAt" timestamp NOT NULL,

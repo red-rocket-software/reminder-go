@@ -8,6 +8,7 @@ import (
 
 type Todo struct {
 	ID             int         `json:"id"`
+	Title          string      `json:"title"`
 	Description    string      `json:"description"`
 	UserID         int         `json:"user_id"`
 	CreatedAt      time.Time   `json:"created_at"`
@@ -20,6 +21,7 @@ type Todo struct {
 }
 
 type TodoInput struct {
+	Title          string   `json:"title"`
 	Description    string   `json:"description"`
 	DeadlineAt     string   `json:"deadline_at"`
 	CreatedAt      string   `json:"created_at"`
@@ -28,6 +30,7 @@ type TodoInput struct {
 }
 
 type TodoUpdateInput struct {
+	Title          string     `json:"title"`
 	Description    string     `json:"description"`
 	FinishedAt     *time.Time `json:"finished_at,omitempty"`
 	Completed      bool       `json:"completed"`
@@ -49,6 +52,7 @@ type TodoUpdateStatusInput struct {
 
 type NotificationRemind struct {
 	ID          int       `json:"id"`
+	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	DeadlineAt  time.Time `json:"deadline_at"`
 	UserID      int       `json:"user_id"`
