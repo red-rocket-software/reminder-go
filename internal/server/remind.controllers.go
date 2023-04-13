@@ -52,7 +52,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input.Description == "" || input.DeadlineAt == "" {
+	if input.Description == "" || input.DeadlineAt == "" || input.Title == "" {
 		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("nothing to save"))
 		return
 	}
@@ -96,6 +96,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	todo.CreatedAt = createParseTime
 	todo.Description = input.Description
+	todo.Title = input.Title
 	todo.DeadlineAt = deadlineParseTime.Truncate(time.Minute)
 	todo.UserID = user.ID
 	todo.DeadlineNotify = input.DeadlineNotify
@@ -293,6 +294,11 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if input.Description == "" {
+		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("description is empty"))
+		return
+	}
+
+	if input.Title == "" {
 		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("description is empty"))
 		return
 	}

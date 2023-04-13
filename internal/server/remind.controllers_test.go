@@ -174,27 +174,29 @@ func TestServer_UpdateRemind(t *testing.T) {
 		{
 			name: "OK",
 			id:   1,
-			body: `{"description":"new test"}`,
+			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
-				}).Return(model.Todo{Description: "new test"}, nil).Times(1)
+					Title:       "new test",
+				}).Return(model.Todo{Description: "new test", Title: "new test"}, nil).Times(1)
 			},
 			expectedStatusCode: 200,
 		},
 		{
 			name:               "Error - wrong input",
-			body:               `{"description":""}`,
+			body:               `{"description":"", "title":""}`,
 			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
 			expectedStatusCode: 422,
 		},
 		{
 			name: "Error - Internal error",
 			id:   1,
-			body: `{"description":"new test"}`,
+			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
+					Title:       "new test",
 				}).Return(model.Todo{}, errors.New("something went wrong")).Times(1)
 			},
 			expectedStatusCode: 500,

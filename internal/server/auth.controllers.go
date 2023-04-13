@@ -351,6 +351,8 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userResponse := model.ToResponseUser(user)
+
 	cookie := http.Cookie{}
 	cookie.Name = "token"
 	cookie.Value = token
@@ -361,7 +363,7 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 	cookie.HttpOnly = true
 	http.SetCookie(w, &cookie)
 
-	utils.JSONFormat(w, http.StatusCreated, user)
+	utils.JSONFormat(w, http.StatusCreated, userResponse)
 }
 
 // LogOutUser godoc

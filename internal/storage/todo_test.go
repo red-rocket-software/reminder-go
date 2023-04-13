@@ -37,6 +37,7 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 			context.Background(),
 			model.Todo{
 				Description: "test text",
+				Title:       "test text",
 				UserID:      userID,
 				DeadlineAt:  date,
 				CreatedAt:   time.Now(),
@@ -66,6 +67,7 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 	insertTodo := model.Todo{
 		Description: "test",
+		Title:       "test",
 		UserID:      userID,
 		DeadlineAt:  date,
 		CreatedAt:   time.Now(),
