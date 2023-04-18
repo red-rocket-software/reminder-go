@@ -18,15 +18,15 @@ var (
 //go:generate mockgen -source=interface.go -destination=mocks/storage.go
 
 type ReminderRepo interface {
-	GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error)
+	GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error)
 	CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error)
 	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error)
 	UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error
 	UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error
 	DeleteRemind(ctx context.Context, id int) error
 	GetRemindByID(ctx context.Context, id int) (model.Todo, error)
-	GetCompletedReminds(ctx context.Context, params Params, userID int) ([]model.Todo, int, error)
-	GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error)
+	GetCompletedReminds(ctx context.Context, params Params, userID int) ([]model.Todo, int, int, error)
+	GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error)
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
 	SeedUser() (int, error)

@@ -42,6 +42,7 @@ type TodoUpdateInput struct {
 
 type TodoResponse struct {
 	Todos    []Todo              `json:"todos"`
+	Count    int                 `json:"count"`
 	PageInfo pagination.PageInfo `json:"pageInfo"`
 }
 

@@ -113,23 +113,28 @@ func TestStorageTodo_GetNewReminds(t *testing.T) {
 		args    args
 		want    int
 		want1   int
+		want2   int
 		wantErr bool
 	}{
 		{name: "success", args: args{context.Background(),
-			pagination.Page{Limit: 3},
+			pagination.Page{Limit: 3, Filter: "DeadlineAt", FilterOption: "ASC"},
 			expectedToto[0].UserID,
 		},
 			want:    3,
-			want1:   nextCursor,
+			want1:   4,
+			want2:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), pagination.Page{}, expectedToto[0].UserID},
+		{name: "error no limit", args: args{context.Background(), pagination.Page{
+			Filter:       "DeadlineAt",
+			FilterOption: "ASC",
+		}, expectedToto[0].UserID},
 			want:    0,
 			want1:   0,
 			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params, tt.args.userID)
+			got, got1, got2, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -138,7 +143,10 @@ func TestStorageTodo_GetNewReminds(t *testing.T) {
 				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("GetNewReminds() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("GetNewReminds() got1 = %v, want1 %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("GetNewReminds() got2 = %v, want2 %v", got1, tt.want2)
 			}
 		})
 	}
@@ -172,22 +180,26 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 		args    args
 		want    []model.Todo
 		want1   int
+		want2   int
 		wantErr bool
 	}{
 		{name: "success", args: args{context.Background(), pagination.Page{
-			Limit: 2,
+			Limit:        2,
+			Filter:       "DeadlineAt",
+			FilterOption: "ASC",
 		}, expectedTodo[0].UserID},
 			want:    []model.Todo{expectedTodo[1], expectedTodo[0]},
-			want1:   nextCursor,
+			want1:   5,
+			want2:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), pagination.Page{}, expectedTodo[0].UserID},
+		{name: "error no limit", args: args{context.Background(), pagination.Page{Filter: "DeadlineAt", FilterOption: "ASC"}, expectedTodo[0].UserID},
 			want:    []model.Todo{},
 			want1:   0,
 			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := testStorage.GetAllReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
+			got, got1, got2, err := testStorage.GetAllReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -196,7 +208,10 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 				t.Errorf("GetAllReminds() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("GetAllReminds() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("GetAllReminds() got1 = %v, want1 %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("GetAllReminds() got2 = %v, want2 %v", got2, tt.want2)
 			}
 		})
 	}
@@ -230,21 +245,25 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 		args    args
 		want    []model.Todo
 		want1   int
+		want2   int
 		wantErr bool
 	}{
 		{name: "success", args: args{context.Background(), Params{
 			Page: pagination.Page{
-				Limit: 5,
+				Limit:        5,
+				Filter:       "DeadlineAt",
+				FilterOption: "ASC",
 			},
 			TimeRangeFilter: TimeRangeFilter{},
 		},
 			expectedTodo[0].UserID,
 		},
 			want:    []model.Todo{expectedTodo[1]},
-			want1:   nextCursor,
+			want1:   1,
+			want2:   nextCursor,
 			wantErr: false},
 		{name: "error no limit", args: args{context.Background(), Params{
-			Page: pagination.Page{},
+			Page: pagination.Page{Filter: "DeadlineAt", FilterOption: "ASC"},
 		}, expectedTodo[0].UserID},
 
 			want:    []model.Todo{},
@@ -253,7 +272,7 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := testStorage.GetCompletedReminds(tt.args.ctx, tt.args.params, tt.args.userID)
+			got, got1, got2, err := testStorage.GetCompletedReminds(tt.args.ctx, tt.args.params, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetComplitedReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -262,7 +281,10 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 				t.Errorf("GetComplitedReminds() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("GetComplitedReminds() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("GetComplitedReminds() got1 = %v, want1 %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("GetComplitedReminds() got2 = %v, want2 %v", got2, tt.want2)
 			}
 		})
 	}
