@@ -190,14 +190,28 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	filter := r.URL.Query().Get("filter")
+	if filter == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("filter parameter is invalid"))
+		return
+	}
+
+	FilterOption := r.URL.Query().Get("filterOption")
+	if FilterOption == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
+		return
+	}
+
 	fetchParam := pagination.Page{
-		Limit:  limit,
-		Cursor: cursor,
+		Limit:        limit,
+		Cursor:       cursor,
+		Filter:       filter,
+		FilterOption: FilterOption,
 	}
 
 	user := r.Context().Value("currentUser").(model.User)
 
-	reminds, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
+	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -205,6 +219,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 
 	res := model.TodoResponse{
 		Todos: reminds,
+		Count: totalCount,
 		PageInfo: pagination.PageInfo{
 			Page:       fetchParam,
 			NextCursor: nextCursor,
@@ -403,11 +418,25 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	rangeStart := r.URL.Query().Get("start")
 	rangeEnd := r.URL.Query().Get("end")
 
+	filter := r.URL.Query().Get("filter")
+	if filter == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("filter parameter is invalid"))
+		return
+	}
+
+	FilterOption := r.URL.Query().Get("filterOption")
+	if FilterOption == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
+		return
+	}
+
 	//initialize fetchParameters
 	fetchParams := storage.Params{
 		Page: pagination.Page{
-			Cursor: cursor,
-			Limit:  limit,
+			Cursor:       cursor,
+			Limit:        limit,
+			FilterOption: FilterOption,
+			Filter:       filter,
 		},
 		TimeRangeFilter: storage.TimeRangeFilter{
 			StartRange: rangeStart,
@@ -417,7 +446,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 
 	user := r.Context().Value("currentUser").(model.User)
 
-	reminds, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
 
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
@@ -426,6 +455,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 
 	res := model.TodoResponse{
 		Todos: reminds,
+		Count: count,
 		PageInfo: pagination.PageInfo{
 			Page:       fetchParams.Page,
 			NextCursor: nextCursor,
@@ -474,18 +504,33 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filter := r.URL.Query().Get("filter")
+	if filter == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("filter parameter is invalid"))
+		return
+	}
+
+	FilterOption := r.URL.Query().Get("filterOption")
+	if FilterOption == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
+		return
+	}
+
 	//initialize fetchParameters
 	fetchParams := pagination.Page{
-		Limit:  limit,
-		Cursor: cursor,
+		Limit:        limit,
+		Cursor:       cursor,
+		Filter:       filter,
+		FilterOption: FilterOption,
 	}
 
 	user := r.Context().Value("currentUser").(model.User)
 
-	reminds, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
 
 	res := model.TodoResponse{
 		Todos: reminds,
+		Count: count,
 		PageInfo: pagination.PageInfo{
 			Page:       fetchParams,
 			NextCursor: nextCursor,

@@ -96,13 +96,14 @@ func (mr *MockReminderRepoMockRecorder) DeleteUser(ctx, id interface{}) *gomock.
 }
 
 // GetAllReminds mocks base method.
-func (m *MockReminderRepo) GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error) {
+func (m *MockReminderRepo) GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]model.Todo)
 	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // GetAllReminds indicates an expected call of GetAllReminds.
@@ -112,13 +113,14 @@ func (mr *MockReminderRepoMockRecorder) GetAllReminds(ctx, params, userID interf
 }
 
 // GetCompletedReminds mocks base method.
-func (m *MockReminderRepo) GetCompletedReminds(ctx context.Context, params storage.Params, userID int) ([]model.Todo, int, error) {
+func (m *MockReminderRepo) GetCompletedReminds(ctx context.Context, params storage.Params, userID int) ([]model.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCompletedReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]model.Todo)
 	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // GetCompletedReminds indicates an expected call of GetCompletedReminds.
@@ -128,13 +130,14 @@ func (mr *MockReminderRepoMockRecorder) GetCompletedReminds(ctx, params, userID 
 }
 
 // GetNewReminds mocks base method.
-func (m *MockReminderRepo) GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, error) {
+func (m *MockReminderRepo) GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNewReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]model.Todo)
 	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
 }
 
 // GetNewReminds indicates an expected call of GetNewReminds.
