@@ -7,6 +7,12 @@ type Page struct {
 
 	// Limit describes the number of records per request
 	Limit int `json:"limit"`
+
+	//Filter describe filter params - by DeadlineAt or CreateAt
+	Filter string `json:"filter"`
+
+	//FilterOption describe filterOption params - DESC or ASC
+	FilterOption string `json:"filterOption"`
 }
 
 // PageInfo describes the results page information
