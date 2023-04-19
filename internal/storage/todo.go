@@ -270,6 +270,10 @@ SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = true
 		}
 	}
 
+	if params.StartRange != "" {
+		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
+	}
+
 	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.Filter, params.FilterOption, params.Limit)
 
 	rows, err := s.Postgres.Query(ctx, sql)
