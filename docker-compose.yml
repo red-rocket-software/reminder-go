@@ -17,12 +17,14 @@ services:
     restart: on-failure
     volumes:
       - ./db-data:/var/lib/postgresql/data
+       # copy the sql script to create tables
+#        - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: reminder-api
+    container_name: reminder-reminder
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
