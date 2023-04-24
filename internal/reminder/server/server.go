@@ -40,8 +40,8 @@ func (server *Server) Run(cfg *config.Config) error {
 
 	server.S = &http.Server{
 
-		Addr:           ":8001",
-		Handler:        server.ConfigureRouter(),
+		Addr:           ":" + cfg.HTTP.ReminderPort,
+		Handler:        server.ConfigureReminderRouter(),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,

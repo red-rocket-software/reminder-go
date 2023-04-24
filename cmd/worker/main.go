@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	todoStorage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
 	"github.com/red-rocket-software/reminder-go/worker"
@@ -27,9 +27,9 @@ func main() {
 	}
 	defer postgresClient.Close()
 
-	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
+	remindStorage := todoStorage.NewStorageTodo(postgresClient, &logger)
 
-	worker := worker.NewWorker(ctx, todoStorage, *cfg)
+	newWorker := worker.NewWorker(ctx, remindStorage, *cfg)
 
 	//run worker in scheduler
 	c := make(chan os.Signal, 1)
@@ -43,12 +43,12 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				err = worker.ProcessSendNotification()
+				err = newWorker.ProcessSendNotification()
 				if err != nil {
 					logger.Errorf("error to process worker send notification: %v", err)
 					return
 				}
-				err = worker.ProcessSendDeadlineNotification()
+				err = newWorker.ProcessSendDeadlineNotification()
 				if err != nil {
 					logger.Errorf("error to process worker send deadline notification: %v", err)
 					return

@@ -5,36 +5,37 @@ import (
 	"fmt"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	model2 "github.com/red-rocket-software/reminder-go/internal/reminder/app/domain"
+	todoModel "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	model "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/red-rocket-software/reminder-go/worker/mail"
 )
 
 type Worker struct {
-	db  storage.ReminderRepo
-	ctx context.Context
-	cfg config.Config
+	todoStorage storage.ReminderRepo
+	ctx         context.Context
+	cfg         config.Config
 }
 
-func NewWorker(ctx context.Context, db storage.ReminderRepo, cfg config.Config) *Worker {
+func NewWorker(ctx context.Context, todoStorage storage.ReminderRepo, cfg config.Config) *Worker {
 	return &Worker{
-		db:  db,
-		ctx: ctx,
-		cfg: cfg,
+		todoStorage: todoStorage,
+		ctx:         ctx,
+		cfg:         cfg,
 	}
 }
 
 func (w *Worker) ProcessSendNotification() error {
-	remindsToNotify, err := w.db.GetRemindsForNotification(w.ctx)
+	remindsToNotify, err := w.todoStorage.GetRemindsForNotification(w.ctx)
 	if err != nil {
 		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
 
 	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
 
-	var user model2.User
+	var user model.User
 	for _, remind := range remindsToNotify {
-		user, err = w.db.GetUserByID(w.ctx, remind.UserID)
+		user, err = w.todoStorage.GetUserByID(w.ctx, remind.UserID)
 		if err != nil {
 			return fmt.Errorf("erorr to get user, err: %v", err)
 		}
@@ -51,7 +52,7 @@ func (w *Worker) ProcessSendNotification() error {
 			return fmt.Errorf("failed to send verify email: %w", err)
 		}
 
-		err = w.db.UpdateNotification(w.ctx, remind.ID, model2.NotificationDAO{Notificated: true})
+		err = w.todoStorage.UpdateNotification(w.ctx, remind.ID, todoModel.NotificationDAO{Notificated: true})
 		if err != nil {
 			return fmt.Errorf("failed to update notificated status: %w", err)
 		}
@@ -62,16 +63,16 @@ func (w *Worker) ProcessSendNotification() error {
 }
 
 func (w *Worker) ProcessSendDeadlineNotification() error {
-	remindsToNotify, timeToDelete, err := w.db.GetRemindsForDeadlineNotification(w.ctx)
+	remindsToNotify, timeToDelete, err := w.todoStorage.GetRemindsForDeadlineNotification(w.ctx)
 	if err != nil {
 		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
 
 	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
 
-	var user model2.User
+	var user model.User
 	for _, remind := range remindsToNotify {
-		user, err = w.db.GetUserByID(w.ctx, remind.UserID)
+		user, err = w.todoStorage.GetUserByID(w.ctx, remind.UserID)
 		if err != nil {
 			return fmt.Errorf("erorr to get user, err: %v", err)
 		}
@@ -88,7 +89,7 @@ func (w *Worker) ProcessSendDeadlineNotification() error {
 			return fmt.Errorf("failed to send verify email: %w", err)
 		}
 
-		err := w.db.UpdateNotifyPeriod(w.ctx, remind.ID, timeToDelete)
+		err := w.todoStorage.UpdateNotifyPeriod(w.ctx, remind.ID, timeToDelete)
 		if err != nil {
 			return fmt.Errorf("failed to update deadline notification period")
 		}

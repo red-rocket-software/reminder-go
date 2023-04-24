@@ -35,7 +35,7 @@ func main() {
 	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
 
 	app := server.New(ctx, logger, todoStorage, *cfg)
-	logger.Debugf("Starting server on port %s", cfg.HTTP.AuthPort)
+	logger.Debugf("Starting reminder server on port %s", cfg.HTTP.ReminderPort)
 
 	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())

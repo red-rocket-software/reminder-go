@@ -12,8 +12,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	model2 "github.com/red-rocket-software/reminder-go/internal/reminder/app/domain"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
+	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,8 +27,8 @@ func TestControllers_AddRemind(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		body                 string
-		inputTodo            model2.Todo
-		mockBehavior         func(store *mockdb.MockReminderRepo, input model2.Todo)
+		inputTodo            model.Todo
+		mockBehavior         func(store *mockdb.MockReminderRepo, input model.Todo)
 		expectedStatusCode   int
 		expectedResponseBody string
 	}{
@@ -49,8 +50,8 @@ func TestControllers_AddRemind(t *testing.T) {
 		{
 			name:                 "Error - wrong input",
 			body:                 `{"description":"", "user_id": "1", "deadline_at": "2023-02-02"}`,
-			inputTodo:            model2.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input model2.Todo) {},
+			inputTodo:            model.Todo{},
+			mockBehavior:         func(store *mockdb.MockReminderRepo, input model.Todo) {},
 			expectedStatusCode:   422,
 			expectedResponseBody: "nothing to save",
 		},
@@ -84,7 +85,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/remind", bytes.NewBufferString(test.body))
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "currentUser", model2.User{
+			ctx = context.WithValue(ctx, "currentUser", userModel.User{
 				ID: 1,
 			})
 			req = req.WithContext(ctx)
@@ -102,7 +103,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 	testCases := []struct {
 		name               string
 		id                 int
-		resTodo            model2.Todo
+		resTodo            model.Todo
 		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
 		expectedStatusCode int
 	}{
@@ -110,7 +111,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "OK",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(1)).Return(model2.Todo{
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(1)).Return(model.Todo{
 					ID:          1,
 					Description: "test",
 					CreatedAt:   time.Now(),
@@ -124,7 +125,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "Not found",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model2.Todo{}, sql.ErrNoRows).Times(1)
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model.Todo{}, sql.ErrNoRows).Times(1)
 			},
 			expectedStatusCode: 404,
 		},
@@ -132,7 +133,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "InternalError",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model2.Todo{}, sql.ErrConnDone).Times(1)
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model.Todo{}, sql.ErrConnDone).Times(1)
 			},
 			expectedStatusCode: 500,
 		},
@@ -173,10 +174,10 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model2.TodoUpdateInput{
+				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
-				}).Return(model2.Todo{Description: "new test", Title: "new test"}, nil).Times(1)
+				}).Return(model.Todo{Description: "new test", Title: "new test"}, nil).Times(1)
 			},
 			expectedStatusCode: 200,
 		},
@@ -191,10 +192,10 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model2.TodoUpdateInput{
+				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
-				}).Return(model2.Todo{}, errors.New("something went wrong")).Times(1)
+				}).Return(model.Todo{}, errors.New("something went wrong")).Times(1)
 			},
 			expectedStatusCode: 500,
 		},

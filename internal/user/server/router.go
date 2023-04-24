@@ -14,7 +14,7 @@ func (server *Server) ConfigureAuthRouter() *mux.Router {
 
 	// private routes
 	privateRoute := router.PathPrefix("").Subrouter()
-	privateRoute.Use(middlewares.AuthMiddleware)
+	privateRoute.Use(server.AuthMiddleware)
 
 	privateRoute.HandleFunc("/logout", server.LogOutUser).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/fetchMe", server.GetMe).Methods("GET", "OPTIONS")

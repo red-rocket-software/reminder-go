@@ -29,9 +29,37 @@ services:
       - POSTGRES_DB=reminder
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
     ports:
       - "8001:8001"
 
+  reminder:
+    build:
+      context: .
+      dockerfile: ./dockers/Dockerfile-reminder
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=reminder
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
 
+  worker:
+    build:
+      context: .
+      dockerfile: ./dockers/Dockerfile-worker
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=reminder
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
 
 

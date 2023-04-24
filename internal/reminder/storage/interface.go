@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/red-rocket-software/reminder-go/internal/reminder/app/model"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
@@ -32,4 +33,5 @@ type ReminderRepo interface {
 	GetRemindsForNotification(ctx context.Context) ([]model.NotificationRemind, error)
 	GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, string, error)
 	UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error
+	GetUserByID(ctx context.Context, id int) (userModel.User, error)
 }

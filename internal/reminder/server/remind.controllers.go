@@ -1,17 +1,20 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	model2 "github.com/red-rocket-software/reminder-go/internal/reminder/app/domain"
-	storage2 "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
@@ -44,7 +47,7 @@ type RemindHandlers interface {
 //	@Security		BasicAuth
 //	@Router			/remind [post]
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
-	var input model2.TodoInput
+	var input model.TodoInput
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -57,9 +60,9 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("currentUser").(model2.User)
+	user := r.Context().Value("currentUser").(userModel.User)
 
-	var todo model2.Todo
+	var todo model.Todo
 
 	deadlineParseTime, err := time.Parse(time.RFC3339, input.DeadlineAt)
 	if err != nil {
@@ -136,11 +139,11 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 	// deleting remind from db
 	if err := server.TodoStorage.DeleteRemind(server.ctx, remindID); err != nil {
-		if errors.Is(err, storage2.ErrDeleteFailed) {
+		if errors.Is(err, storage.ErrDeleteFailed) {
 			utils.JSONError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if errors.Is(err, storage2.ErrCantFindRemindWithID) {
+		if errors.Is(err, storage.ErrCantFindRemindWithID) {
 			utils.JSONError(w, http.StatusNotFound, err)
 		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
@@ -209,7 +212,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(model2.User)
+	user := r.Context().Value("currentUser").(userModel.User)
 
 	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
 	if err != nil {
@@ -217,7 +220,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	res := model2.TodoResponse{
+	res := model.TodoResponse{
 		Todos: reminds,
 		Count: totalCount,
 		PageInfo: pagination.PageInfo{
@@ -292,7 +295,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input model2.TodoUpdateInput
+	var input model.TodoUpdateInput
 
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -353,7 +356,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var updateInput model2.TodoUpdateStatusInput
+	var updateInput model.TodoUpdateStatusInput
 
 	err = json.NewDecoder(r.Body).Decode(&updateInput)
 	if err != nil {
@@ -431,20 +434,20 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	}
 
 	//initialize fetchParameters
-	fetchParams := storage2.Params{
+	fetchParams := storage.Params{
 		Page: pagination.Page{
 			Cursor:       cursor,
 			Limit:        limit,
 			FilterOption: FilterOption,
 			Filter:       filter,
 		},
-		TimeRangeFilter: storage2.TimeRangeFilter{
+		TimeRangeFilter: storage.TimeRangeFilter{
 			StartRange: rangeStart,
 			EndRange:   rangeEnd,
 		},
 	}
 
-	user := r.Context().Value("currentUser").(model2.User)
+	user := r.Context().Value("currentUser").(userModel.User)
 
 	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
 
@@ -453,7 +456,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	res := model2.TodoResponse{
+	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
 		PageInfo: pagination.PageInfo{
@@ -524,11 +527,11 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(model2.User)
+	user := r.Context().Value("currentUser").(userModel.User)
 
 	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
 
-	res := model2.TodoResponse{
+	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
 		PageInfo: pagination.PageInfo{
@@ -543,4 +546,40 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)
+}
+
+func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var token string
+		cookie, err := r.Cookie("token")
+
+		authorizationHeader := r.Header.Get("Authorization")
+		fields := strings.Fields(authorizationHeader)
+
+		if len(fields) != 0 && fields[0] == "Bearer" {
+			token = fields[1]
+		} else if err == nil {
+			token = cookie.Value
+		}
+
+		if token == "" {
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
+			return
+		}
+
+		sub, err := utils.ValidateToken(token, server.config.Auth.JwtSecret)
+		if err != nil {
+			utils.JSONError(w, http.StatusUnauthorized, err)
+			return
+		}
+
+		user, err := server.TodoStorage.GetUserByID(server.ctx, int(sub.(float64)))
+		if err != nil {
+			utils.JSONError(w, http.StatusBadRequest, err)
+		}
+
+		ctx := context.WithValue(r.Context(), "currentUser", user)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

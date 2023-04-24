@@ -8,7 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/app/model"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
@@ -565,4 +566,31 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 	}
 
 	return nil
+}
+
+func (s *TodoStorage) GetUserByID(ctx context.Context, id int) (userModel.User, error) {
+	var user userModel.User
+
+	const sql = `SELECT "ID", "Name", "Email", "Password", "Provider", "CreatedAt", "UpdatedAt" FROM users WHERE "ID" = $1 LIMIT 1`
+
+	row := s.Postgres.QueryRow(ctx, sql, id)
+
+	err := row.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Provider,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return userModel.User{}, errors.New("no rows in result set")
+	}
+
+	if err != nil {
+		s.logger.Printf("cannot get user from database: %v\n", err)
+		return userModel.User{}, err
+	}
+	return user, nil
 }
