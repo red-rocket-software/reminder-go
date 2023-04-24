@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/red-rocket-software/reminder-go/internal/reminder/app/model"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )

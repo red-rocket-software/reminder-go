@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -52,7 +51,7 @@ func GetConfig() *Config {
 	c := &Config{}
 
 	if err := cleanenv.ReadConfig("config.yaml", c); err != nil {
-		fmt.Errorf("error read config: %v", err)
+		log.Fatalf("error read config: %v", err)
 	}
 
 	return c

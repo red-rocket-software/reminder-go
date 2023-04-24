@@ -11,6 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	storage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	domain0 "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	pagination "github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
@@ -161,6 +162,21 @@ func (m *MockReminderRepo) GetRemindsForNotification(ctx context.Context) ([]dom
 func (mr *MockReminderRepoMockRecorder) GetRemindsForNotification(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindsForNotification", reflect.TypeOf((*MockReminderRepo)(nil).GetRemindsForNotification), ctx)
+}
+
+// GetUserByID mocks base method.
+func (m *MockReminderRepo) GetUserByID(ctx context.Context, id int) (domain0.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
+	ret0, _ := ret[0].(domain0.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByID indicates an expected call of GetUserByID.
+func (mr *MockReminderRepoMockRecorder) GetUserByID(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockReminderRepo)(nil).GetUserByID), ctx, id)
 }
 
 // SeedTodos mocks base method.
