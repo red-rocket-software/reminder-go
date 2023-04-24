@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/storage"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
 	"github.com/red-rocket-software/reminder-go/worker"

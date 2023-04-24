@@ -11,9 +11,10 @@ import (
 // Config describes all app configuration
 type Config struct {
 	HTTP struct {
-		IP   string `env-required:"true" yaml:"ip" env:"APP_IP"`
-		Port string `env-required:"true" yaml:"port" env:"APP_PORT"`
-	}
+		IP           string `env-required:"true" yaml:"ip" env:"APP_IP"`
+		ReminderPort string `env-required:"true" yaml:"reminder_port" env:"REMINDER_PORT"`
+		AuthPort     string `env-required:"true" yaml:"auth_port" env:"AUTH_PORT"`
+	} `yaml:"http"`
 	Postgres struct {
 		Password string `env-default:"secret" env-required:"true" yaml:"password" env:"DB_PASSWORD"`
 		Username string `env-default:"root" env-required:"true" yaml:"username" env:"DB_USERNAME"`
@@ -36,7 +37,7 @@ type Config struct {
 		LinkedinAuthClientID     string `env-require:"true" yaml:"linkedin_auth_client_id" env:"LINKEDIN_AUTH_CLIENT_ID"`
 		LinkedinAuthClientSecret string `env-require:"true" yaml:"linkedin_auth_client_secret" env:"LINKEDIN_AUTH_CLIENT_SECRET"`
 		LinkedinAuthRedirectURL  string `env-required:"true" yaml:"linkedin_auth_redirect_url" env:"LINKEDIN_AUTH_REDIRECT_URL"`
-	} `yaml:"auth"`
+	} `yaml:"user"`
 	Email struct {
 		EmailSenderName     string `env-required:"true" yaml:"email_sender_name" env:"EMAIL_SENDER_NAME"`
 		EmailSenderAddress  string `env-required:"true" yaml:"email_sender_address" env:"EMAIL_SENDER_ADDRESS"`
@@ -51,7 +52,7 @@ func GetConfig() *Config {
 	c := &Config{}
 
 	if err := cleanenv.ReadConfig("config.yaml", c); err != nil {
-		fmt.Println("error read config")
+		fmt.Errorf("error read config: %v", err)
 	}
 
 	return c

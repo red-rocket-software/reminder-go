@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/storage"
+	"github.com/red-rocket-software/reminder-go/internal/user/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
 	"github.com/red-rocket-software/reminder-go/utils"
@@ -21,7 +21,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		logger.Fatalf("Error create new db client:%v\n", err)
 	}
 	defer postgresClient.Close()
-	storage := storage.NewStorageTodo(postgresClient, &logger)
+	storage := storage.NewUserStorage(postgresClient, &logger)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
 		cookie, err := r.Cookie("token")

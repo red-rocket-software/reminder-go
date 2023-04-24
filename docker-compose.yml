@@ -2,12 +2,11 @@ version: "3.9"
 
 volumes:
   db-data:
-  api:
 
 services:
-  db:
+  postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:15-alpine
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
@@ -18,13 +17,12 @@ services:
     volumes:
       - ./db-data:/var/lib/postgresql/data
        # copy the sql script to create tables
-#        - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./db/migrations/000001_create_todo.up.sql:/docker-entrypoint-initdb.d/000001_create_todo.up.sql
 
-  api:
+  auth:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: reminder-reminder
+      dockerfile: ./dockers/Dockerfile-auth
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
@@ -32,9 +30,8 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=postgres
     ports:
-      - "8000:8000"
-    depends_on:
-      - db
+      - "8001:8001"
+
 
 
 

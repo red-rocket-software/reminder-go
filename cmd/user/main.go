@@ -4,21 +4,22 @@ import (
 	"context"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/server"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	"github.com/red-rocket-software/reminder-go/internal/user/server"
+	"github.com/red-rocket-software/reminder-go/internal/user/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
 )
 
-//	@title			Reminder App API
+//	@title			Auth App API
 //	@version		1.0
-//	@description	API Server for Reminder Application
+//	@description	API Server for Auth Application
 
-//	@host		localhost:8000
+//	@host		localhost:8001
 //	@BasePath	/
 
 // @securityDefinitions.basic	BasicAuth
 func main() {
+
 	cfg := config.GetConfig()
 	logger := logging.GetLogger()
 
@@ -32,13 +33,12 @@ func main() {
 	}
 	defer postgresClient.Close()
 
-	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
+	userStorage := storage.NewUserStorage(postgresClient, &logger)
 
-	app := server.New(ctx, logger, todoStorage, *cfg)
+	app := server.New(ctx, logger, userStorage, *cfg)
 	logger.Debugf("Starting server on port %s", cfg.HTTP.AuthPort)
 
 	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())
 	}
-
 }
