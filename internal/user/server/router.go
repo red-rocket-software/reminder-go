@@ -26,6 +26,7 @@ func (server *Server) ConfigureAuthRouter() *mux.Router {
 	// login handlers
 	publicRoute.HandleFunc("/register", server.SignUpUser).Methods("POST", "OPTIONS")
 	publicRoute.HandleFunc("/login", server.SignInUser).Methods("POST", "OPTIONS")
+	publicRoute.HandleFunc("/renew-token", server.RefreshAccessToken).Methods("GET", "OPTIONS")
 	publicRoute.HandleFunc("/login-or-register", server.SignInOrSignUp).Methods("POST", "OPTIONS")
 
 	// login callbacks

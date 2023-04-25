@@ -7,23 +7,27 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func GenerateToken(ttl time.Duration, payload interface{}, secretJWTKey string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
+func GenerateNewToken(id int, secret string, expiredTime int) (string, error) {
+	// Create a new claims.
+	claims := jwt.MapClaims{}
 
-	now := time.Now().UTC()
-	claims := token.Claims.(jwt.MapClaims)
+	// Set public claims:
+	claims["sub"] = id
+	claims["expires"] = time.Now().Add(time.Minute * time.Duration(expiredTime)).Unix()
+	claims["iat"] = time.Now().Unix()
+	claims["nbf"] = time.Now().Unix()
 
-	claims["sub"] = payload
-	claims["iat"] = now.Unix()
-	claims["nbf"] = now.Unix()
+	// Create a new JWT access token with claims.
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(secretJWTKey))
-
+	// Generate token.
+	t, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", fmt.Errorf("generating JWT Token failed: %w", err)
+		// Return error, it JWT token generation failed.
+		return "", err
 	}
 
-	return tokenString, nil
+	return t, nil
 }
 
 func ValidateToken(token string, signedJWTKey string) (interface{}, error) {

@@ -73,21 +73,22 @@ func (server *Server) GoogleAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	accessToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtSecret, server.config.Auth.TokenExpiredIn)
 	if err != nil {
-		utils.JSONError(w, http.StatusBadRequest, err)
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	refreshToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtRefreshSecret, server.config.Auth.JwtRefreshKeyExpire)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	cookie := http.Cookie{}
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Path = "/"
-	cookie.Domain = "localhost"
-	cookie.MaxAge = server.config.Auth.TokenMaxAge * 60
-	cookie.Secure = false
-	cookie.HttpOnly = true
-	http.SetCookie(w, &cookie)
+	accessTokenCookie := utils.CreateCookie("token", accessToken, "/", "localhost", server.config.Auth.TokenMaxAge*60, false, true)
+	refreshTokenCookie := utils.CreateCookie("refresh_token", refreshToken, "/", "localhost", server.config.Auth.RefreshTokenMaxAge*60, false, true)
+
+	http.SetCookie(w, &accessTokenCookie)
+	http.SetCookie(w, &refreshTokenCookie)
 
 	http.Redirect(w, r, fmt.Sprint(server.config.Auth.FrontendOrigin, pathURL), http.StatusTemporaryRedirect)
 }
@@ -194,23 +195,24 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	accessToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtSecret, server.config.Auth.TokenExpiredIn)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	refreshToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtRefreshSecret, server.config.Auth.JwtRefreshKeyExpire)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	accessTokenCookie := utils.CreateCookie("token", accessToken, "/", "localhost", server.config.Auth.TokenMaxAge*60, false, true)
+	refreshTokenCookie := utils.CreateCookie("refresh_token", refreshToken, "/", "localhost", server.config.Auth.RefreshTokenMaxAge*60, false, true)
+
 	userResponse := model.ToResponseUser(user)
 
-	cookie := http.Cookie{}
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Path = "/"
-	cookie.Domain = "localhost"
-	cookie.MaxAge = server.config.Auth.TokenMaxAge
-	cookie.Secure = false
-	cookie.HttpOnly = true
-	http.SetCookie(w, &cookie)
+	http.SetCookie(w, &accessTokenCookie)
+	http.SetCookie(w, &refreshTokenCookie)
 
 	utils.JSONFormat(w, http.StatusCreated, userResponse)
 }
@@ -227,15 +229,11 @@ func (server *Server) SignInUser(w http.ResponseWriter, r *http.Request) {
 //
 //	@Router			/logout [get]
 func (server *Server) LogOutUser(w http.ResponseWriter, r *http.Request) {
-	cookie := http.Cookie{}
-	cookie.Name = "token"
-	cookie.Value = ""
-	cookie.Path = "/"
-	cookie.Domain = "localhost"
-	cookie.MaxAge = -1
-	cookie.Secure = false
-	cookie.HttpOnly = true
-	http.SetCookie(w, &cookie)
+	accessTokenCookie := utils.CreateExpiredCookie("token", "", "/", "localhost", false, true)
+	refreshTokenCookie := utils.CreateExpiredCookie("refresh_token", "", "/", "localhost", false, true)
+
+	http.SetCookie(w, &accessTokenCookie)
+	http.SetCookie(w, &refreshTokenCookie)
 
 	utils.JSONFormat(w, http.StatusOK, "Success")
 }
@@ -293,20 +291,22 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, createdUser.ID, server.config.Auth.JwtSecret)
+			accessToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtSecret, server.config.Auth.TokenExpiredIn)
+			if err != nil {
+				utils.JSONError(w, http.StatusInternalServerError, err)
+				return
+			}
+			refreshToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtRefreshSecret, server.config.Auth.JwtRefreshKeyExpire)
 			if err != nil {
 				utils.JSONError(w, http.StatusInternalServerError, err)
 				return
 			}
 
-			cookie := http.Cookie{}
-			cookie.Name = "token"
-			cookie.Value = token
-			cookie.Path = "/"
-			cookie.Domain = "localhost"
-			cookie.Secure = false
-			cookie.HttpOnly = true
-			http.SetCookie(w, &cookie)
+			accessTokenCookie := utils.CreateCookie("token", accessToken, "/", "localhost", server.config.Auth.TokenMaxAge*60, false, true)
+			refreshTokenCookie := utils.CreateCookie("refresh_token", refreshToken, "/", "localhost", server.config.Auth.RefreshTokenMaxAge*60, false, true)
+
+			http.SetCookie(w, &accessTokenCookie)
+			http.SetCookie(w, &refreshTokenCookie)
 
 			resUser := model.ToResponseUser(createdUser)
 
@@ -318,20 +318,22 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	token, err := utils.GenerateToken(server.config.Auth.TokenExpiredIn, user.ID, server.config.Auth.JwtSecret)
+	accessToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtSecret, server.config.Auth.TokenExpiredIn)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	refreshToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtRefreshSecret, server.config.Auth.JwtRefreshKeyExpire)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	cookie := http.Cookie{}
-	cookie.Name = "token"
-	cookie.Value = token
-	cookie.Path = "/"
-	cookie.Domain = "localhost"
-	cookie.Secure = false
-	cookie.HttpOnly = true
-	http.SetCookie(w, &cookie)
+	accessTokenCookie := utils.CreateCookie("token", accessToken, "/", "localhost", server.config.Auth.TokenMaxAge*60, false, true)
+	refreshTokenCookie := utils.CreateCookie("refresh_token", refreshToken, "/", "localhost", server.config.Auth.RefreshTokenMaxAge*60, false, true)
+
+	http.SetCookie(w, &accessTokenCookie)
+	http.SetCookie(w, &refreshTokenCookie)
 
 	resUser := model.ToResponseUser(user)
 
@@ -474,18 +476,49 @@ func (server *Server) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	}
-	cookie := http.Cookie{}
-	cookie.Name = "token"
-	cookie.Value = ""
-	cookie.Path = "/"
-	cookie.Domain = "localhost"
-	cookie.MaxAge = -1
-	cookie.Secure = false
-	cookie.HttpOnly = true
-	http.SetCookie(w, &cookie)
+
+	accessTokenCookie := utils.CreateExpiredCookie("token", "", "/", "localhost", false, true)
+	refreshTokenCookie := utils.CreateExpiredCookie("refresh_token", "", "/", "localhost", false, true)
+
+	http.SetCookie(w, &accessTokenCookie)
+	http.SetCookie(w, &refreshTokenCookie)
 
 	successMsg := fmt.Sprintf("user with id:%d successfully deleted", userID)
 
 	w.Header().Set("Content-Type", "application/json")
 	utils.JSONFormat(w, http.StatusNoContent, successMsg)
+}
+
+func (server *Server) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
+	message := "could not refresh access token"
+
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		utils.JSONError(w, http.StatusForbidden, errors.New(message))
+		return
+	}
+
+	sub, err := utils.ValidateToken(cookie.Value, server.config.Auth.JwtRefreshSecret)
+	if err != nil {
+		utils.JSONError(w, http.StatusForbidden, err)
+		return
+	}
+
+	user, err := server.UserStorage.GetUserByID(server.ctx, int(sub.(float64)))
+	if err != nil {
+		utils.JSONError(w, http.StatusForbidden, errors.New("the user belonging to this token no logger exists"))
+		return
+	}
+
+	accessToken, err := utils.GenerateNewToken(user.ID, server.config.Auth.JwtSecret, server.config.Auth.TokenExpiredIn)
+	if err != nil {
+		utils.JSONError(w, http.StatusForbidden, err)
+		return
+	}
+
+	accessTokenCookie := utils.CreateCookie("token", accessToken, "/", "localhost", server.config.Auth.TokenMaxAge*60, false, true)
+
+	http.SetCookie(w, &accessTokenCookie)
+
+	utils.JSONFormat(w, http.StatusOK, accessToken)
 }
