@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 
+	"firebase.google.com/go/auth"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,17 +19,19 @@ type Server struct {
 	S           *http.Server
 	Router      *mux.Router
 	Logger      logging.Logger
+	FireClient  *auth.Client
 	TodoStorage storage.ReminderRepo
 	ctx         context.Context
 	config      config.Config
 }
 
 // New returns new Server.
-func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
+func New(ctx context.Context, logger logging.Logger, fireClient *auth.Client, storage storage.ReminderRepo, cfg config.Config) *Server {
 
 	server := &Server{
 		ctx:         ctx,
 		Logger:      logger,
+		FireClient:  fireClient,
 		TodoStorage: storage,
 		config:      cfg,
 	}

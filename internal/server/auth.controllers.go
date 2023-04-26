@@ -491,30 +491,16 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 
 func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var token string
-		cookie, err := r.Cookie("token")
 
-		authorizationHeader := r.Header.Get("Authorization")
-		fields := strings.Fields(authorizationHeader)
+		authorizationHeader := r.Header.Get("token")
 
-		if len(fields) != 0 && fields[0] == "Bearer" {
-			token = fields[1]
-		} else if err == nil {
-			token = cookie.Value
-		}
-
-		if token == "" {
+		token, err := server.FireClient.VerifyIDToken(server.ctx, authorizationHeader)
+		if err != nil {
 			utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
 			return
 		}
 
-		sub, err := utils.ValidateToken(token, server.config.Auth.JwtSecret)
-		if err != nil {
-			utils.JSONError(w, http.StatusUnauthorized, err)
-			return
-		}
-
-		user, err := server.TodoStorage.GetUserByID(server.ctx, int(sub.(float64)))
+		user, err := server.TodoStorage.GetUserByEmail(server.ctx, token.Claims["email"].(string))
 		if err != nil {
 			utils.JSONError(w, http.StatusBadRequest, err)
 		}
