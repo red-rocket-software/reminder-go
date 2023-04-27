@@ -45,7 +45,7 @@ func main() {
 	}
 
 	app := server.New(ctx, logger, todoStorage, fireClient, *cfg)
-	logger.Debugf("Starting reminder server on port %s", cfg.HTTP.ReminderPort)
+	logger.Debugf("Starting reminder server on port %s", cfg.HTTP.Port)
 
 	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())

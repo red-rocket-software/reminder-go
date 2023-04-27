@@ -43,7 +43,7 @@ func (server *Server) Run(cfg *config.Config) error {
 
 	server.S = &http.Server{
 
-		Addr:           ":" + cfg.HTTP.ReminderPort,
+		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        server.ConfigureReminderRouter(),
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
