@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
@@ -37,14 +37,14 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
 	reminds := []model.Todo{}
 
 	sql := fmt.Sprintf(`SELECT * FROM 
 (
 SELECT *, COUNT(*) OVER() as total_count FROM todo
 ) AS selected_count
-WHERE "User" = %d`, userID)
+WHERE "User" = '%s'`, userID)
 
 	if params.Cursor > 0 {
 		switch params.FilterOption {
@@ -252,13 +252,13 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 }
 
 // GetCompletedReminds returns list of completed reminds and error
-func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, userID int) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, userID string) ([]model.Todo, int, int, error) {
 
 	sql := fmt.Sprintf(`SELECT * FROM 
 (
 SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = true
 ) AS selected_count
- WHERE "User" = %d`, userID)
+ WHERE "User" = '%s'`, userID)
 
 	//if passed cursorID we add condition to query
 	if params.Cursor > 0 {
@@ -318,12 +318,12 @@ SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = true
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
-func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
 	sql := fmt.Sprintf(`SELECT * FROM 
 (
 SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = false
 ) AS selected_count
- WHERE "User" = %d`, userID)
+ WHERE "User" = '%s'`, userID)
 
 	//if passed cursorID we add condition to query
 	if params.Cursor > 0 {
@@ -381,7 +381,7 @@ SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = false
 
 // Truncate removes all seed data from the test database.
 func (s *TodoStorage) Truncate() error {
-	stmt := "TRUNCATE TABLE todo, users;"
+	stmt := "TRUNCATE TABLE todo, users_configs;"
 
 	if _, err := s.Postgres.Exec(context.Background(), stmt); err != nil {
 		return fmt.Errorf("truncate test database tables %v", err)
@@ -395,9 +395,9 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 	now := time.Now().Truncate(1 * time.Millisecond).UTC()
 
-	userID, err := s.SeedUser()
+	userID, err := s.SeedUserConfig()
 	if err != nil {
-		s.logger.Errorf("error seed user: %v", err)
+		s.logger.Println(err)
 	}
 
 	todos := []model.Todo{
@@ -455,22 +455,29 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	return todos, nil
 }
 
-// SeedUser seed user for tests
-func (s *TodoStorage) SeedUser() (int, error) {
-	var id int
+// SeedUserConfig seed todos for tests
+func (s *TodoStorage) SeedUserConfig() (string, error) {
 
-	const sql = `INSERT INTO users ("Name", "CreatedAt", "Email", "Password", "Provider") 
-				 VALUES ('test', '2023-02-15T02:13:34Z', 'test@gmail.com', 'test', 'test' ) returning "ID"`
-
-	row := s.Postgres.QueryRow(context.Background(), sql)
-
-	err := row.Scan(&id)
-	if err != nil {
-		s.logger.Errorf("Error create user: %v", err)
-		return 0, err
+	userConfig := model.UserConfigs{
+		ID:           "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+		Notification: false,
+		Period:       2,
+		CreatedAt:    time.Now(),
 	}
 
-	return id, nil
+	var ID string
+
+	const sql = `INSERT INTO users_configs ("ID", "Notification", "Period", "CreatedAt") 
+				 VALUES ($1, $2, $3, $4) returning "ID"`
+
+	row := s.Postgres.QueryRow(context.Background(), sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
+
+	err := row.Scan(&ID)
+	if err != nil {
+		s.logger.Errorf("Error create userConfig: %v", err)
+	}
+
+	return ID, nil
 }
 
 func (s *TodoStorage) GetRemindsForNotification(ctx context.Context) ([]model.NotificationRemind, error) {
@@ -565,4 +572,56 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 	}
 
 	return nil
+}
+
+func (s *TodoStorage) GetUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error) {
+	var configs model.UserConfigs
+
+	const sql = `SELECT "ID", "Notification", "Period", "CreatedAt", "UpdatedAt"  FROM users_configs
+    WHERE "ID" = $1 LIMIT 1`
+
+	row := s.Postgres.QueryRow(ctx, sql, userID)
+
+	err := row.Scan(
+		&configs.ID,
+		&configs.Notification,
+		&configs.Period,
+		&configs.CreatedAt,
+		&configs.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.UserConfigs{}, nil
+	}
+	if err != nil {
+		s.logger.Printf("cannot get user-configs from database: %v\n", err)
+		return model.UserConfigs{}, errors.New("cannot get user-configs from database")
+	}
+
+	return configs, nil
+}
+
+// CreateUserConfigs  store new remind entity to DB PostgresSQL
+func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error) {
+	var userConfig model.UserConfigs
+
+	userConfig.ID = userID
+	userConfig.Notification = false
+	userConfig.Period = 2
+	userConfig.CreatedAt = time.Now()
+
+	const sql = `INSERT INTO users_configs ("ID", "Notification",  "Period", "CreatedAt") 
+				 VALUES ($1, $2, $3, $4) returning "ID", "Notification",  "Period", "CreatedAt", "UpdatedAt"`
+	row := s.Postgres.QueryRow(ctx, sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
+	err := row.Scan(
+		&userConfig.ID,
+		&userConfig.Notification,
+		&userConfig.Period,
+		&userConfig.CreatedAt,
+		&userConfig.UpdatedAt,
+	)
+	if err != nil {
+		s.logger.Errorf("Error create userConfigs: %v", err)
+		return model.UserConfigs{}, err
+	}
+	return userConfig, nil
 }

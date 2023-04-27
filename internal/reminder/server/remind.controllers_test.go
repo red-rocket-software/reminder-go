@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	"github.com/red-rocket-software/reminder-go/internal/app/model"
-	mockdb "github.com/red-rocket-software/reminder-go/internal/storage/mocks"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,13 +34,13 @@ func TestControllers_AddRemind(t *testing.T) {
 		//{
 		//	name: "OK",
 		//	body: `{"description":"test", "user_id": "1", "deadline_at": "2023-03-21T16:22:00+02:00", "created_at": "19.01.2023, 22:15:30"}`,
-		//	inputTodo: model.Todo{
+		//	inputTodo: domain.Todo{
 		//		CreatedAt:   now,
 		//		UserID:      1,
 		//		Description: "test",
 		//		DeadlineAt:  dTime,
 		//	},
-		//	mockBehavior: func(store *mockdb.MockReminderRepo, input model.Todo) {
+		//	mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
 		//		store.EXPECT().CreateRemind(gomock.Any(), input).Return(0, nil)
 		//	},
 		//	expectedStatusCode:   201,
@@ -57,13 +57,13 @@ func TestControllers_AddRemind(t *testing.T) {
 		//{
 		//	name: "Error - Service error",
 		//	body: `{"description":"test", "user_id": "1", "deadline_at": "2023-03-21T16:22:00+02:00", "created_at": "19.01.2023, 22:15:30"}`,
-		//	inputTodo: model.Todo{
+		//	inputTodo: domain.Todo{
 		//		CreatedAt:   now,
 		//		UserID:      1,
 		//		Description: "test",
 		//		DeadlineAt:  dTime,
 		//	},
-		//	mockBehavior: func(store *mockdb.MockReminderRepo, input model.Todo) {
+		//	mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
 		//		store.EXPECT().CreateRemind(gomock.Any(), input).Return(0, errors.New("something went wrong"))
 		//	},
 		//	expectedStatusCode:   500,
@@ -84,9 +84,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/remind", bytes.NewBufferString(test.body))
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "currentUser", model.User{
-				ID: 1,
-			})
+			ctx = context.WithValue(ctx, "uerID", "rrdZH9ERxueDxj2m1e1T2vIQKBP2")
 			req = req.WithContext(ctx)
 
 			handler := http.HandlerFunc(server.AddRemind)
@@ -235,7 +233,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 //			params: pagination.Page{Limit: 5, Filter: "DeadlineAt", FilterOption: "ASC"},
 //			userID: 1,
 //			mockBehavior: func(store *mockdb.MockReminderRepo, params pagination.Page, userID int) {
-//				store.EXPECT().GetNewReminds(gomock.Any(), params, userID).Return([]model.Todo{{
+//				store.EXPECT().GetNewReminds(gomock.Any(), params, userID).Return([]domain.Todo{{
 //					ID:          1,
 //					Description: "test",
 //					CreatedAt:   time.Now(),
@@ -261,7 +259,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 //			req, _ := http.NewRequest(http.MethodGet, "/current", http.NoBody)
 //
 //			ctx := req.Context()
-//			ctx = context.WithValue(ctx, "currentUser", model.User{
+//			ctx = context.WithValue(ctx, "currentUser", domain.User{
 //				ID: 1,
 //			})
 //			req = req.WithContext(ctx)
@@ -295,7 +293,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 //			params: pagination.Page{Limit: 5, Filter: "DeadlineAt", FilterOption: "ASC"},
 //			userID: 1,
 //			mockBehavior: func(store *mockdb.MockReminderRepo, params pagination.Page, userID int) {
-//				store.EXPECT().GetAllReminds(gomock.Any(), params, userID).Return([]model.Todo{{
+//				store.EXPECT().GetAllReminds(gomock.Any(), params, userID).Return([]domain.Todo{{
 //					ID:          1,
 //					Description: "test",
 //					CreatedAt:   time.Now(),
@@ -321,7 +319,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 //			req, _ := http.NewRequest(http.MethodGet, "/remind", http.NoBody)
 //
 //			ctx := req.Context()
-//			ctx = context.WithValue(ctx, "currentUser", model.User{
+//			ctx = context.WithValue(ctx, "currentUser", domain.User{
 //				ID: 1,
 //			})
 //			req = req.WithContext(ctx)
@@ -408,7 +406,7 @@ func Test_DeleteRemind(t *testing.T) {
 //			},
 //			userID: 1,
 //			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.Params, userID int) {
-//				store.EXPECT().GetCompletedReminds(gomock.Any(), params, userID).Return([]model.Todo{{
+//				store.EXPECT().GetCompletedReminds(gomock.Any(), params, userID).Return([]domain.Todo{{
 //					ID:          1,
 //					Description: "test",
 //					CreatedAt:   time.Now(),
@@ -434,7 +432,7 @@ func Test_DeleteRemind(t *testing.T) {
 //			req, _ := http.NewRequest(http.MethodGet, "/completed", http.NoBody)
 //
 //			ctx := req.Context()
-//			ctx = context.WithValue(ctx, "currentUser", model.User{
+//			ctx = context.WithValue(ctx, "currentUser", domain.User{
 //				ID: 1,
 //			})
 //			req = req.WithContext(ctx)
