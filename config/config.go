@@ -9,9 +9,8 @@ import (
 // Config describes all app configuration
 type Config struct {
 	HTTP struct {
-		IP           string `env-required:"true" yaml:"ip" env:"APP_IP"`
-		ReminderPort string `env-required:"true" yaml:"reminder_port" env:"REMINDER_PORT"`
-		AuthPort     string `env-required:"true" yaml:"auth_port" env:"AUTH_PORT"`
+		IP   string `env-required:"true" yaml:"ip" env:"APP_IP"`
+		Port string `env-required:"true" yaml:"port" env:"PORT"`
 	} `yaml:"http"`
 	Postgres struct {
 		Password string `env-default:"secret" env-required:"true" yaml:"password" env:"DB_PASSWORD"`

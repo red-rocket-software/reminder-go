@@ -201,6 +201,25 @@ func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput mode
 	return nil
 }
 
+// UpdateUserConfig update user_configs. Changes notification or period
+func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input model.UserConfigs) error {
+	tn := time.Now()
+	const sql = `UPDATE users_configs SET "Notification" = $1, "Period" = $2, "UpdatedAt" = $3 WHERE "ID" = $4`
+
+	ct, err := s.Postgres.Exec(ctx, sql, input.Notification, input.Period, tn, id)
+
+	if err != nil {
+		s.logger.Errorf("unable to update user-config %v", err)
+		return err
+	}
+
+	if ct.RowsAffected() == 0 {
+		return errors.New("user configs not found")
+	}
+
+	return nil
+}
+
 // DeleteRemind deletes remind from DB
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 	const sql = `DELETE FROM todo WHERE "ID" = $1`
@@ -488,7 +507,7 @@ func (s *TodoStorage) GetRemindsForNotification(ctx context.Context) ([]model.No
 		tn := time.Now().Format("2006-01-02 15:04:05")
 
 		sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from todo t 
-INNER JOIN users u on u."ID" = t."User" 
+INNER JOIN users_configs u on u."ID" = t."User" 
 WHERE t."DeadlineAt" BETWEEN '%s' AND '%s' 
 AND t."Completed" = false 
 AND t."Notificated" = false
@@ -527,7 +546,7 @@ func (s *TodoStorage) GetRemindsForDeadlineNotification(ctx context.Context) ([]
 	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
 
 	sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from todo t 
-INNER JOIN users u on u."ID" = t."User" 
+INNER JOIN users_configs u on u."ID" = t."User" 
 WHERE t."NotifyPeriod" @> ARRAY['%s']::TIMESTAMP[] 
 AND t."Completed" = false 
 AND t."DeadlineNotify" = true`, tn)
