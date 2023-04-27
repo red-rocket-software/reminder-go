@@ -293,3 +293,17 @@ func (mr *MockReminderRepoMockRecorder) UpdateStatus(ctx, id, updateInput interf
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockReminderRepo)(nil).UpdateStatus), ctx, id, updateInput)
 }
+
+// UpdateUserConfig mocks base method.
+func (m *MockReminderRepo) UpdateUserConfig(ctx context.Context, id string, input domain.UserConfigs) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserConfig", ctx, id, input)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateUserConfig indicates an expected call of UpdateUserConfig.
+func (mr *MockReminderRepoMockRecorder) UpdateUserConfig(ctx, id, input interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserConfig", reflect.TypeOf((*MockReminderRepo)(nil).UpdateUserConfig), ctx, id, input)
+}

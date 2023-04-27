@@ -329,6 +329,28 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, remind)
 }
 
+func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	uID := vars["id"]
+
+	var input model.UserConfigs
+
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		utils.JSONError(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	err = server.TodoStorage.UpdateUserConfig(server.ctx, uID, input)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	utils.JSONFormat(w, http.StatusOK, "success")
+}
+
 // UpdateCompleteStatus update Completed field to true
 //
 //	@Description	UpdateCompleteStatus

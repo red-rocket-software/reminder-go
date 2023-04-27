@@ -34,4 +34,5 @@ type ReminderRepo interface {
 	UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error
 	GetUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error)
 	CreateUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error)
+	UpdateUserConfig(ctx context.Context, id string, input model.UserConfigs) error
 }
