@@ -20,18 +20,6 @@ type Config struct {
 		Port     string `env-default:"5432" env-required:"true" yaml:"port" env:"DB_PORT"`
 		Database string `env-default:"test_remind" env-required:"true" yaml:"database" env:"DB_DATABASE"`
 	} `yaml:"postgresql"`
-	Auth struct {
-		GoogleAuthClientID     string `env-required:"true" yaml:"google_auth_client_id" env:"GOOGLE_AUTH_CLIENT_ID"`
-		GoogleAuthClientSecret string `env-required:"true" yaml:"google_auth_client_secret" env:"GOOGLE_AUTH_CLIENT_SECRET"`
-		GoogleAuthRedirectURL  string `env-required:"true" yaml:"google_auth_redirect_url" env:"GOOGLE_AUTH_REDIRECT_URL"`
-		JwtSecret              string `env-required:"true" yaml:"jwt-secret" env:"JWT_SECRET"`
-		TokenExpiredIn         int    `env-required:"true" yaml:"token-expired-in" env:"TOKEN_EXPIRED_IN"`
-		JwtRefreshSecret       string `env-required:"true" yaml:"jwt_refresh_secret" env:"JWT_REFRESH_SECRET"`
-		JwtRefreshKeyExpire    int    `env-required:"true" yaml:"jwt_refresh_key_expire_hours_count" env:"JWT_REFRESH_KEY_EXPIRE_HOURS_COUNT"`
-		TokenMaxAge            int    `env-required:"true" yaml:"token-maxage" env:"TOKEN_MAXAGE"`
-		RefreshTokenMaxAge     int    `env-required:"true" yaml:"refresh-token-maxage" env:"REFRESH_TOKEN_MAXAGE"`
-		FrontendOrigin         string `env-required:"true" yaml:"frontend_origin" env:"FRONTEND_ORIGIN"`
-	} `yaml:"auth"`
 	Email struct {
 		EmailSenderName     string `env-required:"true" yaml:"email_sender_name" env:"EMAIL_SENDER_NAME"`
 		EmailSenderAddress  string `env-required:"true" yaml:"email_sender_address" env:"EMAIL_SENDER_ADDRESS"`

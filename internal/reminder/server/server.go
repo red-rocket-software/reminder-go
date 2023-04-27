@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
@@ -19,17 +20,19 @@ type Server struct {
 	Router      *mux.Router
 	Logger      logging.Logger
 	TodoStorage storage.ReminderRepo
+	FireClient  *auth.Client
 	ctx         context.Context
 	config      config.Config
 }
 
 // New returns new Server.
-func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
+func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, fireClient *auth.Client, cfg config.Config) *Server {
 
 	server := &Server{
 		ctx:         ctx,
 		Logger:      logger,
 		TodoStorage: storage,
+		FireClient:  fireClient,
 		config:      cfg,
 	}
 	return server

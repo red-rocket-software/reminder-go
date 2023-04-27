@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "todo" (
   "ID" serial PRIMARY KEY,
-  "User" serial NOT NULL,
+  "User" varchar NOT NULL,
   "Title" varchar NOT NULL,
   "Description" varchar NOT NULL,
   "CreatedAt" timestamp NOT NULL,
@@ -14,17 +14,12 @@ CREATE TABLE IF NOT EXISTS "todo" (
 
 CREATE INDEX ON "todo" ("User");
 
-CREATE TABLE IF NOT EXISTS "users" (
-  "ID" serial PRIMARY KEY,
-  "Name" varchar NOT NULL,
-  "Email" varchar NOT NULL UNIQUE ,
-  "Password" varchar NOT NULL,
-  "Provider" varchar NOT NULL,
-  "Verified" bool DEFAULT false,
-  "CreatedAt" timestamp NOT NULL,
-  "UpdatedAt" timestamp,
+CREATE TABLE IF NOT EXISTS "users_configs" (
+  "ID" varchar NOT NULL PRIMARY KEY,
   "Notification" bool NOT NULL DEFAULT false,
-  "Period" INT
+  "Period" INT,
+  "CreatedAt" timestamp NOT NULL,
+  "UpdatedAt" timestamp
 );
 
-ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users" ("ID") ON DELETE CASCADE;
+ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users_configs" ("ID");

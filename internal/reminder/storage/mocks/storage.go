@@ -11,7 +11,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	storage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	domain0 "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	pagination "github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
@@ -53,6 +52,21 @@ func (mr *MockReminderRepoMockRecorder) CreateRemind(ctx, todo interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRemind", reflect.TypeOf((*MockReminderRepo)(nil).CreateRemind), ctx, todo)
 }
 
+// CreateUserConfigs mocks base method.
+func (m *MockReminderRepo) CreateUserConfigs(ctx context.Context, userID string) (domain.UserConfigs, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUserConfigs", ctx, userID)
+	ret0, _ := ret[0].(domain.UserConfigs)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUserConfigs indicates an expected call of CreateUserConfigs.
+func (mr *MockReminderRepoMockRecorder) CreateUserConfigs(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserConfigs", reflect.TypeOf((*MockReminderRepo)(nil).CreateUserConfigs), ctx, userID)
+}
+
 // DeleteRemind mocks base method.
 func (m *MockReminderRepo) DeleteRemind(ctx context.Context, id int) error {
 	m.ctrl.T.Helper()
@@ -68,7 +82,7 @@ func (mr *MockReminderRepoMockRecorder) DeleteRemind(ctx, id interface{}) *gomoc
 }
 
 // GetAllReminds mocks base method.
-func (m *MockReminderRepo) GetAllReminds(ctx context.Context, params pagination.Page, userID int) ([]domain.Todo, int, int, error) {
+func (m *MockReminderRepo) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]domain.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]domain.Todo)
@@ -85,7 +99,7 @@ func (mr *MockReminderRepoMockRecorder) GetAllReminds(ctx, params, userID interf
 }
 
 // GetCompletedReminds mocks base method.
-func (m *MockReminderRepo) GetCompletedReminds(ctx context.Context, params storage.Params, userID int) ([]domain.Todo, int, int, error) {
+func (m *MockReminderRepo) GetCompletedReminds(ctx context.Context, params storage.Params, userID string) ([]domain.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCompletedReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]domain.Todo)
@@ -102,7 +116,7 @@ func (mr *MockReminderRepoMockRecorder) GetCompletedReminds(ctx, params, userID 
 }
 
 // GetNewReminds mocks base method.
-func (m *MockReminderRepo) GetNewReminds(ctx context.Context, params pagination.Page, userID int) ([]domain.Todo, int, int, error) {
+func (m *MockReminderRepo) GetNewReminds(ctx context.Context, params pagination.Page, userID string) ([]domain.Todo, int, int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNewReminds", ctx, params, userID)
 	ret0, _ := ret[0].([]domain.Todo)
@@ -164,19 +178,19 @@ func (mr *MockReminderRepoMockRecorder) GetRemindsForNotification(ctx interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindsForNotification", reflect.TypeOf((*MockReminderRepo)(nil).GetRemindsForNotification), ctx)
 }
 
-// GetUserByID mocks base method.
-func (m *MockReminderRepo) GetUserByID(ctx context.Context, id int) (domain0.User, error) {
+// GetUserConfigs mocks base method.
+func (m *MockReminderRepo) GetUserConfigs(ctx context.Context, userID string) (domain.UserConfigs, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
-	ret0, _ := ret[0].(domain0.User)
+	ret := m.ctrl.Call(m, "GetUserConfigs", ctx, userID)
+	ret0, _ := ret[0].(domain.UserConfigs)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserByID indicates an expected call of GetUserByID.
-func (mr *MockReminderRepoMockRecorder) GetUserByID(ctx, id interface{}) *gomock.Call {
+// GetUserConfigs indicates an expected call of GetUserConfigs.
+func (mr *MockReminderRepoMockRecorder) GetUserConfigs(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockReminderRepo)(nil).GetUserByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserConfigs", reflect.TypeOf((*MockReminderRepo)(nil).GetUserConfigs), ctx, userID)
 }
 
 // SeedTodos mocks base method.
@@ -194,19 +208,19 @@ func (mr *MockReminderRepoMockRecorder) SeedTodos() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedTodos", reflect.TypeOf((*MockReminderRepo)(nil).SeedTodos))
 }
 
-// SeedUser mocks base method.
-func (m *MockReminderRepo) SeedUser() (int, error) {
+// SeedUserConfig mocks base method.
+func (m *MockReminderRepo) SeedUserConfig() (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SeedUser")
-	ret0, _ := ret[0].(int)
+	ret := m.ctrl.Call(m, "SeedUserConfig")
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SeedUser indicates an expected call of SeedUser.
-func (mr *MockReminderRepoMockRecorder) SeedUser() *gomock.Call {
+// SeedUserConfig indicates an expected call of SeedUserConfig.
+func (mr *MockReminderRepoMockRecorder) SeedUserConfig() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedUser", reflect.TypeOf((*MockReminderRepo)(nil).SeedUser))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedUserConfig", reflect.TypeOf((*MockReminderRepo)(nil).SeedUserConfig))
 }
 
 // Truncate mocks base method.
