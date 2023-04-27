@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
-	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,9 +84,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/remind", bytes.NewBufferString(test.body))
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "currentUser", userModel.User{
-				ID: 1,
-			})
+			ctx = context.WithValue(ctx, "uerID", "rrdZH9ERxueDxj2m1e1T2vIQKBP2")
 			req = req.WithContext(ctx)
 
 			handler := http.HandlerFunc(server.AddRemind)

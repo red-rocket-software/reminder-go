@@ -1,2 +1,2 @@
 DROP TABLE IF EXISTS todo;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS users_configs;

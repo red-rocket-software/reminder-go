@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	userModel "github.com/red-rocket-software/reminder-go/internal/user/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
@@ -60,7 +59,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("currentUser").(userModel.User)
+	userID := r.Context().Value("userID").(string)
 
 	var todo model.Todo
 
@@ -101,7 +100,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.Description = input.Description
 	todo.Title = input.Title
 	todo.DeadlineAt = deadlineParseTime.Truncate(time.Minute)
-	todo.UserID = user.ID
+	todo.UserID = userID
 	todo.DeadlineNotify = input.DeadlineNotify
 	todo.NotifyPeriod = np
 
@@ -212,9 +211,9 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(userModel.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
+	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, userID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -447,9 +446,9 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 		},
 	}
 
-	user := r.Context().Value("currentUser").(userModel.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, userID)
 
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
@@ -527,9 +526,9 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(userModel.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, userID)
 
 	res := model.TodoResponse{
 		Todos: reminds,
@@ -548,37 +547,57 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, res)
 }
 
+func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	uID := vars["id"]
+
+	if uID == "" {
+		utils.JSONError(w, http.StatusInternalServerError, errors.New("empty or wrong userID"))
+		return
+	}
+
+	var userConfigs model.UserConfigs
+	var err error
+
+	userConfigs, err = server.TodoStorage.GetUserConfigs(server.ctx, uID)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	} else if userConfigs == (model.UserConfigs{}) {
+		userConfigs, err = server.TodoStorage.CreateUserConfigs(server.ctx, uID)
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	utils.JSONFormat(w, http.StatusOK, userConfigs)
+}
+
 func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var token string
-		cookie, err := r.Cookie("token")
 
 		authorizationHeader := r.Header.Get("Authorization")
 		fields := strings.Fields(authorizationHeader)
 
 		if len(fields) != 0 && fields[0] == "Bearer" {
 			token = fields[1]
-		} else if err == nil {
-			token = cookie.Value
-		}
-
-		if token == "" {
+		} else {
 			utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
 			return
 		}
 
-		sub, err := utils.ValidateToken(token, server.config.Auth.JwtSecret)
+		verifyToken, err := server.FireClient.VerifyIDToken(server.ctx, token)
 		if err != nil {
-			utils.JSONError(w, http.StatusUnauthorized, err)
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("error verify token"))
 			return
 		}
 
-		user, err := server.TodoStorage.GetUserByID(server.ctx, int(sub.(float64)))
-		if err != nil {
-			utils.JSONError(w, http.StatusBadRequest, err)
-		}
+		userID := verifyToken.Claims["user_id"].(string)
 
-		ctx := context.WithValue(r.Context(), "currentUser", user)
+		ctx := context.WithValue(r.Context(), "userID", userID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

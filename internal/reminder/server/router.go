@@ -25,6 +25,7 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
 	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/user-configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
