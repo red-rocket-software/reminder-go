@@ -2,13 +2,12 @@ package server
 
 import (
 	"context"
-
-	"firebase.google.com/go/auth"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
