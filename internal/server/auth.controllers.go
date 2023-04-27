@@ -492,9 +492,19 @@ func (server *Server) SignInOrSignUp(w http.ResponseWriter, r *http.Request) {
 func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		authorizationHeader := r.Header.Get("token")
+		var tokenID string
 
-		token, err := server.FireClient.VerifyIDToken(server.ctx, authorizationHeader)
+		authorizationHeader := r.Header.Get("Authorization")
+
+		fields := strings.Fields(authorizationHeader)
+
+		if len(fields) != 0 && fields[0] == "Bearer" {
+			tokenID = fields[1]
+		} else {
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("token not provided"))
+		}
+
+		token, err := server.FireClient.VerifyIDToken(server.ctx, tokenID)
 		if err != nil {
 			utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
 			return
