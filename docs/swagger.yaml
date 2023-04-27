@@ -219,7 +219,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: auth user, return user and save token to cookie
+      description: user user, return user and save token to cookie
       parameters:
       - description: user email and password
         in: body
@@ -248,7 +248,7 @@ paths:
             $ref: '#/definitions/utils.HTTPError'
       summary: SignInUser
       tags:
-      - auth
+      - user
   /logout:
     get:
       description: logout user and remove cookie
@@ -263,7 +263,7 @@ paths:
       - BasicAuth: []
       summary: LogOutUser
       tags:
-      - auth
+      - user
   /register:
     post:
       consumes:
@@ -293,7 +293,7 @@ paths:
             $ref: '#/definitions/utils.HTTPError'
       summary: SignUpUser
       tags:
-      - auth
+      - user
   /remind:
     get:
       consumes:

@@ -67,7 +67,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.TodoResponse"
+                            "$ref": "#/definitions/domain.TodoResponse"
                         }
                     },
                     "400": {
@@ -123,7 +123,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.TodoResponse"
+                            "$ref": "#/definitions/domain.TodoResponse"
                         }
                     },
                     "400": {
@@ -143,7 +143,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "auth user, return user and save token to cookie",
+                "description": "user user, return user and save token to cookie",
                 "consumes": [
                     "application/json"
                 ],
@@ -151,7 +151,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "user"
                 ],
                 "summary": "SignInUser",
                 "parameters": [
@@ -161,7 +161,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.LoginUserInput"
+                            "$ref": "#/definitions/domain.LoginUserInput"
                         }
                     }
                 ],
@@ -169,7 +169,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/model.User"
+                            "$ref": "#/definitions/domain.User"
                         }
                     },
                     "401": {
@@ -205,7 +205,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "user"
                 ],
                 "summary": "LogOutUser",
                 "responses": {
@@ -228,7 +228,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "user"
                 ],
                 "summary": "SignUpUser",
                 "parameters": [
@@ -238,7 +238,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.RegisterUserInput"
+                            "$ref": "#/definitions/domain.RegisterUserInput"
                         }
                     }
                 ],
@@ -302,7 +302,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.TodoResponse"
+                            "$ref": "#/definitions/domain.TodoResponse"
                         }
                     },
                     "400": {
@@ -343,7 +343,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TodoInput"
+                            "$ref": "#/definitions/domain.TodoInput"
                         }
                     }
                 ],
@@ -406,7 +406,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Todo"
+                            "$ref": "#/definitions/domain.Todo"
                         }
                     },
                     "400": {
@@ -460,7 +460,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TodoUpdateInput"
+                            "$ref": "#/definitions/domain.TodoUpdateInput"
                         }
                     }
                 ],
@@ -573,7 +573,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.TodoUpdateStatusInput"
+                            "$ref": "#/definitions/domain.TodoUpdateStatusInput"
                         }
                     }
                 ],
@@ -607,7 +607,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.LoginUserInput": {
+        "domain.LoginUserInput": {
             "type": "object",
             "required": [
                 "email",
@@ -622,7 +622,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.RegisterUserInput": {
+        "domain.RegisterUserInput": {
             "type": "object",
             "required": [
                 "email",
@@ -642,7 +642,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Todo": {
+        "domain.Todo": {
             "type": "object",
             "properties": {
                 "completed": {
@@ -668,7 +668,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TodoInput": {
+        "domain.TodoInput": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -682,7 +682,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TodoResponse": {
+        "domain.TodoResponse": {
             "type": "object",
             "properties": {
                 "pageInfo": {
@@ -691,12 +691,12 @@ const docTemplate = `{
                 "todos": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Todo"
+                        "$ref": "#/definitions/domain.Todo"
                     }
                 }
             }
         },
-        "model.TodoUpdateInput": {
+        "domain.TodoUpdateInput": {
             "type": "object",
             "properties": {
                 "completed": {
@@ -713,7 +713,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.TodoUpdateStatusInput": {
+        "domain.TodoUpdateStatusInput": {
             "type": "object",
             "properties": {
                 "completed": {
@@ -724,7 +724,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.User": {
+        "domain.User": {
             "type": "object",
             "properties": {
                 "created_at": {

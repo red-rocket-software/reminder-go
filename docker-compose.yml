@@ -2,12 +2,11 @@ version: "3.9"
 
 volumes:
   db-data:
-  api:
 
 services:
-  db:
+  postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:15-alpine
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
@@ -17,22 +16,50 @@ services:
     restart: on-failure
     volumes:
       - ./db-data:/var/lib/postgresql/data
+       # copy the sql script to create tables
+      - ./db/migrations/000001_create_todo.up.sql:/docker-entrypoint-initdb.d/000001_create_todo.up.sql
 
-  api:
+  auth:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: reminder-api
+      dockerfile: ./dockers/Dockerfile-auth
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=reminder
       - POSTGRES_PORT=5432
       - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+    ports:
+      - "8001:8001"
+
+  reminder:
+    build:
+      context: .
+      dockerfile: ./dockers/Dockerfile-reminder
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=reminder
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
     ports:
       - "8000:8000"
-    depends_on:
-      - db
 
+  worker:
+    build:
+      context: .
+      dockerfile: ./dockers/Dockerfile-worker
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=reminder
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
 
 

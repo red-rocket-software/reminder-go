@@ -1,17 +1,19 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/red-rocket-software/reminder-go/internal/app/model"
-	"github.com/red-rocket-software/reminder-go/internal/storage"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/red-rocket-software/reminder-go/utils"
 )
@@ -34,7 +36,7 @@ type RemindHandlers interface {
 //	@Tags			reminds
 //	@Accept			json
 //	@Produce		json
-//	@Param			input	body		model.TodoInput	true	"remind info"
+//	@Param			input	body		domain.TodoInput	true	"remind info"
 //	@Success		201		{string}	string			"Remind is successfully created"
 //
 //	@Failure		422		{object}	utils.HTTPError
@@ -57,7 +59,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.Context().Value("currentUser").(model.User)
+	userID := r.Context().Value("userID").(string)
 
 	var todo model.Todo
 
@@ -98,7 +100,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	todo.Description = input.Description
 	todo.Title = input.Title
 	todo.DeadlineAt = deadlineParseTime.Truncate(time.Minute)
-	todo.UserID = user.ID
+	todo.UserID = userID
 	todo.DeadlineNotify = input.DeadlineNotify
 	todo.NotifyPeriod = np
 
@@ -163,7 +165,7 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			limit	query		string	true	"limit"
 //	@Param			cursor	query		string	true	"cursor"
-//	@Success		200		{object}	model.TodoResponse
+//	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
@@ -209,9 +211,9 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(model.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, user.ID)
+	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, userID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -237,7 +239,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		int	true	"id"
-//	@Success		200	{object}	model.Todo
+//	@Success		200	{object}	domain.Todo
 //
 //	@Failure		400	{object}	utils.HTTPError
 //	@Failure		404	{object}	utils.HTTPError
@@ -274,7 +276,7 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int						true	"id"
-//	@Param			input	body		model.TodoUpdateInput	true	"update info"
+//	@Param			input	body		domain.TodoUpdateInput	true	"update info"
 //	@Success		200		{string}	string					"remind successfully updated"
 //
 //	@Failure		400		{object}	utils.HTTPError
@@ -335,7 +337,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int							true	"id"
-//	@Param			input	body		model.TodoUpdateStatusInput	true	"update info"
+//	@Param			input	body		domain.TodoUpdateStatusInput	true	"update info"
 //	@Success		200		{string}	string						"remind status updated"
 //
 //	@Failure		400		{object}	utils.HTTPError
@@ -387,7 +389,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 //	@Param			cursor	query		string	true	"cursor"
 //	@Param			start	query		string	true	"start of time range"
 //	@Param			end		query		string	true	"end of time range"
-//	@Success		200		{object}	model.TodoResponse
+//	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
@@ -444,9 +446,9 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 		},
 	}
 
-	user := r.Context().Value("currentUser").(model.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, userID)
 
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
@@ -475,7 +477,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 //	@Produce		json
 //	@Param			limit	query		string	true	"limit"
 //	@Param			cursor	query		string	true	"cursor"
-//	@Success		200		{object}	model.TodoResponse
+//	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
@@ -524,9 +526,9 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		FilterOption: FilterOption,
 	}
 
-	user := r.Context().Value("currentUser").(model.User)
+	userID := r.Context().Value("userID").(string)
 
-	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, user.ID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, userID)
 
 	res := model.TodoResponse{
 		Todos: reminds,
@@ -543,4 +545,60 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)
+}
+
+func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	uID := vars["id"]
+
+	if uID == "" {
+		utils.JSONError(w, http.StatusInternalServerError, errors.New("empty or wrong userID"))
+		return
+	}
+
+	var userConfigs model.UserConfigs
+	var err error
+
+	userConfigs, err = server.TodoStorage.GetUserConfigs(server.ctx, uID)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	} else if userConfigs == (model.UserConfigs{}) {
+		userConfigs, err = server.TodoStorage.CreateUserConfigs(server.ctx, uID)
+		if err != nil {
+			utils.JSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	utils.JSONFormat(w, http.StatusOK, userConfigs)
+}
+
+func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var token string
+
+		authorizationHeader := r.Header.Get("Authorization")
+		fields := strings.Fields(authorizationHeader)
+
+		if len(fields) != 0 && fields[0] == "Bearer" {
+			token = fields[1]
+		} else {
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("you are not logged in"))
+			return
+		}
+
+		verifyToken, err := server.FireClient.VerifyIDToken(server.ctx, token)
+		if err != nil {
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("error verify token"))
+			return
+		}
+
+		userID := verifyToken.Claims["user_id"].(string)
+
+		ctx := context.WithValue(r.Context(), "userID", userID)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

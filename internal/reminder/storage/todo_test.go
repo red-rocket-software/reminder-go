@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/red-rocket-software/reminder-go/internal/app/model"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/pagination"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,8 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 		}
 	}()
 
-	userID, _ := testStorage.SeedUser()
+	userID, err := testStorage.SeedUserConfig()
+	require.NoError(t, err)
 
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 
@@ -63,7 +64,8 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 
-	userID, _ := testStorage.SeedUser()
+	userID, err := testStorage.SeedUserConfig()
+	require.NoError(t, err)
 
 	insertTodo := model.Todo{
 		Description: "test",
@@ -106,7 +108,7 @@ func TestStorageTodo_GetNewReminds(t *testing.T) {
 	type args struct {
 		ctx    context.Context
 		params pagination.Page
-		userID int
+		userID string
 	}
 	tests := []struct {
 		name    string
@@ -173,7 +175,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 	type args struct {
 		ctx         context.Context
 		fetchParams pagination.Page
-		userID      int
+		userID      string
 	}
 	tests := []struct {
 		name    string
@@ -238,7 +240,7 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 	type args struct {
 		ctx    context.Context
 		params Params
-		userID int
+		userID string
 	}
 	tests := []struct {
 		name    string
