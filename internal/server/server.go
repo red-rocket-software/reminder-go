@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
-
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"firebase.google.com/go/auth"
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/internal/storage"
@@ -18,17 +18,19 @@ type Server struct {
 	S           *http.Server
 	Router      *mux.Router
 	Logger      logging.Logger
+	FireClient  *auth.Client
 	TodoStorage storage.ReminderRepo
 	ctx         context.Context
 	config      config.Config
 }
 
 // New returns new Server.
-func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, cfg config.Config) *Server {
+func New(ctx context.Context, logger logging.Logger, fireClient *auth.Client, storage storage.ReminderRepo, cfg config.Config) *Server {
 
 	server := &Server{
 		ctx:         ctx,
 		Logger:      logger,
+		FireClient:  fireClient,
 		TodoStorage: storage,
 		config:      cfg,
 	}

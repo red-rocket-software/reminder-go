@@ -51,5 +51,4 @@ func main() {
 	if err := app.Run(cfg); err != nil {
 		logger.Fatalf("%s", err.Error())
 	}
-
 }
