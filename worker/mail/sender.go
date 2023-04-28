@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/smtp"
 
@@ -61,5 +62,7 @@ func (sender *GmailSender) SendEmail(
 	}
 
 	smtpAuth := smtp.PlainAuth("", sender.fromEmailAddress, sender.fromEmailPassword, smtpAuthAddress)
-	return e.Send(smtpServerAddress, smtpAuth)
+	t := &tls.Config{InsecureSkipVerify: true}
+	return e.SendWithStartTLS(smtpServerAddress, smtpAuth, t)
+	//return e.Send(smtpServerAddress, smtpAuth)
 }
