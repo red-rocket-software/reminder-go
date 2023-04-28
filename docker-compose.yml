@@ -18,36 +18,21 @@ services:
       - ./db-data:/var/lib/postgresql/data
        # copy the sql script to create tables
       - ./db/migrations/000001_create_todo.up.sql:/docker-entrypoint-initdb.d/000001_create_todo.up.sql
-
-  auth:
-    build:
-      context: .
-      dockerfile: ./dockers/Dockerfile-auth
-    environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=reminder
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-    depends_on:
-      - postgres
-    ports:
-      - "8001:8001"
-
-  reminder:
-    build:
-      context: .
-      dockerfile: ./dockers/Dockerfile-reminder
-    environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=reminder
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=postgres
-    depends_on:
-      - postgres
-    ports:
-      - "8000:8000"
+#
+#  reminder:
+#    build:
+#      context: .
+#      dockerfile: ./dockers/Dockerfile-reminder
+#    environment:
+#      - POSTGRES_USER=root
+#      - POSTGRES_PASSWORD=secret
+#      - POSTGRES_DB=reminder
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_HOST=postgres
+#    depends_on:
+#      - postgres
+#    ports:
+#      - "8000:8000"
 
   worker:
     build:
@@ -61,5 +46,8 @@ services:
       - POSTGRES_HOST=postgres
     depends_on:
       - postgres
+    ports:
+      - "587:587"
+
 
 

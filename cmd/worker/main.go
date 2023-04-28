@@ -45,26 +45,23 @@ func main() {
 	//run worker in scheduler
 	c := make(chan os.Signal, 1)
 	signal.Notify(c)
-	stop := make(chan bool)
+	stop := make(chan error)
 
 	ticker := time.NewTicker(time.Second * 10) // worker runs every 10 second
 
 	go func() {
-		defer func() { stop <- true }()
 		for {
 			select {
 			case <-ticker.C:
-				logger.Info("processing worker notification...")
 				err = newWorker.ProcessSendNotification()
 				if err != nil {
 					logger.Errorf("error to process worker send notification: %v", err)
-					return
+					stop <- err
 				}
-				logger.Info("processing worker deadline notification...")
 				err = newWorker.ProcessSendDeadlineNotification()
 				if err != nil {
 					logger.Errorf("error to process worker send deadline notification: %v", err)
-					return
+					stop <- err
 				}
 			case <-stop:
 				logger.Info("closing goroutine")
@@ -75,8 +72,6 @@ func main() {
 	}()
 	<-c
 	defer ticker.Stop()
-
-	stop <- true
 
 	<-stop
 	logger.Info("Stop application")
