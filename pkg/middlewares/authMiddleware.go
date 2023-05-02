@@ -1,5 +1,7 @@
 package middlewares
 
+// recommended to read it again: https://go.dev/doc/effective_go#package-names
+
 //func AuthMiddleware(next http.Handler) http.Handler {
 //	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 //		var token string
