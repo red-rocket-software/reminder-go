@@ -26,6 +26,7 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/user-configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
+	// dont use verb in url path!
 	privateRoute.HandleFunc("/update-configs/{id}", server.UpdateUserConfig).Methods("PUT", "OPTIONS")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)

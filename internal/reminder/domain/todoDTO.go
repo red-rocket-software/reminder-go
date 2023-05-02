@@ -1,5 +1,7 @@
 package domain
 
+// bad name for file, please call more simple and clear, all why you can't include it in one file todo.go?
+
 import (
 	"time"
 

@@ -1,5 +1,7 @@
 package utils
 
+// why utils is not under internal package?
+
 import (
 	"encoding/json"
 	"fmt"

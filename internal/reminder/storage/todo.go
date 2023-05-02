@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
@@ -38,7 +37,8 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 
 // GetAllReminds return all todos in DB PostgreSQL
 func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
-	reminds := []model.Todo{}
+	// this is better!
+	var reminds []model.Todo
 
 	sql := fmt.Sprintf(`SELECT * FROM 
 (
@@ -168,7 +168,6 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 
 // UpdateNotification update Notificated field
 func (s *TodoStorage) UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error {
-
 	sql := `UPDATE todo SET "Notificated" = $1 WHERE "ID" = $2`
 
 	ct, err := s.Postgres.Exec(ctx, sql, dao.Notificated, id)

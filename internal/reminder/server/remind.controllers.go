@@ -29,6 +29,8 @@ type RemindHandlers interface {
 	GetCurrentReminds(w http.ResponseWriter, r *http.Request)
 }
 
+// TODO: why you choose this way as a docs?
+
 // AddRemind godoc
 //
 //	@Description	AddRemind

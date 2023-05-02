@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// TODO: This variables should be stored in env variables, NOT HARD CODE!
 	smtpAuthAddress   = "smtp.gmail.com"
 	smtpServerAddress = "smtp.gmail.com:587"
 )
@@ -53,6 +54,15 @@ func (sender *GmailSender) SendEmail(
 	e.To = to
 	e.Cc = cc
 	e.Bcc = bcc
+	// please make it better like this
+	// e = &email.Email{
+	//	 From : fmt.Sprintf("%s <%s>", sender.name, sender.fromEmailAddress),
+	//	 Subject: subject,
+	//	 HTML: []byte(content),
+	//	 To: to,
+	//	 Cc: cc,
+	//	 Bcc: bcc,
+	// }
 
 	for _, f := range attachFiles {
 		_, err := e.AttachFile(f)
@@ -64,5 +74,6 @@ func (sender *GmailSender) SendEmail(
 	smtpAuth := smtp.PlainAuth("", sender.fromEmailAddress, sender.fromEmailPassword, smtpAuthAddress)
 	t := &tls.Config{InsecureSkipVerify: true}
 	return e.SendWithStartTLS(smtpServerAddress, smtpAuth, t)
+	// why do you need next line?
 	//return e.Send(smtpServerAddress, smtpAuth)
 }

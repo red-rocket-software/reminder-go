@@ -1,5 +1,7 @@
 package worker
 
+// TODO: why did you call this block as worker? call it like notifier
+
 import (
 	"context"
 	"fmt"

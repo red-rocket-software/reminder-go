@@ -1,5 +1,7 @@
 package pagination
 
+// why did you add pagination module in pkg?
+
 // Page defines the page parameters
 type Page struct {
 	// Cursor describes the position in the database to start from
