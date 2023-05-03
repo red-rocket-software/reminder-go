@@ -40,11 +40,9 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
 	reminds := []model.Todo{}
 
-	sql := fmt.Sprintf(`SELECT * FROM 
-(
-SELECT *, COUNT(*) OVER() as total_count FROM todo
-) AS selected_count
-WHERE "User" = '%s'`, userID)
+	sql := fmt.Sprintf(`SELECT *, (
+SELECT COUNT(*) FROM todo WHERE "User" = '%s') as total_count
+FROM todo WHERE "User" = '%s'`, userID, userID)
 
 	if params.Cursor > 0 {
 		switch params.FilterOption {
@@ -273,11 +271,9 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 // GetCompletedReminds returns list of completed reminds and error
 func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, userID string) ([]model.Todo, int, int, error) {
 
-	sql := fmt.Sprintf(`SELECT * FROM 
-(
-SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = true
-) AS selected_count
- WHERE "User" = '%s'`, userID)
+	sql := fmt.Sprintf(`SELECT *, (
+SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = true) as total_count
+FROM todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
 
 	//if passed cursorID we add condition to query
 	if params.Cursor > 0 {

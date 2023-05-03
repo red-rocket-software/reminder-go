@@ -50,6 +50,20 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "filter",
+                        "name": "filter",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filterOptions",
+                        "name": "filterOptions",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
                         "description": "start of time range",
                         "name": "start",
                         "in": "query",
@@ -87,11 +101,6 @@ const docTemplate = `{
         },
         "/current": {
             "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "GetCurrentReminds",
                 "consumes": [
                     "application/json"
@@ -115,6 +124,20 @@ const docTemplate = `{
                         "type": "string",
                         "description": "cursor",
                         "name": "cursor",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter",
+                        "name": "filter",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filterOption",
+                        "name": "filterOption",
                         "in": "query",
                         "required": true
                     }
@@ -141,136 +164,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/login": {
-            "post": {
-                "description": "user user, return user and save token to cookie",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "SignInUser",
-                "parameters": [
-                    {
-                        "description": "user email and password",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.LoginUserInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/domain.User"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/logout": {
-            "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
-                "description": "logout user and remove cookie",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "LogOutUser",
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/register": {
-            "post": {
-                "description": "create user account",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "SignUpUser",
-                "parameters": [
-                    {
-                        "description": "user info",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.RegisterUserInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "User is successfully created id: 1",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
         "/remind": {
             "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "GetAllReminds",
                 "consumes": [
                     "application/json"
@@ -294,6 +189,20 @@ const docTemplate = `{
                         "type": "string",
                         "description": "cursor",
                         "name": "cursor",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter",
+                        "name": "filter",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filterOptions",
+                        "name": "filterOptions",
                         "in": "query",
                         "required": true
                     }
@@ -320,11 +229,6 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "AddRemind",
                 "consumes": [
                     "application/json"
@@ -349,7 +253,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Remind is successfully created",
+                        "description": "Created",
                         "schema": {
                             "type": "string"
                         }
@@ -377,11 +281,6 @@ const docTemplate = `{
         },
         "/remind/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "GetRemindByID",
                 "consumes": [
                     "application/json"
@@ -430,11 +329,6 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "UpdateRemind",
                 "consumes": [
                     "application/json"
@@ -466,7 +360,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "remind successfully updated",
+                        "description": "OK",
                         "schema": {
                             "type": "string"
                         }
@@ -494,11 +388,6 @@ const docTemplate = `{
         },
         "/remind{id}": {
             "delete": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "DeleteRemind",
                 "consumes": [
                     "application/json"
@@ -543,11 +432,6 @@ const docTemplate = `{
         },
         "/status/{id}": {
             "put": {
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "description": "UpdateCompleteStatus",
                 "consumes": [
                     "application/json"
@@ -604,44 +488,62 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/update-configs/{id}": {
+            "put": {
+                "description": "UpdateUserConfig",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_config"
+                ],
+                "summary": "update user_config with given fields",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "update info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UserConfigs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "domain.LoginUserInput": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.RegisterUserInput": {
-            "type": "object",
-            "required": [
-                "email",
-                "name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 6
-                }
-            }
-        },
         "domain.Todo": {
             "type": "object",
             "properties": {
@@ -654,6 +556,9 @@ const docTemplate = `{
                 "deadline_at": {
                     "type": "string"
                 },
+                "deadline_notify": {
+                    "type": "boolean"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -663,8 +568,20 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "notificated": {
+                    "type": "boolean"
+                },
+                "notify_period": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -677,7 +594,19 @@ const docTemplate = `{
                 "deadline_at": {
                     "type": "string"
                 },
+                "deadline_notify": {
+                    "type": "boolean"
+                },
                 "description": {
+                    "type": "string"
+                },
+                "notify_period": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -685,6 +614,9 @@ const docTemplate = `{
         "domain.TodoResponse": {
             "type": "object",
             "properties": {
+                "count": {
+                    "type": "integer"
+                },
                 "pageInfo": {
                     "$ref": "#/definitions/pagination.PageInfo"
                 },
@@ -705,10 +637,25 @@ const docTemplate = `{
                 "deadline_at": {
                     "type": "string"
                 },
+                "deadline_notify": {
+                    "type": "boolean"
+                },
                 "description": {
                     "type": "string"
                 },
                 "finished_at": {
+                    "type": "string"
+                },
+                "notificated": {
+                    "type": "boolean"
+                },
+                "notify_period": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -724,35 +671,23 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.User": {
+        "domain.UserConfigs": {
             "type": "object",
             "properties": {
+                "ID": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
+                "notification": {
+                    "type": "boolean"
                 },
-                "id": {
+                "period": {
                     "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "photo": {
-                    "type": "string"
-                },
-                "provider": {
-                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
-                },
-                "verified": {
-                    "type": "boolean"
                 }
             }
         },
@@ -762,6 +697,14 @@ const docTemplate = `{
                 "cursor": {
                     "description": "Cursor describes the position in the database to start from",
                     "type": "integer"
+                },
+                "filter": {
+                    "description": "Filter describe filter params - by DeadlineAt or CreateAt",
+                    "type": "string"
+                },
+                "filterOption": {
+                    "description": "FilterOption describe filterOption params - DESC or ASC",
+                    "type": "string"
                 },
                 "limit": {
                     "description": "Limit describes the number of records per request",
@@ -798,11 +741,6 @@ const docTemplate = `{
                     "example": "status bad request"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
         }
     }
 }`

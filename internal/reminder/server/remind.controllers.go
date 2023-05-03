@@ -37,13 +37,12 @@ type RemindHandlers interface {
 //	@Accept			json
 //	@Produce		json
 //	@Param			input	body		domain.TodoInput	true	"remind info"
-//	@Success		201		{string}	string			"Remind is successfully created"
+//	@Success		201		{string}	domain.Todo
 //
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/remind [post]
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	var input model.TodoInput
@@ -126,7 +125,6 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400	{object}	utils.HTTPError
 //	@Failure		500	{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/remind{id} [delete]
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -165,12 +163,13 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			limit	query		string	true	"limit"
 //	@Param			cursor	query		string	true	"cursor"
+//	@Param			filter	query		string	true	"filter"
+//	@Param			filterOption	query		string	true	"filterOption"
 //	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/current [get]
 func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
 	strLimit := r.URL.Query().Get("limit")
@@ -245,7 +244,6 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 //	@Failure		404	{object}	utils.HTTPError
 //	@Failure		500	{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/remind/{id} [get]
 func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -277,13 +275,12 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int						true	"id"
 //	@Param			input	body		domain.TodoUpdateInput	true	"update info"
-//	@Success		200		{string}	string					"remind successfully updated"
+//	@Success		200		{string}	domain.Todo
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/remind/{id} [put]
 func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -329,6 +326,21 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, remind)
 }
 
+// UpdateUserConfig update user_config model
+//
+//	@Description	UpdateUserConfig
+//	@Summary		update user_config with given fields
+//	@Tags			user_config
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"id"
+//	@Param			input	body		domain.UserConfigs	true	"update info"
+//	@Success		200		{string}	string					"success"
+//
+//	@Failure		422		{object}	utils.HTTPError
+//	@Failure		500		{object}	utils.HTTPError
+//
+//	@Router			/update-configs/{id} [put]
 func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -366,7 +378,6 @@ func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/status/{id} [put]
 func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -409,6 +420,8 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 //	@Produce		json
 //	@Param			limit	query		string	true	"limit"
 //	@Param			cursor	query		string	true	"cursor"
+//	@Param			filter	query		string	true	"filter"
+//	@Param			filterOptions	query		string	true	"filterOptions"
 //	@Param			start	query		string	true	"start of time range"
 //	@Param			end		query		string	true	"end of time range"
 //	@Success		200		{object}	domain.TodoResponse
@@ -489,7 +502,6 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	utils.JSONFormat(w, http.StatusOK, res)
 }
 
-// GetAllReminds makes request to DB for all reminds. Works with cursor pagination
 // GetAllReminds handle get completed reminds.
 //
 //	@Description	GetAllReminds
@@ -499,12 +511,13 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 //	@Produce		json
 //	@Param			limit	query		string	true	"limit"
 //	@Param			cursor	query		string	true	"cursor"
+//	@Param			filter	query		string	true	"filter"
+//	@Param			filterOptions	query		string	true	"filterOptions"
 //	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Security		BasicAuth
 //	@Router			/remind [get]
 func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	// scan for limit in parameters
