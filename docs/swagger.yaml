@@ -1,30 +1,6 @@
 basePath: /
 definitions:
-  model.LoginUserInput:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  model.RegisterUserInput:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        minLength: 6
-        type: string
-    required:
-    - email
-    - name
-    - password
-    type: object
-  model.Todo:
+  domain.Todo:
     properties:
       completed:
         type: boolean
@@ -32,77 +8,105 @@ definitions:
         type: string
       deadline_at:
         type: string
+      deadline_notify:
+        type: boolean
       description:
         type: string
       finished_at:
         type: string
       id:
         type: integer
+      notificated:
+        type: boolean
+      notify_period:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
       user_id:
-        type: integer
+        type: string
     type: object
-  model.TodoInput:
+  domain.TodoInput:
     properties:
       created_at:
         type: string
       deadline_at:
         type: string
+      deadline_notify:
+        type: boolean
       description:
         type: string
+      notify_period:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
     type: object
-  model.TodoResponse:
+  domain.TodoResponse:
     properties:
+      count:
+        type: integer
       pageInfo:
         $ref: '#/definitions/pagination.PageInfo'
       todos:
         items:
-          $ref: '#/definitions/model.Todo'
+          $ref: '#/definitions/domain.Todo'
         type: array
     type: object
-  model.TodoUpdateInput:
+  domain.TodoUpdateInput:
     properties:
       completed:
         type: boolean
       deadline_at:
         type: string
+      deadline_notify:
+        type: boolean
       description:
         type: string
       finished_at:
         type: string
+      notificated:
+        type: boolean
+      notify_period:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
     type: object
-  model.TodoUpdateStatusInput:
+  domain.TodoUpdateStatusInput:
     properties:
       completed:
         type: boolean
       finished_at:
         type: string
     type: object
-  model.User:
+  domain.UserConfigs:
     properties:
+      ID:
+        type: string
       created_at:
         type: string
-      email:
-        type: string
-      id:
+      notification:
+        type: boolean
+      period:
         type: integer
-      name:
-        type: string
-      password:
-        type: string
-      photo:
-        type: string
-      provider:
-        type: string
       updated_at:
         type: string
-      verified:
-        type: boolean
     type: object
   pagination.Page:
     properties:
       cursor:
         description: Cursor describes the position in the database to start from
         type: integer
+      filter:
+        description: Filter describe filter params - by DeadlineAt or CreateAt
+        type: string
+      filterOption:
+        description: FilterOption describe filterOption params - DESC or ASC
+        type: string
       limit:
         description: Limit describes the number of records per request
         type: integer
@@ -149,6 +153,16 @@ paths:
         name: cursor
         required: true
         type: string
+      - description: filter
+        in: query
+        name: filter
+        required: true
+        type: string
+      - description: filterOptions
+        in: query
+        name: filterOptions
+        required: true
+        type: string
       - description: start of time range
         in: query
         name: start
@@ -165,7 +179,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.TodoResponse'
+            $ref: '#/definitions/domain.TodoResponse'
         "400":
           description: Bad Request
           schema:
@@ -195,13 +209,23 @@ paths:
         name: cursor
         required: true
         type: string
+      - description: filter
+        in: query
+        name: filter
+        required: true
+        type: string
+      - description: filterOption
+        in: query
+        name: filterOption
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.TodoResponse'
+            $ref: '#/definitions/domain.TodoResponse'
         "400":
           description: Bad Request
           schema:
@@ -210,90 +234,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: return a list of current reminds
       tags:
       - reminds
-  /login:
-    post:
-      consumes:
-      - application/json
-      description: user user, return user and save token to cookie
-      parameters:
-      - description: user email and password
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.LoginUserInput'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.User'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-      summary: SignInUser
-      tags:
-      - user
-  /logout:
-    get:
-      description: logout user and remove cookie
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            type: string
-      security:
-      - BasicAuth: []
-      summary: LogOutUser
-      tags:
-      - user
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: create user account
-      parameters:
-      - description: user info
-        in: body
-        name: payload
-        required: true
-        schema:
-          $ref: '#/definitions/model.RegisterUserInput'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 'User is successfully created id: 1'
-          schema:
-            type: string
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-      summary: SignUpUser
-      tags:
-      - user
   /remind:
     get:
       consumes:
@@ -310,13 +253,23 @@ paths:
         name: cursor
         required: true
         type: string
+      - description: filter
+        in: query
+        name: filter
+        required: true
+        type: string
+      - description: filterOptions
+        in: query
+        name: filterOptions
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.TodoResponse'
+            $ref: '#/definitions/domain.TodoResponse'
         "400":
           description: Bad Request
           schema:
@@ -325,8 +278,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: return a list of all reminds
       tags:
       - reminds
@@ -340,12 +291,12 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.TodoInput'
+          $ref: '#/definitions/domain.TodoInput'
       produces:
       - application/json
       responses:
         "201":
-          description: Remind is successfully created
+          description: Created
           schema:
             type: string
         "400":
@@ -360,8 +311,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: create a new remind
       tags:
       - reminds
@@ -382,7 +331,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.Todo'
+            $ref: '#/definitions/domain.Todo'
         "400":
           description: Bad Request
           schema:
@@ -395,8 +344,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: return a remind by id
       tags:
       - reminds
@@ -415,12 +362,12 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.TodoUpdateInput'
+          $ref: '#/definitions/domain.TodoUpdateInput'
       produces:
       - application/json
       responses:
         "200":
-          description: remind successfully updated
+          description: OK
           schema:
             type: string
         "400":
@@ -435,8 +382,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: update remind with given fields
       tags:
       - reminds
@@ -466,8 +411,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: delete remind
       tags:
       - reminds
@@ -487,7 +430,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.TodoUpdateStatusInput'
+          $ref: '#/definitions/domain.TodoUpdateStatusInput'
       produces:
       - application/json
       responses:
@@ -507,12 +450,42 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      security:
-      - BasicAuth: []
       summary: update remind's field "completed"
       tags:
       - reminds
-securityDefinitions:
-  BasicAuth:
-    type: basic
+  /update-configs/{id}:
+    put:
+      consumes:
+      - application/json
+      description: UpdateUserConfig
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: update info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UserConfigs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      summary: update user_config with given fields
+      tags:
+      - user_config
 swagger: "2.0"

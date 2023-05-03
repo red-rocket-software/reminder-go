@@ -16,10 +16,8 @@ import (
 //	@version		1.0
 //	@description	API Server for Reminder Application
 
-//	@host		localhost:8000
-//	@BasePath	/
-
-// @securityDefinitions.basic	BasicAuth
+// @host		localhost:8000
+// @BasePath	/
 func main() {
 	cfg := config.GetConfig()
 	logger := logging.GetLogger()
