@@ -11,7 +11,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	storage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	pagination "github.com/red-rocket-software/reminder-go/pkg/pagination"
 )
 
 // MockReminderRepo is a mock of ReminderRepo interface.
@@ -81,57 +80,6 @@ func (mr *MockReminderRepoMockRecorder) DeleteRemind(ctx, id interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRemind", reflect.TypeOf((*MockReminderRepo)(nil).DeleteRemind), ctx, id)
 }
 
-// GetAllReminds mocks base method.
-func (m *MockReminderRepo) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]domain.Todo, int, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllReminds", ctx, params, userID)
-	ret0, _ := ret[0].([]domain.Todo)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(int)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// GetAllReminds indicates an expected call of GetAllReminds.
-func (mr *MockReminderRepoMockRecorder) GetAllReminds(ctx, params, userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllReminds", reflect.TypeOf((*MockReminderRepo)(nil).GetAllReminds), ctx, params, userID)
-}
-
-// GetCompletedReminds mocks base method.
-func (m *MockReminderRepo) GetCompletedReminds(ctx context.Context, params storage.Params, userID string) ([]domain.Todo, int, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCompletedReminds", ctx, params, userID)
-	ret0, _ := ret[0].([]domain.Todo)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(int)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// GetCompletedReminds indicates an expected call of GetCompletedReminds.
-func (mr *MockReminderRepoMockRecorder) GetCompletedReminds(ctx, params, userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompletedReminds", reflect.TypeOf((*MockReminderRepo)(nil).GetCompletedReminds), ctx, params, userID)
-}
-
-// GetNewReminds mocks base method.
-func (m *MockReminderRepo) GetNewReminds(ctx context.Context, params pagination.Page, userID string) ([]domain.Todo, int, int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNewReminds", ctx, params, userID)
-	ret0, _ := ret[0].([]domain.Todo)
-	ret1, _ := ret[1].(int)
-	ret2, _ := ret[2].(int)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
-}
-
-// GetNewReminds indicates an expected call of GetNewReminds.
-func (mr *MockReminderRepoMockRecorder) GetNewReminds(ctx, params, userID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewReminds", reflect.TypeOf((*MockReminderRepo)(nil).GetNewReminds), ctx, params, userID)
-}
-
 // GetRemindByID mocks base method.
 func (m *MockReminderRepo) GetRemindByID(ctx context.Context, id int) (domain.Todo, error) {
 	m.ctrl.T.Helper()
@@ -145,6 +93,23 @@ func (m *MockReminderRepo) GetRemindByID(ctx context.Context, id int) (domain.To
 func (mr *MockReminderRepoMockRecorder) GetRemindByID(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindByID", reflect.TypeOf((*MockReminderRepo)(nil).GetRemindByID), ctx, id)
+}
+
+// GetReminds mocks base method.
+func (m *MockReminderRepo) GetReminds(ctx context.Context, params storage.FetchParams, userID string) ([]domain.Todo, int, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReminds", ctx, params, userID)
+	ret0, _ := ret[0].([]domain.Todo)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(int)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GetReminds indicates an expected call of GetReminds.
+func (mr *MockReminderRepoMockRecorder) GetReminds(ctx, params, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReminds", reflect.TypeOf((*MockReminderRepo)(nil).GetReminds), ctx, params, userID)
 }
 
 // GetRemindsForDeadlineNotification mocks base method.
