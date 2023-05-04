@@ -23,7 +23,7 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
 	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
-	privateRoute.HandleFunc("/user-configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/configs/{id}", server.UpdateUserConfig).Methods("PUT", "OPTIONS")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
