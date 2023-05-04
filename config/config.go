@@ -23,6 +23,8 @@ type Config struct {
 		EmailSenderName     string `env-required:"true" yaml:"email_sender_name" env:"EMAIL_SENDER_NAME"`
 		EmailSenderAddress  string `env-required:"true" yaml:"email_sender_address" env:"EMAIL_SENDER_ADDRESS"`
 		EmailSenderPassword string `env-required:"true" yaml:"email_sender_password" env:"EMAIL_SENDER_PASSWORD"`
+		SMTPAuthAddress     string `env-required:"true" yaml:"smtp_auth_address" env:"SMTP_AUTH_ADDRESS"`
+		SMTPServerAddress   string `env-required:"true" yaml:"smtp_server_address" env:"SMTP_SERVER_ADDRESS"`
 	} `yaml:"email"`
 }
 

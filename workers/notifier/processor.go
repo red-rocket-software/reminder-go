@@ -1,4 +1,4 @@
-package worker
+package notifier
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/config"
 	todoModel "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	"github.com/red-rocket-software/reminder-go/worker/mail"
+	"github.com/red-rocket-software/reminder-go/workers/notifier/mail"
 )
 
 type Worker struct {
@@ -33,7 +33,11 @@ func (w *Worker) ProcessSendNotification() error {
 		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
 
-	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
+	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName,
+		w.cfg.Email.EmailSenderAddress,
+		w.cfg.Email.EmailSenderPassword,
+		w.cfg.Email.SMTPAuthAddress,
+		w.cfg.Email.SMTPServerAddress)
 
 	for _, remind := range remindsToNotify {
 		user, err := w.fireClient.GetUser(w.ctx, remind.UserID)
@@ -50,7 +54,7 @@ func (w *Worker) ProcessSendNotification() error {
 
 		err = mailer.SendEmail(subject, content, to, nil, nil, nil)
 		if err != nil {
-			return fmt.Errorf("failed to send notify email: %w", err)
+			return fmt.Errorf("failed to send notifier email: %w", err)
 		}
 
 		err = w.todoStorage.UpdateNotification(w.ctx, remind.ID, todoModel.NotificationDAO{Notificated: true})
@@ -69,7 +73,12 @@ func (w *Worker) ProcessSendDeadlineNotification() error {
 		return fmt.Errorf("erorr to get reminds to notification, err: %v", err)
 	}
 
-	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName, w.cfg.Email.EmailSenderAddress, w.cfg.Email.EmailSenderPassword)
+	mailer := mail.NewGmailSender(w.cfg.Email.EmailSenderName,
+		w.cfg.Email.EmailSenderAddress,
+		w.cfg.Email.EmailSenderPassword,
+		w.cfg.Email.SMTPAuthAddress,
+		w.cfg.Email.SMTPServerAddress,
+	)
 
 	for _, remind := range remindsToNotify {
 		user, err := w.fireClient.GetUser(w.ctx, remind.UserID)

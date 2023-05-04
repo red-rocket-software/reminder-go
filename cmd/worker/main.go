@@ -11,7 +11,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
-	"github.com/red-rocket-software/reminder-go/worker"
+	"github.com/red-rocket-software/reminder-go/workers/notifier"
 	"google.golang.org/api/option"
 )
 
@@ -40,14 +40,14 @@ func main() {
 
 	remindStorage := todoStorage.NewStorageTodo(postgresClient, &logger)
 
-	newWorker := worker.NewWorker(ctx, remindStorage, fireClient, *cfg)
+	newWorker := notifier.NewWorker(ctx, remindStorage, fireClient, *cfg)
 
-	//run worker in scheduler
+	//run workers in scheduler
 	c := make(chan os.Signal, 1)
 	signal.Notify(c)
 	stop := make(chan error)
 
-	ticker := time.NewTicker(time.Second * 10) // worker runs every 10 second
+	ticker := time.NewTicker(time.Second * 10) // workers runs every 10 second
 
 	go func() {
 		for {
@@ -55,12 +55,12 @@ func main() {
 			case <-ticker.C:
 				err = newWorker.ProcessSendNotification()
 				if err != nil {
-					logger.Errorf("error to process worker send notification: %v", err)
+					logger.Errorf("error to process workers send notification: %v", err)
 					stop <- err
 				}
 				err = newWorker.ProcessSendDeadlineNotification()
 				if err != nil {
-					logger.Errorf("error to process worker send deadline notification: %v", err)
+					logger.Errorf("error to process workers send deadline notification: %v", err)
 					stop <- err
 				}
 			case <-stop:
