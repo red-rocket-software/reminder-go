@@ -18,16 +18,15 @@ import (
 )
 
 type RemindHandlers interface {
-	GetAllReminds(w http.ResponseWriter, r *http.Request)
+	GetReminds(w http.ResponseWriter, r *http.Request)
 	GetRemindByID(w http.ResponseWriter, r *http.Request)
 	AddRemind(w http.ResponseWriter, r *http.Request)
 	UpdateRemind(w http.ResponseWriter, r *http.Request)
 	UpdateCompleteStatus(w http.ResponseWriter, r *http.Request)
 	DeleteRemind(w http.ResponseWriter, r *http.Request)
-	GetCompletedReminds(w http.ResponseWriter, r *http.Request)
-	GetCurrentReminds(w http.ResponseWriter, r *http.Request)
 }
 
+// AddRemind
 // @Description	AddRemind
 // @Summary		create a new remind
 // @Tags			reminds
@@ -109,6 +108,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, remind)
 }
 
+// DeleteRemind
 // @Description	DeleteRemind
 // @Summary		delete remind
 // @Tags			reminds
@@ -146,83 +146,6 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	utils.JSONFormat(w, http.StatusNoContent, successMsg)
-}
-
-// GetCurrentReminds handle get current reminds. First url should be like: http://localhost:8000/current?limit=5
-// the next we should write cursor from prev.   http://localhost:8000/current?limit=5&cursor=33
-//
-//	@Description	GetCurrentReminds
-//	@Summary		return a list of current reminds
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			limit	query		string	true	"limit"
-//	@Param			cursor	query		string	true	"cursor"
-//	@Param			filter	query		string	true	"filter"
-//	@Param			filterOption	query		string	true	"filterOption"
-//	@Success		200		{object}	domain.TodoResponse
-//
-//	@Failure		400		{object}	utils.HTTPError
-//	@Failure		500		{object}	utils.HTTPError
-//
-//	@Router			/current [get]
-func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) {
-	strLimit := r.URL.Query().Get("limit")
-	limit, err := strconv.Atoi(strLimit)
-	if err != nil && strLimit != "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
-		return
-	}
-
-	//if no write limit it will be 5
-	if limit == 0 {
-		limit = 5
-	}
-
-	strCursor := r.URL.Query().Get("cursor")
-	cursor, err := strconv.Atoi(strCursor)
-	if err != nil && strCursor != "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
-		return
-	}
-
-	filter := r.URL.Query().Get("filter")
-	if filter == "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("filter parameter is invalid"))
-		return
-	}
-
-	FilterOption := r.URL.Query().Get("filterOption")
-	if FilterOption == "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
-		return
-	}
-
-	fetchParam := utils.Page{
-		Limit:        limit,
-		Cursor:       cursor,
-		Filter:       filter,
-		FilterOption: FilterOption,
-	}
-
-	userID := r.Context().Value("userID").(string)
-
-	reminds, totalCount, nextCursor, err := server.TodoStorage.GetNewReminds(server.ctx, fetchParam, userID)
-	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	res := model.TodoResponse{
-		Todos: reminds,
-		Count: totalCount,
-		PageInfo: utils.PageInfo{
-			Page:       fetchParam,
-			NextCursor: nextCursor,
-		},
-	}
-
-	utils.JSONFormat(w, http.StatusOK, res)
 }
 
 // GetRemindByID godoc
@@ -335,7 +258,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Router			/update-configs/{id} [put]
+//	@Router			/configs/{id} [put]
 func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -406,101 +329,10 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 	utils.JSONFormat(w, http.StatusOK, "remind status updated")
 }
 
-// GetCompletedReminds handle get completed reminds.
+// GetReminds handle get reminds.
 //
-//	@Description	GetCompletedReminds
-//	@Summary		return a list of completed reminds
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			limit	query		string	true	"limit"
-//	@Param			cursor	query		string	true	"cursor"
-//	@Param			filter	query		string	true	"filter"
-//	@Param			filterOptions	query		string	true	"filterOptions"
-//	@Param			start	query		string	true	"start of time range"
-//	@Param			end		query		string	true	"end of time range"
-//	@Success		200		{object}	domain.TodoResponse
-//
-//	@Failure		400		{object}	utils.HTTPError
-//	@Failure		500		{object}	utils.HTTPError
-//
-//	@Security		BasicAuth
-//	@Router			/completed [get]
-func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request) {
-	// scan for limit in parameters
-	limitStr := r.URL.Query().Get("limit")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil && limitStr != "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("limit parameter is invalid, should be positive integer"))
-		return
-	}
-	if limit == 0 {
-		limit = 5
-	}
-
-	// scan for cursor in parameters
-	cursorStr := r.URL.Query().Get("cursor")
-	cursor, err := strconv.Atoi(cursorStr)
-	if err != nil && cursorStr != "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("cursor parameter is invalid"))
-		return
-	}
-
-	// scan for timeRangeValues in parameters
-	rangeStart := r.URL.Query().Get("start")
-	rangeEnd := r.URL.Query().Get("end")
-
-	filter := r.URL.Query().Get("filter")
-	if filter == "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("filter parameter is invalid"))
-		return
-	}
-
-	FilterOption := r.URL.Query().Get("filterOption")
-	if FilterOption == "" {
-		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
-		return
-	}
-
-	//initialize fetchParameters
-	fetchParams := storage.Params{
-		Page: utils.Page{
-			Cursor:       cursor,
-			Limit:        limit,
-			FilterOption: FilterOption,
-			Filter:       filter,
-		},
-		TimeRangeFilter: storage.TimeRangeFilter{
-			StartRange: rangeStart,
-			EndRange:   rangeEnd,
-		},
-	}
-
-	userID := r.Context().Value("userID").(string)
-
-	reminds, count, nextCursor, err := server.TodoStorage.GetCompletedReminds(server.ctx, fetchParams, userID)
-
-	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	res := model.TodoResponse{
-		Todos: reminds,
-		Count: count,
-		PageInfo: utils.PageInfo{
-			Page:       fetchParams.Page,
-			NextCursor: nextCursor,
-		},
-	}
-
-	utils.JSONFormat(w, http.StatusOK, res)
-}
-
-// GetAllReminds handle get completed reminds.
-//
-//	@Description	GetAllReminds
-//	@Summary		return a list of all reminds
+//	@Description	GetReminds
+//	@Summary		return a list of reminds according to params
 //	@Tags			reminds
 //	@Accept			json
 //	@Produce		json
@@ -514,7 +346,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 //	@Failure		500		{object}	utils.HTTPError
 //
 //	@Router			/remind [get]
-func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
+func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	// scan for limit in parameters
 	limitStr := r.URL.Query().Get("limit")
 	limit, err := strconv.Atoi(limitStr)
@@ -523,9 +355,9 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// by default limit = 5
+	// by default limit = 10
 	if limit == 0 {
-		limit = 5
+		limit = 10
 	}
 
 	// scan for cursor in parameters
@@ -542,29 +374,38 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	FilterOption := r.URL.Query().Get("filterOption")
-	if FilterOption == "" {
+	filterOption := r.URL.Query().Get("filterOption")
+	if filterOption == "" {
 		utils.JSONError(w, http.StatusBadRequest, errors.New("FilterOption parameter is invalid"))
 		return
 	}
 
+	filterParams := r.URL.Query().Get("filterParams")
+	if filterParams == "" {
+		utils.JSONError(w, http.StatusBadRequest, errors.New("filterParams parameter is invalid"))
+		return
+	}
+
 	//initialize fetchParameters
-	fetchParams := utils.Page{
-		Limit:        limit,
-		Cursor:       cursor,
-		Filter:       filter,
-		FilterOption: FilterOption,
+	params := storage.FetchParams{
+		Page: utils.Page{
+			Cursor: cursor,
+			Limit:  limit,
+		},
+		FilterByDate:  filter,
+		FilterBySort:  filterOption,
+		FilterByQuery: filterParams,
 	}
 
 	userID := r.Context().Value("userID").(string)
 
-	reminds, count, nextCursor, err := server.TodoStorage.GetAllReminds(server.ctx, fetchParams, userID)
+	reminds, count, nextCursor, err := server.TodoStorage.GetReminds(server.ctx, params, userID)
 
 	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
 		PageInfo: utils.PageInfo{
-			Page:       fetchParams,
+			Page:       params.Page,
 			NextCursor: nextCursor,
 		},
 	}

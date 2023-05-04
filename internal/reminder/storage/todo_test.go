@@ -86,75 +86,7 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 }
 
-func TestStorageTodo_GetNewReminds(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
-
-	expectedToto, err := testStorage.SeedTodos()
-
-	var nextCursor int
-	if len(expectedToto) > 0 {
-		nextCursor = expectedToto[len(expectedToto)-2].ID
-	}
-
-	if err != nil {
-		log.Fatal("error seed todos")
-	}
-
-	type args struct {
-		ctx    context.Context
-		params utils.Page
-		userID string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    int
-		want1   int
-		want2   int
-		wantErr bool
-	}{
-		{name: "success", args: args{context.Background(),
-			utils.Page{Limit: 3, Filter: "DeadlineAt", FilterOption: "ASC"},
-			expectedToto[0].UserID,
-		},
-			want:    3,
-			want1:   4,
-			want2:   nextCursor,
-			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), utils.Page{
-			Filter:       "DeadlineAt",
-			FilterOption: "ASC",
-		}, expectedToto[0].UserID},
-			want:    0,
-			want1:   0,
-			wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := testStorage.GetNewReminds(tt.args.ctx, tt.args.params, tt.args.userID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetNewReminds() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(len(got), tt.want) {
-				t.Errorf("GetNewReminds() got = %v, want %v", len(got), tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("GetNewReminds() got1 = %v, want1 %v", got1, tt.want1)
-			}
-			if got2 != tt.want2 {
-				t.Errorf("GetNewReminds() got2 = %v, want2 %v", got1, tt.want2)
-			}
-		})
-	}
-}
-
-func TestStorageTodo_GetAllReminds(t *testing.T) {
+func TestStorageTodo_GetReminds(t *testing.T) {
 	defer func() {
 		err := testStorage.Truncate()
 		if err != nil {
@@ -167,14 +99,9 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 		log.Fatal("error seed reminds")
 	}
 
-	var nextCursor int
-	if len(expectedTodo) > 0 {
-		nextCursor = expectedTodo[len(expectedTodo)-5].ID
-	}
-
 	type args struct {
 		ctx         context.Context
-		fetchParams utils.Page
+		fetchParams FetchParams
 		userID      string
 	}
 	tests := []struct {
@@ -185,108 +112,73 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 		want2   int
 		wantErr bool
 	}{
-		{name: "success", args: args{context.Background(), utils.Page{
-			Limit:        2,
-			Filter:       "DeadlineAt",
-			FilterOption: "ASC",
+		{name: "success get all reminds", args: args{context.Background(), FetchParams{
+			Page: utils.Page{
+				Cursor: 0,
+				Limit:  10,
+			},
+			FilterByDate:  "CreatedAt",
+			FilterBySort:  "DESC",
+			FilterByQuery: "all",
 		}, expectedTodo[0].UserID},
-			want:    []model.Todo{expectedTodo[1], expectedTodo[0]},
+			want:    expectedTodo,
 			want1:   5,
-			want2:   nextCursor,
+			want2:   expectedTodo[len(expectedTodo)-1].ID,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), utils.Page{Filter: "DeadlineAt", FilterOption: "ASC"}, expectedTodo[0].UserID},
-			want:    []model.Todo{},
+		{name: "success get completed", args: args{context.Background(), FetchParams{
+			Page: utils.Page{
+				Cursor: 0,
+				Limit:  10,
+			},
+			FilterByDate:  "CreatedAt",
+			FilterBySort:  "DESC",
+			FilterByQuery: "completed",
+		}, expectedTodo[0].UserID},
+			want:    []model.Todo{expectedTodo[1]},
+			want1:   1,
+			want2:   expectedTodo[len(expectedTodo)-4].ID,
+			wantErr: false},
+		{name: "success get current", args: args{context.Background(), FetchParams{
+			Page: utils.Page{
+				Cursor: 0,
+				Limit:  10,
+			},
+			FilterByDate:  "CreatedAt",
+			FilterBySort:  "DESC",
+			FilterByQuery: "current",
+		}, expectedTodo[0].UserID},
+			want:    []model.Todo{expectedTodo[0], expectedTodo[2], expectedTodo[3], expectedTodo[4]},
+			want1:   4,
+			want2:   expectedTodo[len(expectedTodo)-1].ID,
+			wantErr: false},
+		{name: "empty filterParams value", args: args{context.Background(), FetchParams{
+			Page: utils.Page{
+				Cursor: 0,
+				Limit:  10,
+			},
+			FilterByDate:  "CreatedAt",
+			FilterBySort:  "DESC",
+			FilterByQuery: "",
+		}, expectedTodo[0].UserID},
+			want:    nil,
 			want1:   0,
-			wantErr: false},
+			wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := testStorage.GetAllReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
+			got, got1, got2, err := testStorage.GetReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetAllReminds() got = %v, want %v", got, tt.want)
+				t.Errorf("GetAReminds() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("GetAllReminds() got1 = %v, want1 %v", got1, tt.want1)
+				t.Errorf("GetAReminds() got1 = %v, want1 %v", got1, tt.want1)
 			}
 			if got2 != tt.want2 {
-				t.Errorf("GetAllReminds() got2 = %v, want2 %v", got2, tt.want2)
-			}
-		})
-	}
-}
-
-func TestStorageTodo_GetCompletedReminds(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
-
-	expectedTodo, err := testStorage.SeedTodos()
-	if err != nil {
-		log.Fatal("error seed reminds")
-	}
-
-	var nextCursor int
-	if len(expectedTodo) > 0 {
-		nextCursor = expectedTodo[len(expectedTodo)-4].ID
-	}
-
-	type args struct {
-		ctx    context.Context
-		params Params
-		userID string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []model.Todo
-		want1   int
-		want2   int
-		wantErr bool
-	}{
-		{name: "success", args: args{context.Background(), Params{
-			Page: utils.Page{
-				Limit:        5,
-				Filter:       "DeadlineAt",
-				FilterOption: "ASC",
-			},
-			TimeRangeFilter: TimeRangeFilter{},
-		},
-			expectedTodo[0].UserID,
-		},
-			want:    []model.Todo{expectedTodo[1]},
-			want1:   1,
-			want2:   nextCursor,
-			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), Params{
-			Page: utils.Page{Filter: "DeadlineAt", FilterOption: "ASC"},
-		}, expectedTodo[0].UserID},
-
-			want:    []model.Todo{},
-			want1:   0,
-			wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := testStorage.GetCompletedReminds(tt.args.ctx, tt.args.params, tt.args.userID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetComplitedReminds() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetComplitedReminds() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("GetComplitedReminds() got1 = %v, want1 %v", got1, tt.want1)
-			}
-			if got2 != tt.want2 {
-				t.Errorf("GetComplitedReminds() got2 = %v, want2 %v", got2, tt.want2)
+				t.Errorf("GetAReminds() got2 = %v, want2 %v", got2, tt.want2)
 			}
 		})
 	}

@@ -17,7 +17,7 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 	privateRoute := router.PathPrefix("").Subrouter()
 	privateRoute.Use(server.AuthMiddleware)
 
-	privateRoute.HandleFunc("/reminds", server.GetAllReminds).Methods("GET")
+	privateRoute.HandleFunc("/reminds", server.GetReminds).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.GetRemindByID).Methods("GET")
 	privateRoute.HandleFunc("/remind", server.AddRemind).Methods("POST", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")

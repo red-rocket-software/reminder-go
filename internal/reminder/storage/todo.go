@@ -26,9 +26,13 @@ type TimeRangeFilter struct {
 	EndRange   string
 }
 
-type Params struct {
+type FetchParams struct {
 	utils.Page
 	TimeRangeFilter
+	FilterByDate  string //createdAt or deadlineAt
+	FilterBySort  string // ASC or DESC
+	FilterByQuery string // current, all or completed
+
 }
 
 // NewStorageTodo  return new SorageTodo with Postgres pool and logger
@@ -36,30 +40,48 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 	return &TodoStorage{Postgres: postgres, logger: logger}
 }
 
-// GetAllReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetAllReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error) {
-	reminds := []model.Todo{}
+// GetReminds return all todos in DB PostgreSQL
+func (s *TodoStorage) GetReminds(ctx context.Context, params FetchParams, userID string) ([]model.Todo, int, int, error) {
+	var reminds []model.Todo
+	var sql string
 
-	sql := fmt.Sprintf(`SELECT *, (
+	switch params.FilterByQuery {
+	case "current":
+		sql = fmt.Sprintf(`SELECT *, (
+SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = false) as total_count
+FROM todo WHERE "User" = '%s' AND "Completed" = false`, userID, userID)
+	case "completed":
+		sql = fmt.Sprintf(`SELECT *, (
+SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = true) as total_count
+FROM todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
+	case "all":
+		sql = fmt.Sprintf(`SELECT *, (
 SELECT COUNT(*) FROM todo WHERE "User" = '%s') as total_count
 FROM todo WHERE "User" = '%s'`, userID, userID)
+	default:
+		return nil, 0, 0, errors.New("wrong filterParams value")
+	}
 
 	if params.Cursor > 0 {
-		switch params.FilterOption {
+		switch params.FilterBySort {
 		case "DESC":
-			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		case "ASC":
-			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		}
 	}
 
-	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.Filter, params.FilterOption, params.Limit)
+	if params.StartRange != "" {
+		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
+	}
+
+	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.FilterByDate, params.FilterBySort, params.Limit)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 
 	if err != nil {
 		s.logger.Errorf("error get all reminds from db: %v", err)
-		return nil, 0, 0, err
+		return []model.Todo{}, 0, 0, err
 	}
 	defer rows.Close()
 
@@ -83,7 +105,7 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 			&totalCount,
 		); err != nil {
 			s.logger.Errorf("remind doesnt exist: %v", err)
-			return nil, 0, 0, err
+			return []model.Todo{}, 0, 0, err
 		}
 		reminds = append(reminds, remind)
 	}
@@ -92,6 +114,8 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 
 	if len(reminds) > 0 {
 		nextCursor = reminds[len(reminds)-1].ID
+	} else {
+		reminds = []model.Todo{}
 	}
 
 	return reminds, totalCount, nextCursor, nil
@@ -265,132 +289,6 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 	}
 
 	return todo, nil
-}
-
-// GetCompletedReminds returns list of completed reminds and error
-func (s *TodoStorage) GetCompletedReminds(ctx context.Context, params Params, userID string) ([]model.Todo, int, int, error) {
-
-	sql := fmt.Sprintf(`SELECT *, (
-SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = true) as total_count
-FROM todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
-
-	//if passed cursorID we add condition to query
-	if params.Cursor > 0 {
-		switch params.FilterOption {
-		case "DESC":
-			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
-		case "ASC":
-			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
-		}
-	}
-
-	if params.StartRange != "" {
-		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
-	}
-
-	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.Filter, params.FilterOption, params.Limit)
-
-	rows, err := s.Postgres.Query(ctx, sql)
-	if err != nil {
-		s.logger.Errorf("error to select completed reminds: %v", err)
-		return nil, 0, 0, err
-	}
-
-	reminds := []model.Todo{}
-
-	var totalCount int
-
-	for rows.Next() {
-		var remind model.Todo
-
-		if err := rows.Scan(
-			&remind.ID,
-			&remind.UserID,
-			&remind.Title,
-			&remind.Description,
-			&remind.CreatedAt,
-			&remind.DeadlineAt,
-			&remind.FinishedAt,
-			&remind.Completed,
-			&remind.Notificated,
-			&remind.DeadlineNotify,
-			&remind.NotifyPeriod,
-			&totalCount,
-		); err != nil {
-			s.logger.Errorf("remind doesn't exist: %v", err)
-			return nil, 0, 0, err
-		}
-		reminds = append(reminds, remind)
-	}
-
-	var nextCursor int
-	if len(reminds) > 0 {
-		nextCursor = reminds[len(reminds)-1].ID
-	}
-
-	return reminds, totalCount, nextCursor, nil
-}
-
-// GetNewReminds get all no completed reminds from DB with pagination.
-func (s *TodoStorage) GetNewReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error) {
-	sql := fmt.Sprintf(`SELECT * FROM 
-(
-SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = false
-) AS selected_count
- WHERE "User" = '%s'`, userID)
-
-	//if passed cursorID we add condition to query
-	if params.Cursor > 0 {
-		switch params.FilterOption {
-		case "DESC":
-			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
-		case "ASC":
-			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
-		}
-	}
-
-	//always add sort and LIMIT to query
-	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.Filter, params.FilterOption, params.Limit)
-
-	rows, err := s.Postgres.Query(ctx, sql)
-	if err != nil {
-		s.logger.Errorf("error to select completed reminds: %v", err)
-		return nil, 0, 0, err
-	}
-	defer rows.Close()
-
-	reminds := []model.Todo{}
-	var totalCount int
-
-	for rows.Next() {
-		var remind model.Todo
-
-		if err := rows.Scan(&remind.ID,
-			&remind.UserID,
-			&remind.Title,
-			&remind.Description,
-			&remind.CreatedAt,
-			&remind.DeadlineAt,
-			&remind.FinishedAt,
-			&remind.Completed,
-			&remind.Notificated,
-			&remind.DeadlineNotify,
-			&remind.NotifyPeriod,
-			&totalCount,
-		); err != nil {
-			s.logger.Errorf("remind doesn't exist %v", err)
-			return nil, 0, 0, err
-		}
-
-		reminds = append(reminds, remind)
-	}
-
-	var nextCursor int
-	if len(reminds) > 0 {
-		nextCursor = reminds[len(reminds)-1].ID
-	}
-
-	return reminds, totalCount, nextCursor, nil
 }
 
 // Truncate removes all seed data from the test database.
