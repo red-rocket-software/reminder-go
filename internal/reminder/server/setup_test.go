@@ -27,6 +27,5 @@ func newTestServer(store storage.ReminderRepo) *Server {
 }
 
 func TestMain(m *testing.M) {
-
 	os.Exit(m.Run())
 }

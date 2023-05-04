@@ -11,7 +11,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	storage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	pagination "github.com/red-rocket-software/reminder-go/pkg/pagination"
+	pagination "github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 // MockReminderRepo is a mock of ReminderRepo interface.

@@ -1,4 +1,4 @@
-package pagination
+package utils
 
 // Page defines the page parameters
 type Page struct {

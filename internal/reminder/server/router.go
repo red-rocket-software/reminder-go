@@ -11,22 +11,21 @@ import (
 func (server *Server) ConfigureReminderRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	router.Use(middlewares.CorsMiddleware)
+	router.Use(middlewares.Cors)
 
 	// private routes
 	privateRoute := router.PathPrefix("").Subrouter()
 	privateRoute.Use(server.AuthMiddleware)
 
-	privateRoute.HandleFunc("/remind", server.GetAllReminds).Methods("GET")
+	privateRoute.HandleFunc("/reminds", server.GetAllReminds).Methods("GET")
 	privateRoute.HandleFunc("/remind/{id}", server.GetRemindByID).Methods("GET")
 	privateRoute.HandleFunc("/remind", server.AddRemind).Methods("POST", "OPTIONS")
-	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
-	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
-	privateRoute.HandleFunc("/completed", server.GetCompletedReminds).Methods("GET", "OPTIONS")
-	privateRoute.HandleFunc("/current", server.GetCurrentReminds).Methods("GET", "OPTIONS")
-	privateRoute.HandleFunc("/user-configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
-	privateRoute.HandleFunc("/update-configs/{id}", server.UpdateUserConfig).Methods("PUT", "OPTIONS")
+	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
+
+	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
+	privateRoute.HandleFunc("/configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
+	privateRoute.HandleFunc("/configs/{id}", server.UpdateUserConfig).Methods("PUT", "OPTIONS")
 
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 

@@ -14,8 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
-	"github.com/red-rocket-software/reminder-go/utils"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 type RemindHandlers interface {
@@ -29,21 +28,19 @@ type RemindHandlers interface {
 	GetCurrentReminds(w http.ResponseWriter, r *http.Request)
 }
 
-// AddRemind godoc
+// @Description	AddRemind
+// @Summary		create a new remind
+// @Tags			reminds
+// @Accept			json
+// @Produce		json
+// @Param			input	body		domain.TodoInput	true	"remind info"
+// @Success		201		{string}	domain.Todo
 //
-//	@Description	AddRemind
-//	@Summary		create a new remind
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			input	body		domain.TodoInput	true	"remind info"
-//	@Success		201		{string}	domain.Todo
+// @Failure		422		{object}	utils.HTTPError
+// @Failure		400		{object}	utils.HTTPError
+// @Failure		500		{object}	utils.HTTPError
 //
-//	@Failure		422		{object}	utils.HTTPError
-//	@Failure		400		{object}	utils.HTTPError
-//	@Failure		500		{object}	utils.HTTPError
-//
-//	@Router			/remind [post]
+// @Router			/remind [post]
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	var input model.TodoInput
 
@@ -112,20 +109,18 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, remind)
 }
 
-// DeleteRemind godoc
+// @Description	DeleteRemind
+// @Summary		delete remind
+// @Tags			reminds
+// @Accept			json
+// @Produce		json
+// @Param			id	path		int		true	"id"
+// @Success		204	{string}	string	"remind with id:1 successfully deleted"
 //
-//	@Description	DeleteRemind
-//	@Summary		delete remind
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int		true	"id"
-//	@Success		204	{string}	string	"remind with id:1 successfully deleted"
+// @Failure		400	{object}	utils.HTTPError
+// @Failure		500	{object}	utils.HTTPError
 //
-//	@Failure		400	{object}	utils.HTTPError
-//	@Failure		500	{object}	utils.HTTPError
-//
-//	@Router			/remind{id} [delete]
+// @Router			/remind{id} [delete]
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	remindID, err := strconv.Atoi(vars["id"])
@@ -203,7 +198,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	fetchParam := pagination.Page{
+	fetchParam := utils.Page{
 		Limit:        limit,
 		Cursor:       cursor,
 		Filter:       filter,
@@ -221,7 +216,7 @@ func (server *Server) GetCurrentReminds(w http.ResponseWriter, r *http.Request) 
 	res := model.TodoResponse{
 		Todos: reminds,
 		Count: totalCount,
-		PageInfo: pagination.PageInfo{
+		PageInfo: utils.PageInfo{
 			Page:       fetchParam,
 			NextCursor: nextCursor,
 		},
@@ -469,7 +464,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 
 	//initialize fetchParameters
 	fetchParams := storage.Params{
-		Page: pagination.Page{
+		Page: utils.Page{
 			Cursor:       cursor,
 			Limit:        limit,
 			FilterOption: FilterOption,
@@ -493,7 +488,7 @@ func (server *Server) GetCompletedReminds(w http.ResponseWriter, r *http.Request
 	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
-		PageInfo: pagination.PageInfo{
+		PageInfo: utils.PageInfo{
 			Page:       fetchParams.Page,
 			NextCursor: nextCursor,
 		},
@@ -554,7 +549,7 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//initialize fetchParameters
-	fetchParams := pagination.Page{
+	fetchParams := utils.Page{
 		Limit:        limit,
 		Cursor:       cursor,
 		Filter:       filter,
@@ -568,7 +563,7 @@ func (server *Server) GetAllReminds(w http.ResponseWriter, r *http.Request) {
 	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
-		PageInfo: pagination.PageInfo{
+		PageInfo: utils.PageInfo{
 			Page:       fetchParams,
 			NextCursor: nextCursor,
 		},
