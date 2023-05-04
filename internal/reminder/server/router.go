@@ -11,7 +11,7 @@ import (
 func (server *Server) ConfigureReminderRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	router.Use(middlewares.CorsMiddleware)
+	router.Use(middlewares.Cors)
 
 	// private routes
 	privateRoute := router.PathPrefix("").Subrouter()
@@ -20,9 +20,10 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 	privateRoute.HandleFunc("/reminds", server.GetReminds).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.GetRemindByID).Methods("GET")
 	privateRoute.HandleFunc("/remind", server.AddRemind).Methods("POST", "OPTIONS")
-	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
-	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
 	privateRoute.HandleFunc("/remind/{id}", server.DeleteRemind).Methods("DELETE", "OPTIONS")
+	privateRoute.HandleFunc("/remind/{id}", server.UpdateRemind).Methods("PUT")
+
+	privateRoute.HandleFunc("/status/{id}", server.UpdateCompleteStatus).Methods("PUT", "OPTIONS")
 	privateRoute.HandleFunc("/configs/{id}", server.GetOrCreateUserConfig).Methods("GET", "OPTIONS")
 	privateRoute.HandleFunc("/configs/{id}", server.UpdateUserConfig).Methods("PUT", "OPTIONS")
 

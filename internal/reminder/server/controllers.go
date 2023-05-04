@@ -14,8 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
-	"github.com/red-rocket-software/reminder-go/utils"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 type RemindHandlers interface {
@@ -27,21 +26,20 @@ type RemindHandlers interface {
 	DeleteRemind(w http.ResponseWriter, r *http.Request)
 }
 
-// AddRemind godoc
+// AddRemind
+// @Description	AddRemind
+// @Summary		create a new remind
+// @Tags			reminds
+// @Accept			json
+// @Produce		json
+// @Param			input	body		domain.TodoInput	true	"remind info"
+// @Success		201		{string}	domain.Todo
 //
-//	@Description	AddRemind
-//	@Summary		create a new remind
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			input	body		domain.TodoInput	true	"remind info"
-//	@Success		201		{string}	domain.Todo
+// @Failure		422		{object}	utils.HTTPError
+// @Failure		400		{object}	utils.HTTPError
+// @Failure		500		{object}	utils.HTTPError
 //
-//	@Failure		422		{object}	utils.HTTPError
-//	@Failure		400		{object}	utils.HTTPError
-//	@Failure		500		{object}	utils.HTTPError
-//
-//	@Router			/remind [post]
+// @Router			/remind [post]
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	var input model.TodoInput
 
@@ -110,20 +108,19 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, remind)
 }
 
-// DeleteRemind godoc
+// DeleteRemind
+// @Description	DeleteRemind
+// @Summary		delete remind
+// @Tags			reminds
+// @Accept			json
+// @Produce		json
+// @Param			id	path		int		true	"id"
+// @Success		204	{string}	string	"remind with id:1 successfully deleted"
 //
-//	@Description	DeleteRemind
-//	@Summary		delete remind
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int		true	"id"
-//	@Success		204	{string}	string	"remind with id:1 successfully deleted"
+// @Failure		400	{object}	utils.HTTPError
+// @Failure		500	{object}	utils.HTTPError
 //
-//	@Failure		400	{object}	utils.HTTPError
-//	@Failure		500	{object}	utils.HTTPError
-//
-//	@Router			/remind{id} [delete]
+// @Router			/remind{id} [delete]
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	remindID, err := strconv.Atoi(vars["id"])
@@ -332,7 +329,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 	utils.JSONFormat(w, http.StatusOK, "remind status updated")
 }
 
-// GetReminds handle get completed reminds.
+// GetReminds handle get reminds.
 //
 //	@Description	GetReminds
 //	@Summary		return a list of reminds according to params
@@ -391,7 +388,7 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 
 	//initialize fetchParameters
 	params := storage.FetchParams{
-		Page: pagination.Page{
+		Page: utils.Page{
 			Cursor: cursor,
 			Limit:  limit,
 		},
@@ -407,7 +404,7 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	res := model.TodoResponse{
 		Todos: reminds,
 		Count: count,
-		PageInfo: pagination.PageInfo{
+		PageInfo: utils.PageInfo{
 			Page:       params.Page,
 			NextCursor: nextCursor,
 		},

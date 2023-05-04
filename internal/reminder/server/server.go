@@ -27,7 +27,6 @@ type Server struct {
 
 // New returns new Server.
 func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRepo, fireClient *auth.Client, cfg config.Config) *Server {
-
 	server := &Server{
 		ctx:         ctx,
 		Logger:      logger,
@@ -40,9 +39,7 @@ func New(ctx context.Context, logger logging.Logger, storage storage.ReminderRep
 
 // Run start server on IP address an PORT passed in parameters
 func (server *Server) Run(cfg *config.Config) error {
-
 	server.S = &http.Server{
-
 		Addr:           ":" + cfg.HTTP.Port,
 		Handler:        server.ConfigureReminderRouter(),
 		ReadTimeout:    10 * time.Second,

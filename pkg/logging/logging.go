@@ -15,7 +15,7 @@ type writeHook struct {
 	LogLevels []logrus.Level
 }
 
-// the Fire method will be called every time we write something somewhere for each level
+// Fire method will be called every time we write something somewhere for each level
 func (hook *writeHook) Fire(entry *logrus.Entry) error {
 	line, err := entry.String()
 	if err != nil {
@@ -28,7 +28,7 @@ func (hook *writeHook) Fire(entry *logrus.Entry) error {
 	return err
 }
 
-// the Levels method will return to us levels of hook which we are use
+// Levels method will return to us levels of hook which we are use
 func (hook *writeHook) Levels() []logrus.Level {
 	return hook.LogLevels
 }
@@ -61,6 +61,7 @@ func init() {
 		ForceColors:   true,
 	}
 
+	//to the case when we need to store logs in separate text file
 	//err := os.MkdirAll("logs", 0644)
 	//if err != nil {
 	//	panic(err)

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 // TodoStorage handles database communication with PostgreSQL.
@@ -27,7 +27,7 @@ type TimeRangeFilter struct {
 }
 
 type FetchParams struct {
-	pagination.Page
+	utils.Page
 	TimeRangeFilter
 	FilterByDate  string //createdAt or deadlineAt
 	FilterBySort  string // ASC or DESC
@@ -190,7 +190,6 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 
 // UpdateNotification update Notificated field
 func (s *TodoStorage) UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error {
-
 	sql := `UPDATE todo SET "Notificated" = $1 WHERE "ID" = $2`
 
 	ct, err := s.Postgres.Exec(ctx, sql, dao.Notificated, id)
@@ -370,7 +369,6 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 
 // SeedUserConfig seed todos for tests
 func (s *TodoStorage) SeedUserConfig() (string, error) {
-
 	userConfig := model.UserConfigs{
 		ID:           "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
 		Notification: false,
@@ -476,7 +474,7 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 
 	ct, err := s.Postgres.Exec(ctx, sql)
 	if err != nil {
-		s.logger.Printf("unable to update remind notify period %v", err)
+		s.logger.Printf("unable to update remind notifier period %v", err)
 		return err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -113,7 +113,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "success get all reminds", args: args{context.Background(), FetchParams{
-			Page: pagination.Page{
+			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
@@ -126,7 +126,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want2:   expectedTodo[len(expectedTodo)-1].ID,
 			wantErr: false},
 		{name: "success get completed", args: args{context.Background(), FetchParams{
-			Page: pagination.Page{
+			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
@@ -139,7 +139,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want2:   expectedTodo[len(expectedTodo)-4].ID,
 			wantErr: false},
 		{name: "success get current", args: args{context.Background(), FetchParams{
-			Page: pagination.Page{
+			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
@@ -152,7 +152,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want2:   expectedTodo[len(expectedTodo)-1].ID,
 			wantErr: false},
 		{name: "empty filterParams value", args: args{context.Background(), FetchParams{
-			Page: pagination.Page{
+			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
