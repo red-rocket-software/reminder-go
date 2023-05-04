@@ -238,9 +238,9 @@ func TestControllers_GetAllReminds(t *testing.T) {
 					Cursor: 0,
 					Limit:  10,
 				},
-				Filter:       "createdAt",
-				FilterOption: "ASC",
-				FilterParam:  "all",
+				FilterByDate:  "createdAt",
+				FilterBySort:  "ASC",
+				FilterByQuery: "all",
 			},
 			userID: "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
 			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {
@@ -278,9 +278,9 @@ func TestControllers_GetAllReminds(t *testing.T) {
 			q := req.URL.Query()
 			q.Add("cursor", fmt.Sprintf("%d", test.params.Cursor))
 			q.Add("limit", fmt.Sprintf("%d", test.params.Limit))
-			q.Add("filter", fmt.Sprintf("%s", test.params.Filter))
-			q.Add("filterOption", fmt.Sprintf("%s", test.params.FilterOption))
-			q.Add("filterParams", fmt.Sprintf("%s", test.params.FilterParam))
+			q.Add("filter", fmt.Sprintf("%s", test.params.FilterByDate))
+			q.Add("filterOption", fmt.Sprintf("%s", test.params.FilterBySort))
+			q.Add("filterParams", fmt.Sprintf("%s", test.params.FilterByQuery))
 			req.URL.RawQuery = q.Encode()
 
 			handler := http.HandlerFunc(server.GetReminds)

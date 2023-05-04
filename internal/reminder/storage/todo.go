@@ -29,9 +29,9 @@ type TimeRangeFilter struct {
 type FetchParams struct {
 	pagination.Page
 	TimeRangeFilter
-	Filter       string //createdAt or deadlineAt
-	FilterOption string // ASC or DESC
-	FilterParam  string // current or completed
+	FilterByDate  string //createdAt or deadlineAt
+	FilterBySort  string // ASC or DESC
+	FilterByQuery string // current, all or completed
 
 }
 
@@ -45,7 +45,7 @@ func (s *TodoStorage) GetReminds(ctx context.Context, params FetchParams, userID
 	var reminds []model.Todo
 	var sql string
 
-	switch params.FilterParam {
+	switch params.FilterByQuery {
 	case "current":
 		sql = fmt.Sprintf(`SELECT *, (
 SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = false) as total_count
@@ -63,11 +63,11 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 	}
 
 	if params.Cursor > 0 {
-		switch params.FilterOption {
+		switch params.FilterBySort {
 		case "DESC":
-			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		case "ASC":
-			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.Filter, params.Filter, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		}
 	}
 
@@ -75,7 +75,7 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 		sql += fmt.Sprintf(` AND "FinishedAt" BETWEEN '%s' AND '%s'`, params.StartRange, params.EndRange)
 	}
 
-	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.Filter, params.FilterOption, params.Limit)
+	sql += fmt.Sprintf(` ORDER BY "%s" %s LIMIT %d`, params.FilterByDate, params.FilterBySort, params.Limit)
 
 	rows, err := s.Postgres.Query(ctx, sql)
 

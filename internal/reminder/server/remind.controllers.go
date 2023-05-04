@@ -395,9 +395,9 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 			Cursor: cursor,
 			Limit:  limit,
 		},
-		Filter:       filter,
-		FilterOption: filterOption,
-		FilterParam:  filterParams,
+		FilterByDate:  filter,
+		FilterBySort:  filterOption,
+		FilterByQuery: filterParams,
 	}
 
 	userID := r.Context().Value("userID").(string)
