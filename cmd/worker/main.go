@@ -11,7 +11,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
-	"github.com/red-rocket-software/reminder-go/workers/notify"
+	"github.com/red-rocket-software/reminder-go/workers/notifier"
 	"google.golang.org/api/option"
 )
 
@@ -40,7 +40,7 @@ func main() {
 
 	remindStorage := todoStorage.NewStorageTodo(postgresClient, &logger)
 
-	newWorker := notify.NewWorker(ctx, remindStorage, fireClient, *cfg)
+	newWorker := notifier.NewWorker(ctx, remindStorage, fireClient, *cfg)
 
 	//run workers in scheduler
 	c := make(chan os.Signal, 1)

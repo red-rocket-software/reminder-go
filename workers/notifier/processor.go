@@ -1,4 +1,4 @@
-package notify
+package notifier
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/red-rocket-software/reminder-go/config"
 	todoModel "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	"github.com/red-rocket-software/reminder-go/workers/notify/mail"
+	"github.com/red-rocket-software/reminder-go/workers/notifier/mail"
 )
 
 type Worker struct {
@@ -54,7 +54,7 @@ func (w *Worker) ProcessSendNotification() error {
 
 		err = mailer.SendEmail(subject, content, to, nil, nil, nil)
 		if err != nil {
-			return fmt.Errorf("failed to send notify email: %w", err)
+			return fmt.Errorf("failed to send notifier email: %w", err)
 		}
 
 		err = w.todoStorage.UpdateNotification(w.ctx, remind.ID, todoModel.NotificationDAO{Notificated: true})

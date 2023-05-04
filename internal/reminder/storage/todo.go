@@ -576,7 +576,7 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 
 	ct, err := s.Postgres.Exec(ctx, sql)
 	if err != nil {
-		s.logger.Printf("unable to update remind notify period %v", err)
+		s.logger.Printf("unable to update remind notifier period %v", err)
 		return err
 	}
 
