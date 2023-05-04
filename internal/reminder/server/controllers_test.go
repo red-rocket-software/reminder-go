@@ -16,7 +16,7 @@ import (
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -234,7 +234,7 @@ func TestControllers_GetAllReminds(t *testing.T) {
 		{
 			name: "OK",
 			params: storage.FetchParams{
-				Page: pagination.Page{
+				Page: utils.Page{
 					Cursor: 0,
 					Limit:  10,
 				},
