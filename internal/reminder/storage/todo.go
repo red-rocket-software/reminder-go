@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 // TodoStorage handles database communication with PostgreSQL.
@@ -27,7 +27,7 @@ type TimeRangeFilter struct {
 }
 
 type Params struct {
-	pagination.Page
+	utils.Page
 	TimeRangeFilter
 }
 
@@ -37,7 +37,7 @@ func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo
 }
 
 // GetAllReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetAllReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error) {
 	reminds := []model.Todo{}
 
 	sql := fmt.Sprintf(`SELECT *, (
@@ -333,7 +333,7 @@ FROM todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
 }
 
 // GetNewReminds get all no completed reminds from DB with pagination.
-func (s *TodoStorage) GetNewReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetNewReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error) {
 	sql := fmt.Sprintf(`SELECT * FROM 
 (
 SELECT *, COUNT(*) OVER() as total_count FROM todo WHERE "Completed" = false

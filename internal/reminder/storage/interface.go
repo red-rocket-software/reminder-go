@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 //go:generate mockgen -source=interface.go -destination=mocks/storage.go
 
 type ReminderRepo interface {
-	GetAllReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error)
+	GetAllReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error)
 	CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error)
 	UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error)
 	UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error
@@ -25,7 +25,7 @@ type ReminderRepo interface {
 	DeleteRemind(ctx context.Context, id int) error
 	GetRemindByID(ctx context.Context, id int) (model.Todo, error)
 	GetCompletedReminds(ctx context.Context, params Params, userID string) ([]model.Todo, int, int, error)
-	GetNewReminds(ctx context.Context, params pagination.Page, userID string) ([]model.Todo, int, int, error)
+	GetNewReminds(ctx context.Context, params utils.Page, userID string) ([]model.Todo, int, int, error)
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
 	SeedUserConfig() (string, error)

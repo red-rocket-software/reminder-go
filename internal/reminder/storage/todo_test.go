@@ -8,7 +8,7 @@ import (
 	"time"
 
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/pkg/pagination"
+	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -107,7 +107,7 @@ func TestStorageTodo_GetNewReminds(t *testing.T) {
 
 	type args struct {
 		ctx    context.Context
-		params pagination.Page
+		params utils.Page
 		userID string
 	}
 	tests := []struct {
@@ -119,14 +119,14 @@ func TestStorageTodo_GetNewReminds(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "success", args: args{context.Background(),
-			pagination.Page{Limit: 3, Filter: "DeadlineAt", FilterOption: "ASC"},
+			utils.Page{Limit: 3, Filter: "DeadlineAt", FilterOption: "ASC"},
 			expectedToto[0].UserID,
 		},
 			want:    3,
 			want1:   4,
 			want2:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), pagination.Page{
+		{name: "error no limit", args: args{context.Background(), utils.Page{
 			Filter:       "DeadlineAt",
 			FilterOption: "ASC",
 		}, expectedToto[0].UserID},
@@ -174,7 +174,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 
 	type args struct {
 		ctx         context.Context
-		fetchParams pagination.Page
+		fetchParams utils.Page
 		userID      string
 	}
 	tests := []struct {
@@ -185,7 +185,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 		want2   int
 		wantErr bool
 	}{
-		{name: "success", args: args{context.Background(), pagination.Page{
+		{name: "success", args: args{context.Background(), utils.Page{
 			Limit:        2,
 			Filter:       "DeadlineAt",
 			FilterOption: "ASC",
@@ -194,7 +194,7 @@ func TestStorageTodo_GetAllReminds(t *testing.T) {
 			want1:   5,
 			want2:   nextCursor,
 			wantErr: false},
-		{name: "error no limit", args: args{context.Background(), pagination.Page{Filter: "DeadlineAt", FilterOption: "ASC"}, expectedTodo[0].UserID},
+		{name: "error no limit", args: args{context.Background(), utils.Page{Filter: "DeadlineAt", FilterOption: "ASC"}, expectedTodo[0].UserID},
 			want:    []model.Todo{},
 			want1:   0,
 			wantErr: false},
@@ -251,7 +251,7 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "success", args: args{context.Background(), Params{
-			Page: pagination.Page{
+			Page: utils.Page{
 				Limit:        5,
 				Filter:       "DeadlineAt",
 				FilterOption: "ASC",
@@ -265,7 +265,7 @@ func TestStorageTodo_GetCompletedReminds(t *testing.T) {
 			want2:   nextCursor,
 			wantErr: false},
 		{name: "error no limit", args: args{context.Background(), Params{
-			Page: pagination.Page{Filter: "DeadlineAt", FilterOption: "ASC"},
+			Page: utils.Page{Filter: "DeadlineAt", FilterOption: "ASC"},
 		}, expectedTodo[0].UserID},
 
 			want:    []model.Todo{},
