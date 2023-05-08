@@ -63,7 +63,7 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 	}
 
 	if params.Cursor > 0 {
-		switch params.FilterBySort {
+		switch params.FilterByDate {
 		case "DESC":
 			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		case "ASC":
@@ -245,15 +245,14 @@ func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input mod
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 	const sql = `DELETE FROM todo WHERE "ID" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
-
+	s.logger.Errorf("Error delete remind: %v", err)
 	if err != nil {
-		s.logger.Errorf("error don't found remind: %v", err)
 		return ErrCantFindRemindWithID
 	}
 
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
-		s.logger.Errorf("Error delete remind: %v", err)
+		s.logger.Errorf("error don't found remind: %v", err)
 		return ErrDeleteFailed
 	}
 
@@ -306,10 +305,12 @@ func (s *TodoStorage) Truncate() error {
 func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
 
 	userID, err := s.SeedUserConfig()
 	if err != nil {
 		s.logger.Println(err)
+		return []model.Todo{}, err
 	}
 
 	todos := []model.Todo{
@@ -327,6 +328,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 			CreatedAt:   now,
 			DeadlineAt:  date,
 			Completed:   true,
+			FinishedAt:  &finishedDate,
 		},
 		{
 			Description: "tes3",
@@ -352,10 +354,10 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "Completed") 
-				 VALUES ($1, $2, $3, $4, $5, $6) returning "ID"`
+		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed") 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7) returning "ID"`
 
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed)
 
 		err := row.Scan(&todos[i].ID)
 		if err != nil {
