@@ -37,7 +37,7 @@ exec-db:
 	docker exec -it postgres psql -U root reminder
 
 run:
-	go run cmd/api/main.go
+	go run cmd/reminder/main.go
 
 run-worker:
 	go run cmd/worker/main.go
@@ -46,7 +46,8 @@ compose-up:
 	docker-compose -f docker-compose.yml up --build
 
 test:
-	go test -v -cover ./...
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -func coverage.out
 
 coverage:
 	go test ./... -coverprofile=coverage.out
