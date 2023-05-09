@@ -258,24 +258,38 @@ func TestStorage_GetRemindsForNotification(t *testing.T) {
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
-
-	reminds, err := testStorage.GetRemindsForNotification(context.Background())
 	require.NoError(t, err)
 
-	require.Equal(t, 4, len(reminds))
+	t.Run("success", func(t *testing.T) {
+		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, 4, len(reminds))
 
-	tn := time.Now().Truncate(1 * time.Second).UTC()
+		tn := time.Now().Truncate(1 * time.Second).UTC()
 
-	for _, remind := range reminds {
-		userID := remind.UserID
-		userConfig, err := testStorage.GetUserConfigs(context.Background(), userID)
-		if err != nil {
-			log.Fatal("error to get userConfig")
+		for _, remind := range reminds {
+			userID := remind.UserID
+			userConfig, err := testStorage.GetUserConfigs(context.Background(), userID)
+			if err != nil {
+				log.Fatal("error to get userConfig")
+			}
+			tfromPeriod := time.Now().AddDate(0, 0, userConfig.Period)
+			expr := remind.DeadlineAt.After(tn) && remind.DeadlineAt.Before(tfromPeriod)
+			require.Equal(t, true, expr)
 		}
-		tfromPeriod := time.Now().AddDate(0, 0, userConfig.Period)
-		expr := remind.DeadlineAt.After(tn) && remind.DeadlineAt.Before(tfromPeriod)
-		require.Equal(t, true, expr)
-	}
+
+		err = testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+		require.NoError(t, err)
+	})
+
+	t.Run("no reminds for Notification at this moment", func(t *testing.T) {
+		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		require.NoError(t, err)
+		require.Empty(t, reminds)
+	})
 }
 
 func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
@@ -305,6 +319,7 @@ func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
+		require.NoError(t, err)
 	})
 
 	t.Run("no reminds for DeadlineNotification at this moment", func(t *testing.T) {
