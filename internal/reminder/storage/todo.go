@@ -304,21 +304,28 @@ func (s *TodoStorage) Truncate() error {
 
 // SeedTodos seed todos for tests
 func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
-	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
-	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+	// date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
+	now := time.Now().Truncate(1 * time.Second).UTC()
+	date := time.Now().Truncate(1*time.Second).UTC().AddDate(0, 0, 1)
+	dateNotifyPeriod, _ := time.Parse(time.RFC3339, time.Now().Truncate(time.Minute).Format(time.RFC3339))
 
 	userID, err := s.SeedUserConfig()
 	if err != nil {
 		s.logger.Println(err)
 	}
 
+	b := true
+
 	todos := []model.Todo{
 		{
-			Description: "tes1",
-			Title:       "tes1",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
+			Description:    "tes1",
+			Title:          "tes1",
+			UserID:         userID,
+			CreatedAt:      now,
+			DeadlineAt:     date,
+			Completed:      false,
+			DeadlineNotify: &b,
+			NotifyPeriod:   []time.Time{dateNotifyPeriod},
 		},
 		{
 			Description: "tes2",
@@ -352,10 +359,10 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "Completed") 
-				 VALUES ($1, $2, $3, $4, $5, $6) returning "ID"`
+		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning "ID"`
 
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed)
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
 
 		err := row.Scan(&todos[i].ID)
 		if err != nil {
@@ -371,7 +378,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 func (s *TodoStorage) SeedUserConfig() (string, error) {
 	userConfig := model.UserConfigs{
 		ID:           "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-		Notification: false,
+		Notification: true,
 		Period:       2,
 		CreatedAt:    time.Now(),
 	}
