@@ -290,14 +290,29 @@ func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
+	require.NoError(t, err)
 
 	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
 
-	reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, 1, len(reminds))
-	require.Equal(t, tn, timeNow)
-	require.Equal(t, expectedReminds[0].UserID, reminds[0].UserID)
+	t.Run("success", func(t *testing.T) {
+		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, 1, len(reminds))
+		require.Equal(t, tn, timeNow)
+		require.Equal(t, expectedReminds[0].UserID, reminds[0].UserID)
+
+		err = testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	})
+
+	t.Run("no reminds for DeadlineNotification at this moment", func(t *testing.T) {
+		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		require.Empty(t, reminds)
+		require.Equal(t, tn, timeNow)
+		require.Empty(t, err)
+	})
 }
 
 func TestStorage_UpdateNotifyPeriod(t *testing.T) {
