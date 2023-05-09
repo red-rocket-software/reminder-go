@@ -329,6 +329,7 @@ func TestStorageTodo_UpdateUserConfig(t *testing.T) {
 	if err != nil {
 		log.Fatal("error truncate config")
 	}
+	require.NoError(t, err)
 	tn := time.Now()
 
 	updateConfigInput := model.UserConfigs{
@@ -338,9 +339,15 @@ func TestStorageTodo_UpdateUserConfig(t *testing.T) {
 		UpdatedAt:    &tn,
 	}
 
-	err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
+	t.Run("success", func(t *testing.T) {
+		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
+		require.NoError(t, err)
+	})
+	t.Run("user configs not found", func(t *testing.T) {
+		err = testStorage.UpdateUserConfig(context.Background(), "0", updateConfigInput)
+		require.Error(t, err)
+	})
 
-	require.NoError(t, err)
 }
 
 func TestStorage_CreateUserConfigs(t *testing.T) {
