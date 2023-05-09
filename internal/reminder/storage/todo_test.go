@@ -358,6 +358,7 @@ func TestStorage_UpdateNotifyPeriod(t *testing.T) {
 		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, "")
 		require.Error(t, err)
 	})
+
 }
 
 func TestStorageTodo_UpdateUserConfig(t *testing.T) {
@@ -386,7 +387,7 @@ func TestStorageTodo_UpdateUserConfig(t *testing.T) {
 		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
 		require.NoError(t, err)
 	})
-
+  
 	t.Run("empty input", func(t *testing.T) {
 		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, model.UserConfigs{})
 		require.NoError(t, err)
@@ -396,6 +397,7 @@ func TestStorageTodo_UpdateUserConfig(t *testing.T) {
 		err = testStorage.UpdateUserConfig(context.Background(), "0", updateConfigInput)
 		require.Error(t, err)
 	})
+
 }
 
 func TestStorage_CreateUserConfigs(t *testing.T) {
