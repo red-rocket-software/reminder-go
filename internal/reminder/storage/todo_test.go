@@ -353,7 +353,7 @@ func TestStorage_CreateUserConfigs(t *testing.T) {
 
 	expectedUserConfig := model.UserConfigs{
 		ID:           "1",
-		Notification: true,
+		Notification: false,
 		Period:       2,
 	}
 
