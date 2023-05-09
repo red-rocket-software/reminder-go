@@ -312,9 +312,17 @@ func TestStorage_UpdateNotifyPeriod(t *testing.T) {
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
-
-	err = testStorage.UpdateNotifyPeriod(context.Background(), expectedTodos[0].ID, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
 	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		err = testStorage.UpdateNotifyPeriod(context.Background(), expectedTodos[0].ID, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		require.NoError(t, err)
+	})
+
+	t.Run("remind not found", func(t *testing.T) {
+		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		require.Error(t, err)
+	})
 }
 
 func TestStorageTodo_UpdateUserConfig(t *testing.T) {
@@ -385,6 +393,7 @@ func TestStorage_GetUserConfigs(t *testing.T) {
 	if err != nil {
 		log.Fatal("error truncate config")
 	}
+	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
 		config, err := testStorage.GetUserConfigs(context.Background(), expectedUserID)
