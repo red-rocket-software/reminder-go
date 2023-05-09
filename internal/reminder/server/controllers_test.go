@@ -8,70 +8,103 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"firebase.google.com/go/auth"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
-	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
+	mock_firestore "github.com/red-rocket-software/reminder-go/pkg/firestore/mocks"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
 
 func TestControllers_AddRemind(t *testing.T) {
-	//dTime, err := time.Parse(time.RFC3339, "2023-03-21T16:22:00+02:00")
-	//require.NoError(t, err)
-	//now, err := time.Parse("02.01.2006, 15:04:05", "19.01.2023, 22:15:30")
-	//require.NoError(t, err)
+	dTime, err := time.Parse(time.RFC3339, "2023-04-15T16:27:00+02:00")
+	require.NoError(t, err)
+	now, err := time.Parse("02.01.2006, 15:04:05", "14.04.2023, 15:30:35")
+	require.NoError(t, err)
+	b := false
 
 	testCases := []struct {
 		name                 string
 		body                 string
-		inputTodo            model.Todo
-		mockBehavior         func(store *mockdb.MockReminderRepo, input model.Todo)
+		inputTodo            domain.Todo
+		mockBehavior         func(store *mockdb.MockReminderRepo, input domain.Todo)
 		expectedStatusCode   int
 		expectedResponseBody string
 	}{
-		//{
-		//	name: "OK",
-		//	body: `{"description":"test", "user_id": "1", "deadline_at": "2023-03-21T16:22:00+02:00", "created_at": "19.01.2023, 22:15:30"}`,
-		//	inputTodo: domain.Todo{
-		//		CreatedAt:   now,
-		//		UserID:      1,
-		//		Description: "test",
-		//		DeadlineAt:  dTime,
-		//	},
-		//	mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
-		//		store.EXPECT().CreateRemind(gomock.Any(), input).Return(0, nil)
-		//	},
-		//	expectedStatusCode:   201,
-		//	expectedResponseBody: "Remind is successfully created",
-		//},
+		{
+			name: "OK",
+			body: `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": []}`,
+			inputTodo: domain.Todo{
+				Description:    "Test",
+				Title:          "Title",
+				UserID:         "GxRlwVXMF0UAc15VwtkYJGWdKmj2",
+				DeadlineAt:     dTime,
+				CreatedAt:      now,
+				DeadlineNotify: &b,
+				NotifyPeriod:   []time.Time{},
+			},
+			mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
+				store.EXPECT().CreateRemind(gomock.Any(), input).Return(domain.Todo{}, nil)
+			},
+			expectedStatusCode: 201,
+		},
 		{
 			name:                 "Error - wrong input",
 			body:                 `{"description":"", "user_id": "1", "deadline_at": "2023-02-02"}`,
-			inputTodo:            model.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input model.Todo) {},
+			inputTodo:            domain.Todo{},
+			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
 			expectedStatusCode:   422,
 			expectedResponseBody: "nothing to save",
 		},
-		//{
-		//	name: "Error - Service error",
-		//	body: `{"description":"test", "user_id": "1", "deadline_at": "2023-03-21T16:22:00+02:00", "created_at": "19.01.2023, 22:15:30"}`,
-		//	inputTodo: domain.Todo{
-		//		CreatedAt:   now,
-		//		UserID:      1,
-		//		Description: "test",
-		//		DeadlineAt:  dTime,
-		//	},
-		//	mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
-		//		store.EXPECT().CreateRemind(gomock.Any(), input).Return(0, errors.New("something went wrong"))
-		//	},
-		//	expectedStatusCode:   500,
-		//	expectedResponseBody: `"something went wrong"`,
-		//},
+		{
+			name:                 "Error - notify period after deadline",
+			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": ["2023-05-15T16:27:00+02:00"]}`,
+			inputTodo:            domain.Todo{},
+			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			expectedStatusCode:   400,
+			expectedResponseBody: "time to deadline notification can't be more than deadline time",
+		},
+		{
+			name:                 "Error - notify period more than 2 days before deadline",
+			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": ["2023-04-12T16:27:00+02:00"]}`,
+			inputTodo:            domain.Todo{},
+			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			expectedStatusCode:   400,
+			expectedResponseBody: "time to deadline notification can't be less than 2 days to deadline time",
+		},
+		{
+			name:                 "Error - wrong deadline time format",
+			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": []}`,
+			inputTodo:            domain.Todo{},
+			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			expectedStatusCode:   400,
+			expectedResponseBody: "cannot parse",
+		},
+		{
+			name: "Error - Service error",
+			body: `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": []}`,
+			inputTodo: domain.Todo{
+				Description:    "Test",
+				Title:          "Title",
+				UserID:         "GxRlwVXMF0UAc15VwtkYJGWdKmj2",
+				DeadlineAt:     dTime,
+				CreatedAt:      now,
+				DeadlineNotify: &b,
+				NotifyPeriod:   []time.Time{},
+			},
+			mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
+				store.EXPECT().CreateRemind(gomock.Any(), input).Return(domain.Todo{}, errors.New("something went wrong"))
+			},
+			expectedStatusCode:   500,
+			expectedResponseBody: `"something went wrong"`,
+		},
 	}
 
 	for _, test := range testCases {
@@ -87,14 +120,16 @@ func TestControllers_AddRemind(t *testing.T) {
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/remind", bytes.NewBufferString(test.body))
 			ctx := req.Context()
-			ctx = context.WithValue(ctx, "uerID", "rrdZH9ERxueDxj2m1e1T2vIQKBP2")
+			ctx = context.WithValue(ctx, "userID", "GxRlwVXMF0UAc15VwtkYJGWdKmj2")
 			req = req.WithContext(ctx)
 
 			handler := http.HandlerFunc(server.AddRemind)
 			handler.ServeHTTP(w, req)
 
 			require.Equal(t, test.expectedStatusCode, w.Code)
-			require.Contains(t, w.Body.String(), test.expectedResponseBody)
+			if test.name != "OK" {
+				require.Contains(t, w.Body.String(), test.expectedResponseBody)
+			}
 		})
 	}
 }
@@ -103,7 +138,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 	testCases := []struct {
 		name               string
 		id                 int
-		resTodo            model.Todo
+		resTodo            domain.Todo
 		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
 		expectedStatusCode int
 	}{
@@ -111,7 +146,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "OK",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(1)).Return(model.Todo{
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(1)).Return(domain.Todo{
 					ID:          1,
 					Description: "test",
 					CreatedAt:   time.Now(),
@@ -125,7 +160,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "Not found",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model.Todo{}, sql.ErrNoRows).Times(1)
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(domain.Todo{}, sql.ErrNoRows).Times(1)
 			},
 			expectedStatusCode: 404,
 		},
@@ -133,7 +168,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			name: "InternalError",
 			id:   1,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(model.Todo{}, sql.ErrConnDone).Times(1)
+				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(domain.Todo{}, sql.ErrConnDone).Times(1)
 			},
 			expectedStatusCode: 500,
 		},
@@ -174,16 +209,22 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
+				store.EXPECT().UpdateRemind(gomock.Any(), id, domain.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
-				}).Return(model.Todo{Description: "new test", Title: "new test"}, nil).Times(1)
+				}).Return(domain.Todo{Description: "new test", Title: "new test"}, nil).Times(1)
 			},
 			expectedStatusCode: 200,
 		},
 		{
-			name:               "Error - wrong input",
-			body:               `{"description":"", "title":""}`,
+			name:               "Error - no description",
+			body:               `{"description":"", "title":"title"}`,
+			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			expectedStatusCode: 422,
+		},
+		{
+			name:               "Error - no title",
+			body:               `{"description":"test", "title":""}`,
 			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
 			expectedStatusCode: 422,
 		},
@@ -192,10 +233,10 @@ func TestServer_UpdateRemind(t *testing.T) {
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
 			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), model.TodoUpdateInput{
+				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), domain.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
-				}).Return(model.Todo{}, errors.New("something went wrong")).Times(1)
+				}).Return(domain.Todo{}, errors.New("something went wrong")).Times(1)
 			},
 			expectedStatusCode: 500,
 		},
@@ -223,7 +264,7 @@ func TestServer_UpdateRemind(t *testing.T) {
 	}
 }
 
-func TestControllers_GetAllReminds(t *testing.T) {
+func TestControllers_GetReminds(t *testing.T) {
 	testCases := []struct {
 		name               string
 		params             storage.FetchParams
@@ -244,7 +285,7 @@ func TestControllers_GetAllReminds(t *testing.T) {
 			},
 			userID: "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
 			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {
-				store.EXPECT().GetReminds(context.Background(), params, userID).Return([]model.Todo{{
+				store.EXPECT().GetReminds(context.Background(), params, userID).Return([]domain.Todo{{
 					ID:          1,
 					Title:       "test",
 					Description: "test",
@@ -254,6 +295,51 @@ func TestControllers_GetAllReminds(t *testing.T) {
 				}}, 1, 1, nil).Times(1)
 			},
 			expectedStatusCode: 200,
+		},
+		{
+			name: "Error wrong filter",
+			params: storage.FetchParams{
+				Page: utils.Page{
+					Cursor: 0,
+					Limit:  10,
+				},
+				FilterByDate:  "",
+				FilterBySort:  "ASC",
+				FilterByQuery: "all",
+			},
+			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			expectedStatusCode: 400,
+		},
+		{
+			name: "Error wrong filter params",
+			params: storage.FetchParams{
+				Page: utils.Page{
+					Cursor: 0,
+					Limit:  10,
+				},
+				FilterByDate:  "CratedAt",
+				FilterBySort:  "ASC",
+				FilterByQuery: "",
+			},
+			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			expectedStatusCode: 400,
+		},
+		{
+			name: "Error wrong filter options",
+			params: storage.FetchParams{
+				Page: utils.Page{
+					Cursor: 0,
+					Limit:  10,
+				},
+				FilterByDate:  "CratedAt",
+				FilterBySort:  "",
+				FilterByQuery: "all",
+			},
+			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			expectedStatusCode: 400,
 		},
 	}
 
@@ -314,6 +400,14 @@ func Test_DeleteRemind(t *testing.T) {
 			},
 			expectedStatus: 500,
 		},
+		{
+			name: "Error remind doesn't exist",
+			id:   1,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(storage.ErrCantFindRemindWithID).Times(1)
+			},
+			expectedStatus: 404,
+		},
 	}
 
 	for _, test := range testCases {
@@ -335,6 +429,150 @@ func Test_DeleteRemind(t *testing.T) {
 
 			require.Equal(t, test.expectedStatus, w.Code)
 
+		})
+	}
+
+}
+
+func TestServer_UpdateUserConfig(t *testing.T) {
+	testCases := []struct {
+		name               string
+		id                 string
+		body               string
+		mockBehavior       func(store *mockdb.MockReminderRepo, id string)
+		expectedStatusCode int
+	}{
+		{
+			name: "OK",
+			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			body: `{"notification": true, "period": 1}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+				store.EXPECT().UpdateUserConfig(gomock.Any(), gomock.Eq(id), domain.UserConfigs{
+					Notification: true,
+					Period:       1,
+				}).Return(nil).Times(1)
+			},
+			expectedStatusCode: 200,
+		},
+		{
+			name: "Error - internal error",
+			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			body: `{"notification": true, "period": 1}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+				store.EXPECT().UpdateUserConfig(gomock.Any(), gomock.Eq(id), domain.UserConfigs{
+					Notification: true,
+					Period:       1,
+				}).Return(errors.New("something went wrong")).Times(1)
+			},
+			expectedStatusCode: 500,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.id)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodPut, "/configs", bytes.NewBufferString(test.body))
+			req = mux.SetURLVars(req, map[string]string{"id": "rrdZH9ERxueDxj2m1e1T2vIQKBP2"})
+
+			handler := http.HandlerFunc(server.UpdateUserConfig)
+			handler.ServeHTTP(w, req)
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
+}
+
+func TestServer_AuthMiddleware(t *testing.T) {
+	tests := []struct {
+		name           string
+		token          string
+		mockBehavior   func(store *mock_firestore.MockClient, token string)
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:  "valid token",
+			token: "Bearer valid_token",
+			mockBehavior: func(store *mock_firestore.MockClient, token string) {
+				store.EXPECT().VerifyIDToken("valid_token").Return(&auth.Token{
+					UID: "user123",
+					Claims: map[string]interface{}{
+						"user_id": "user123",
+					},
+				}, nil)
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   "OK",
+		},
+		{
+			name:           "no authorization header",
+			token:          "",
+			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "you are not logged in",
+		},
+		{
+			name:           "invalid authorization header",
+			token:          "invalid_header",
+			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "you are not logged in",
+		},
+		{
+			name:  "invalid token",
+			token: "Bearer invalid_token",
+			mockBehavior: func(store *mock_firestore.MockClient, token string) {
+				store.EXPECT().VerifyIDToken("invalid_token").Return(nil, errors.New("invalid token"))
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "error verify token",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			req, err := http.NewRequest(http.MethodGet, "/", nil)
+			if err != nil {
+				t.Fatalf("failed to create request: %v", err)
+			}
+
+			if tt.token != "" {
+				req.Header.Set("Authorization", tt.token)
+			}
+
+			rec := httptest.NewRecorder()
+
+			client := mock_firestore.NewMockClient(c)
+			tt.mockBehavior(client, tt.token)
+
+			server := &Server{
+				FireClient: client,
+			}
+
+			handler := server.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte("OK"))
+			}))
+
+			handler.ServeHTTP(rec, req)
+
+			if rec.Code != tt.expectedStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v", rec.Code, tt.expectedStatus)
+			}
+
+			if !strings.Contains(rec.Body.String(), tt.expectedBody) {
+				t.Errorf("handler returned unexpected body: got %v want %v", rec.Body.String(), tt.expectedBody)
+			}
 		})
 	}
 
