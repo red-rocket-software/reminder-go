@@ -357,11 +357,13 @@ func TestStorage_CreateUserConfigs(t *testing.T) {
 		Period:       2,
 	}
 
-	got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserConfig.ID)
-	require.NoError(t, err)
-	require.Equal(t, got.ID, expectedUserConfig.ID)
-	require.Equal(t, got.Notification, expectedUserConfig.Notification)
-	require.Equal(t, got.Period, expectedUserConfig.Period)
+	t.Run("success", func(t *testing.T) {
+		got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserConfig.ID)
+		require.NoError(t, err)
+		require.Equal(t, got.ID, expectedUserConfig.ID)
+		require.Equal(t, got.Notification, expectedUserConfig.Notification)
+		require.Equal(t, got.Period, expectedUserConfig.Period)
+	})
 }
 
 func TestStorage_GetUserConfigs(t *testing.T) {

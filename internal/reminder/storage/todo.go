@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -537,6 +538,7 @@ func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (mod
 		&userConfig.CreatedAt,
 		&userConfig.UpdatedAt,
 	)
+	log.Print("CreatedAt ", userConfig.CreatedAt)
 	if err != nil {
 		s.logger.Errorf("Error create userConfigs: %v", err)
 		return model.UserConfigs{}, err
