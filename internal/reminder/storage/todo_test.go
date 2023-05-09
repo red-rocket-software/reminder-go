@@ -377,9 +377,16 @@ func TestStorage_GetUserConfigs(t *testing.T) {
 		log.Fatal("error truncate config")
 	}
 
-	got, err := testStorage.GetUserConfigs(context.Background(), expectedUserID)
-	require.NoError(t, err)
-	require.Equal(t, got.ID, expectedUserID)
-	require.Equal(t, got.Notification, true)
-	require.Equal(t, got.Period, 2)
+	t.Run("success", func(t *testing.T) {
+		config, err := testStorage.GetUserConfigs(context.Background(), expectedUserID)
+		require.NoError(t, err)
+		require.Equal(t, config.ID, expectedUserID)
+		require.Equal(t, config.Notification, true)
+		require.Equal(t, config.Period, 2)
+	})
+	t.Run("no rows in result set", func(t *testing.T) {
+		config, err := testStorage.GetUserConfigs(context.Background(), "0")
+		require.Empty(t, err)
+		require.Empty(t, config)
+	})
 }
