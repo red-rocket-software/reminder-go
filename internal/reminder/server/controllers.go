@@ -424,6 +424,7 @@ func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Reque
 	uID := vars["id"]
 
 	if uID == "" {
+
 		utils.JSONError(w, http.StatusInternalServerError, errors.New("empty or wrong userID"))
 		return
 	}
