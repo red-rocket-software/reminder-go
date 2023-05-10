@@ -575,5 +575,69 @@ func TestServer_AuthMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
 
+func Test_UpdateCompleteStatus(t *testing.T) {
+	tn := time.Now().Truncate(1 * time.Second)
+
+	testCases := []struct {
+		name               string
+		id                 int
+		body               string
+		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
+		expectedStatusCode int
+	}{
+		{
+			name: "OK",
+			id:   1,
+			body: `{"completed": true}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
+					Completed:  true,
+					FinishedAt: &tn,
+				}).Return(nil).Times(1)
+			},
+			expectedStatusCode: 200,
+		},
+		{
+			name:               "Error - Missed Body",
+			id:                 1,
+			body:               "",
+			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			expectedStatusCode: 422,
+		},
+		{
+			name: "Error - Internal error",
+			id:   1,
+			body: `{"completed": true}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
+					Completed:  true,
+					FinishedAt: &tn,
+				}).Return(errors.New("remind not found")).Times(1)
+			},
+			expectedStatusCode: 500,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.id)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodPut, "/status", bytes.NewBufferString(test.body))
+			req = mux.SetURLVars(req, map[string]string{"id": "1"})
+
+			handler := http.HandlerFunc(server.UpdateCompleteStatus)
+			handler.ServeHTTP(w, req)
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
 }

@@ -315,7 +315,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	tn := time.Now()
+	tn := time.Now().Truncate(1 * time.Second)
 
 	if updateInput.Completed {
 		updateInput.FinishedAt = &tn
