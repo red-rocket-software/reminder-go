@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -575,5 +576,141 @@ func TestServer_AuthMiddleware(t *testing.T) {
 			}
 		})
 	}
+}
 
+func Test_UpdateCompleteStatus(t *testing.T) {
+	tn := time.Now().Truncate(1 * time.Second)
+
+	testCases := []struct {
+		name               string
+		id                 int
+		body               string
+		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
+		expectedStatusCode int
+	}{
+		{
+			name: "OK",
+			id:   1,
+			body: `{"completed": true}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
+					Completed:  true,
+					FinishedAt: &tn,
+				}).Return(nil).Times(1)
+			},
+			expectedStatusCode: 200,
+		},
+		{
+			name:               "Error - Missed Body",
+			id:                 1,
+			body:               "",
+			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			expectedStatusCode: 422,
+		},
+		{
+			name: "Error - Internal error",
+			id:   1,
+			body: `{"completed": true}`,
+			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
+					Completed:  true,
+					FinishedAt: &tn,
+				}).Return(errors.New("remind not found")).Times(1)
+			},
+			expectedStatusCode: 500,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.id)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodPut, "/status", bytes.NewBufferString(test.body))
+
+			req = mux.SetURLVars(req, map[string]string{"id": strconv.Itoa(test.id)})
+
+			handler := http.HandlerFunc(server.UpdateCompleteStatus)
+			handler.ServeHTTP(w, req)
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
+}
+
+func TestServer_GetOrCreateUserConfig(t *testing.T) {
+	tn := time.Now()
+
+	testCases := []struct {
+		name               string
+		id                 string
+		mockBehavior       func(store *mockdb.MockReminderRepo, id string)
+		expectedStatusCode int
+	}{
+		{
+			name: "OK",
+			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, nil)
+				store.EXPECT().CreateUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{
+					ID:           id,
+					Notification: false,
+					Period:       2,
+					CreatedAt:    tn,
+				}, nil)
+			},
+			expectedStatusCode: 200,
+		},
+		{
+			name: "Error - Wrong uID",
+			id:   "",
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			},
+			expectedStatusCode: 500,
+		},
+		{
+			name: "Error - GetUserConfigs Error",
+			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, errors.New("cannot get user-configs from database"))
+			},
+			expectedStatusCode: 500,
+		},
+		{
+			name: "Error - CreateUserConfigs Error",
+			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
+			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, nil)
+				store.EXPECT().CreateUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, errors.New("Error create userConfigs"))
+			},
+			expectedStatusCode: 500,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(*testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			store := mockdb.NewMockReminderRepo(c)
+			test.mockBehavior(store, test.id)
+
+			server := newTestServer(store)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(http.MethodGet, "/configs", http.NoBody)
+			req = mux.SetURLVars(req, map[string]string{"id": test.id})
+
+			handler := http.HandlerFunc(server.GetOrCreateUserConfig)
+			handler.ServeHTTP(w, req)
+
+			require.Equal(t, test.expectedStatusCode, w.Code)
+		})
+	}
 }
