@@ -137,6 +137,7 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 		}
 		if errors.Is(err, storage.ErrCantFindRemindWithID) {
 			utils.JSONError(w, http.StatusNotFound, err)
+			return
 		}
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -400,6 +401,10 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value("userID").(string)
 
 	reminds, count, nextCursor, err := server.TodoStorage.GetReminds(server.ctx, params, userID)
+	if err != nil {
+		utils.JSONError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	res := model.TodoResponse{
 		Todos: reminds,
@@ -408,11 +413,6 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 			Page:       params.Page,
 			NextCursor: nextCursor,
 		},
-	}
-
-	if err != nil {
-		utils.JSONError(w, http.StatusInternalServerError, err)
-		return
 	}
 
 	utils.JSONFormat(w, http.StatusOK, res)
@@ -460,7 +460,7 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		verifyToken, err := server.FireClient.VerifyIDToken(server.ctx, token)
+		verifyToken, err := server.FireClient.VerifyIDToken(token)
 		if err != nil {
 			utils.JSONError(w, http.StatusUnauthorized, errors.New("error verify token"))
 			return

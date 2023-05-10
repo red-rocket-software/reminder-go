@@ -4,21 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"firebase.google.com/go/auth"
 	"github.com/red-rocket-software/reminder-go/config"
 	todoModel "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/workers/notifier/mail"
 )
 
 type Worker struct {
 	todoStorage storage.ReminderRepo
-	fireClient  *auth.Client
+	fireClient  firestore.Client
 	ctx         context.Context
 	cfg         config.Config
 }
 
-func NewWorker(ctx context.Context, todoStorage storage.ReminderRepo, fireClient *auth.Client, cfg config.Config) *Worker {
+func NewWorker(ctx context.Context, todoStorage storage.ReminderRepo, fireClient firestore.Client, cfg config.Config) *Worker {
 	return &Worker{
 		todoStorage: todoStorage,
 		fireClient:  fireClient,
@@ -40,7 +40,7 @@ func (w *Worker) ProcessSendNotification() error {
 		w.cfg.Email.SMTPServerAddress)
 
 	for _, remind := range remindsToNotify {
-		user, err := w.fireClient.GetUser(w.ctx, remind.UserID)
+		user, err := w.fireClient.GetUser(remind.UserID)
 		if err != nil {
 			return fmt.Errorf("erorr to get user, err: %v", err)
 		}
@@ -81,7 +81,7 @@ func (w *Worker) ProcessSendDeadlineNotification() error {
 	)
 
 	for _, remind := range remindsToNotify {
-		user, err := w.fireClient.GetUser(w.ctx, remind.UserID)
+		user, err := w.fireClient.GetUser(remind.UserID)
 		if err != nil {
 			return fmt.Errorf("erorr to get user, err: %v", err)
 		}

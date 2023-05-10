@@ -248,13 +248,14 @@ func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 	res, err := s.Postgres.Exec(ctx, sql, id)
 	s.logger.Errorf("Error delete remind: %v", err)
 	if err != nil {
-		return ErrCantFindRemindWithID
+		s.logger.Errorf("error don't found remind: %v", err)
+		return ErrDeleteFailed
 	}
 
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
-		s.logger.Errorf("error don't found remind: %v", err)
-		return ErrDeleteFailed
+		s.logger.Errorf("Error delete remind: %v", err)
+		return ErrCantFindRemindWithID
 	}
 
 	return nil
