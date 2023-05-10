@@ -635,7 +635,6 @@ func TestStorageTodo_UpdateUserConfig(t *testing.T) {
 		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
 		require.NoError(t, err)
 	})
-
 	t.Run("empty input", func(t *testing.T) {
 		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, model.UserConfigs{})
 		require.NoError(t, err)
