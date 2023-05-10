@@ -64,7 +64,7 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 	}
 
 	if params.Cursor > 0 {
-		switch params.FilterBySort {
+		switch params.FilterByDate {
 		case "DESC":
 			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		case "ASC":
@@ -246,15 +246,14 @@ func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input mod
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 	const sql = `DELETE FROM todo WHERE "ID" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
-
+	s.logger.Errorf("Error delete remind: %v", err)
 	if err != nil {
-		s.logger.Errorf("error don't found remind: %v", err)
 		return ErrCantFindRemindWithID
 	}
 
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
-		s.logger.Errorf("Error delete remind: %v", err)
+		s.logger.Errorf("error don't found remind: %v", err)
 		return ErrDeleteFailed
 	}
 
@@ -305,28 +304,26 @@ func (s *TodoStorage) Truncate() error {
 
 // SeedTodos seed todos for tests
 func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
-	// date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
-	now := time.Now().Truncate(1 * time.Second).UTC()
-	date := time.Now().Truncate(1*time.Second).UTC().AddDate(0, 0, 1)
-	dateNotifyPeriod, _ := time.Parse(time.RFC3339, time.Now().Truncate(time.Minute).Format(time.RFC3339))
+	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
+	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
 
 	userID, err := s.SeedUserConfig()
 	if err != nil {
 		s.logger.Println(err)
+		return []model.Todo{}, err
 	}
 
-	b := true
+	// b := true
 
 	todos := []model.Todo{
 		{
-			Description:    "tes1",
-			Title:          "tes1",
-			UserID:         userID,
-			CreatedAt:      now,
-			DeadlineAt:     date,
-			Completed:      false,
-			DeadlineNotify: &b,
-			NotifyPeriod:   []time.Time{dateNotifyPeriod},
+			Description: "tes1",
+			Title:       "tes1",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+			Completed:   false,
 		},
 		{
 			Description: "tes2",
@@ -335,6 +332,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 			CreatedAt:   now,
 			DeadlineAt:  date,
 			Completed:   true,
+			FinishedAt:  &finishedDate,
 		},
 		{
 			Description: "tes3",
@@ -360,10 +358,84 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning "ID"`
+		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed") 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7) returning "ID"`
 
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed)
+
+		err := row.Scan(&todos[i].ID)
+		if err != nil {
+			s.logger.Errorf("Error create remind: %v", err)
+		}
+
+	}
+
+	return todos, nil
+}
+
+// SeedTodos seed todos for tests with notification
+func (s *TodoStorage) SeedTodosForDeadline() ([]model.Todo, error) {
+	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
+	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
+	dateNotifyPeriod, _ := time.Parse(time.RFC3339, time.Now().Truncate(time.Minute).Format(time.RFC3339))
+
+	userID, err := s.SeedUserConfig()
+	if err != nil {
+		s.logger.Println(err)
+		return []model.Todo{}, err
+	}
+
+	b := true
+
+	todos := []model.Todo{
+		{
+			Description:    "tes1",
+			Title:          "tes1",
+			UserID:         userID,
+			CreatedAt:      now,
+			DeadlineAt:     date,
+			Completed:      false,
+			DeadlineNotify: &b,
+			NotifyPeriod:   []time.Time{dateNotifyPeriod},
+		},
+		{
+			Description: "tes2",
+			Title:       "tes2",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+			Completed:   true,
+			FinishedAt:  &finishedDate,
+		},
+		{
+			Description: "tes3",
+			Title:       "tes3",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes4",
+			Title:       "tes4",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes5",
+			Title:       "tes5",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+	}
+
+	for i := range todos {
+		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning "ID"`
+
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
 
 		err := row.Scan(&todos[i].ID)
 		if err != nil {

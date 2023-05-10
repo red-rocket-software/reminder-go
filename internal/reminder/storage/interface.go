@@ -25,6 +25,7 @@ type ReminderRepo interface {
 	GetRemindByID(ctx context.Context, id int) (model.Todo, error)
 	Truncate() error
 	SeedTodos() ([]model.Todo, error)
+	SeedTodosForDeadline() ([]model.Todo, error)
 	SeedUserConfig() (string, error)
 	GetRemindsForNotification(ctx context.Context) ([]model.NotificationRemind, error)
 	GetRemindsForDeadlineNotification(ctx context.Context) ([]model.NotificationRemind, string, error)
