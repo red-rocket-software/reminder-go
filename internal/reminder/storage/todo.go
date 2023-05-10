@@ -314,8 +314,6 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 		return []model.Todo{}, err
 	}
 
-	// b := true
-
 	todos := []model.Todo{
 		{
 			Description: "tes1",
@@ -432,7 +430,7 @@ func (s *TodoStorage) SeedTodosForDeadline() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
+const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
 				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning "ID"`
 
 		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
