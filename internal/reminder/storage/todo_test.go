@@ -335,6 +335,20 @@ func TestStorageTodo_SeedTodos(t *testing.T) {
 	require.Equal(t, len(todos), 5)
 }
 
+func TestStorageTodo_SeedTodosForDeadline(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	todos, err := testStorage.SeedTodosForDeadline()
+
+	require.NoError(t, err)
+	require.Equal(t, len(todos), 5)
+}
+
 func TestTodoStorage_UpdateNotification(t *testing.T) {
 	defer func() {
 		err := testStorage.Truncate()
@@ -478,4 +492,220 @@ func TestTodoStorage_SeedUserConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStorage_GetRemindsForNotification(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	_, err := testStorage.SeedTodosForDeadline()
+	if err != nil {
+		log.Fatal("error seed reminds")
+	}
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, 0, len(reminds))
+
+		tn := time.Now().Truncate(1 * time.Second).UTC()
+
+		for _, remind := range reminds {
+			userID := remind.UserID
+			userConfig, err := testStorage.GetUserConfigs(context.Background(), userID)
+			if err != nil {
+				log.Fatal("error to get userConfig")
+			}
+			tfromPeriod := time.Now().AddDate(0, 0, userConfig.Period)
+			expr := remind.DeadlineAt.After(tn) && remind.DeadlineAt.Before(tfromPeriod)
+			require.Equal(t, true, expr)
+		}
+
+		err = testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+		require.NoError(t, err)
+	})
+
+	t.Run("no reminds for Notification at this moment", func(t *testing.T) {
+		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		require.NoError(t, err)
+		require.Empty(t, reminds)
+	})
+}
+
+func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	expectedReminds, err := testStorage.SeedTodosForDeadline()
+	if err != nil {
+		log.Fatal("error seed reminds")
+	}
+	require.NoError(t, err)
+
+	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
+
+	t.Run("success", func(t *testing.T) {
+		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, 1, len(reminds))
+		require.Equal(t, tn, timeNow)
+		require.Equal(t, expectedReminds[0].UserID, reminds[0].UserID)
+
+		err = testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+		require.NoError(t, err)
+	})
+
+	t.Run("no reminds for DeadlineNotification at this moment", func(t *testing.T) {
+		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		require.Empty(t, reminds)
+		require.Equal(t, tn, timeNow)
+		require.Empty(t, err)
+	})
+}
+
+func TestStorage_UpdateNotifyPeriod(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	expectedTodos, err := testStorage.SeedTodosForDeadline()
+	if err != nil {
+		log.Fatal("error seed reminds")
+	}
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		err = testStorage.UpdateNotifyPeriod(context.Background(), expectedTodos[0].ID, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		require.NoError(t, err)
+	})
+
+	t.Run("remind not found", func(t *testing.T) {
+		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		require.Error(t, err)
+	})
+
+	t.Run("empty timeToDelete", func(t *testing.T) {
+		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, "")
+		require.Error(t, err)
+	})
+
+}
+
+func TestStorageTodo_UpdateUserConfig(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	expectedUserID, err := testStorage.SeedUserConfig()
+	if err != nil {
+		log.Fatal("error truncate config")
+	}
+	require.NoError(t, err)
+	tn := time.Now()
+
+	updateConfigInput := model.UserConfigs{
+		ID:           expectedUserID,
+		Notification: true,
+		Period:       1,
+		UpdatedAt:    &tn,
+	}
+
+	t.Run("success", func(t *testing.T) {
+		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
+		require.NoError(t, err)
+	})
+	t.Run("empty input", func(t *testing.T) {
+		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, model.UserConfigs{})
+		require.NoError(t, err)
+	})
+
+	t.Run("user configs not found", func(t *testing.T) {
+		err = testStorage.UpdateUserConfig(context.Background(), "0", updateConfigInput)
+		require.Error(t, err)
+	})
+
+}
+
+func TestStorage_CreateUserConfigs(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	expectedUserID, err := testStorage.SeedUserConfig()
+	if err != nil {
+		log.Fatal("error truncate config")
+	}
+	require.NoError(t, err)
+
+	expectedUserConfig := model.UserConfigs{
+		ID:           "1",
+		Notification: false,
+		Period:       2,
+	}
+
+	t.Run("success", func(t *testing.T) {
+		got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserConfig.ID)
+		require.NoError(t, err)
+		require.Equal(t, got.ID, expectedUserConfig.ID)
+		require.Equal(t, got.Notification, expectedUserConfig.Notification)
+		require.Equal(t, got.Period, expectedUserConfig.Period)
+	})
+
+	t.Run("fail user already exist", func(t *testing.T) {
+		got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserID)
+		require.Error(t, err)
+		require.Empty(t, got)
+	})
+}
+
+func TestStorage_GetUserConfigs(t *testing.T) {
+	defer func() {
+		err := testStorage.Truncate()
+		if err != nil {
+			log.Fatal("error truncate table")
+		}
+	}()
+
+	expectedUserID, err := testStorage.SeedUserConfig()
+	if err != nil {
+		log.Fatal("error truncate config")
+	}
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		config, err := testStorage.GetUserConfigs(context.Background(), expectedUserID)
+		require.NoError(t, err)
+		require.Equal(t, config.ID, expectedUserID)
+		require.Equal(t, config.Notification, true)
+		require.Equal(t, config.Period, 2)
+	})
+	t.Run("no rows in result set", func(t *testing.T) {
+		config, err := testStorage.GetUserConfigs(context.Background(), "0")
+		require.Empty(t, err)
+		require.Empty(t, config)
+	})
 }

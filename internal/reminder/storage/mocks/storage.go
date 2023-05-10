@@ -173,6 +173,21 @@ func (mr *MockReminderRepoMockRecorder) SeedTodos() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedTodos", reflect.TypeOf((*MockReminderRepo)(nil).SeedTodos))
 }
 
+// SeedTodosForDeadline mocks base method.
+func (m *MockReminderRepo) SeedTodosForDeadline() ([]domain.Todo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SeedTodosForDeadline")
+	ret0, _ := ret[0].([]domain.Todo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SeedTodosForDeadline indicates an expected call of SeedTodosForDeadline.
+func (mr *MockReminderRepoMockRecorder) SeedTodosForDeadline() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SeedTodosForDeadline", reflect.TypeOf((*MockReminderRepo)(nil).SeedTodosForDeadline))
+}
+
 // SeedUserConfig mocks base method.
 func (m *MockReminderRepo) SeedUserConfig() (string, error) {
 	m.ctrl.T.Helper()

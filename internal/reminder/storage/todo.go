@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -320,6 +321,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 			UserID:      userID,
 			CreatedAt:   now,
 			DeadlineAt:  date,
+			Completed:   false,
 		},
 		{
 			Description: "tes2",
@@ -369,11 +371,85 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	return todos, nil
 }
 
+// SeedTodos seed todos for tests with notification
+func (s *TodoStorage) SeedTodosForDeadline() ([]model.Todo, error) {
+	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
+	now := time.Now().Truncate(1 * time.Millisecond).UTC()
+	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
+	dateNotifyPeriod, _ := time.Parse(time.RFC3339, time.Now().Truncate(time.Minute).Format(time.RFC3339))
+
+	userID, err := s.SeedUserConfig()
+	if err != nil {
+		s.logger.Println(err)
+		return []model.Todo{}, err
+	}
+
+	b := true
+
+	todos := []model.Todo{
+		{
+			Description:    "tes1",
+			Title:          "tes1",
+			UserID:         userID,
+			CreatedAt:      now,
+			DeadlineAt:     date,
+			Completed:      false,
+			DeadlineNotify: &b,
+			NotifyPeriod:   []time.Time{dateNotifyPeriod},
+		},
+		{
+			Description: "tes2",
+			Title:       "tes2",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+			Completed:   true,
+			FinishedAt:  &finishedDate,
+		},
+		{
+			Description: "tes3",
+			Title:       "tes3",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes4",
+			Title:       "tes4",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+		{
+			Description: "tes5",
+			Title:       "tes5",
+			UserID:      userID,
+			CreatedAt:   now,
+			DeadlineAt:  date,
+		},
+	}
+
+	for i := range todos {
+		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning "ID"`
+
+		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
+
+		err := row.Scan(&todos[i].ID)
+		if err != nil {
+			s.logger.Errorf("Error create remind: %v", err)
+		}
+
+	}
+
+	return todos, nil
+}
+
 // SeedUserConfig seed todos for tests
 func (s *TodoStorage) SeedUserConfig() (string, error) {
 	userConfig := model.UserConfigs{
 		ID:           "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-		Notification: false,
+		Notification: true,
 		Period:       2,
 		CreatedAt:    time.Now(),
 	}
@@ -532,6 +608,7 @@ func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (mod
 		&userConfig.CreatedAt,
 		&userConfig.UpdatedAt,
 	)
+	log.Print("CreatedAt ", userConfig.CreatedAt)
 	if err != nil {
 		s.logger.Errorf("Error create userConfigs: %v", err)
 		return model.UserConfigs{}, err
