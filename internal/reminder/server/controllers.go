@@ -474,3 +474,7 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (server *Server) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	utils.JSONFormat(w, http.StatusOK, "OK")
+}
