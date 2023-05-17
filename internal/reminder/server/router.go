@@ -13,6 +13,8 @@ func (server *Server) ConfigureReminderRouter() *mux.Router {
 
 	router.Use(middlewares.Cors)
 
+	router.HandleFunc("/health", server.HealthCheck).Methods("GET")
+
 	// private routes
 	privateRoute := router.PathPrefix("").Subrouter()
 	privateRoute.Use(server.AuthMiddleware)
