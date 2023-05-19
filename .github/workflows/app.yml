@@ -56,3 +56,63 @@ jobs:
           with:
             # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
             version: v1.45.2
+  
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/stage'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker Images
+        run: |
+          docker buildx build \
+            --file Dockerfile \
+            --tag your-image-tag \
+            .
+
+      - name: Login to Google Container Registry
+        run: |
+          docker buildx build \
+            --file Dockerfile \
+            --tag your-image-tag \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push your-image-tag
+    
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/stage'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          version: 'latest'
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: YOUR_PROJECT_ID
+
+      - name: Configure Docker and Kubectl
+        run: |
+          gcloud --quiet components update
+          gcloud --quiet components install kubectl
+          gcloud auth configure-docker --quiet
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+      - name: Deploy to GKE
+        run: |
+          helm upgrade --install your-release-name your-chart-directory \
+            --set image.repository=gcr.io/YOUR_PROJECT_ID/your-image-tag \
+            --set image.tag=latest \
+            --set other-values=...
+
