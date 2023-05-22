@@ -70,7 +70,7 @@ jobs:
 
       - name: Build Reminder image
         run: |
-          docker buildx build \
+          docker build \
             --file dockers/Dockerfile-reminder \
             -t eu.gcr.io/coa-project-5c923/coa-reminder:latest \
             .
@@ -78,7 +78,7 @@ jobs:
 
       - name: Build Worker image
         run: |
-          docker buildx build \
+          docker build \
             --file dockers/Dockerfile-worker \
             -t eu.gcr.io/coa-project-5c923/coa-worker:latest \
             .
