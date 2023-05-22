@@ -102,7 +102,7 @@ jobs:
 
       - name: Push Docker images
         run: |
-          docker image ls
+          gcloud auth activate-service-account --key-file ${{ secrets.GCP_SA_KEY }}
           docker push eu.gcr.io/coa-project-5c923/coa-reminder:latest
           docker push eu.gcr.io/coa-project-5c923/coa-worker:latest
   
