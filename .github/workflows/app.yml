@@ -81,6 +81,7 @@ jobs:
             --file dockers/Dockerfile-worker \
             --tag eu.gcr.io/coa-project-5c923/coa-worker:latest \
             .
+          docker image ls
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@main
@@ -95,6 +96,7 @@ jobs:
 
       - name: Push Docker images
         run: |
+          docker image ls
           docker push eu.gcr.io/coa-project-5c923/coa-reminder:latest
           docker push eu.gcr.io/coa-project-5c923/coa-worker:latest
   
