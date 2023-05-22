@@ -91,10 +91,7 @@ jobs:
 
       - name: Login to Google Container Registry
         run: |
-          gcloud auth configure-docker europe-central2-docker.pkg.dev \
-            --file Dockerfile \
-            --tag your-image-tag \
-            .
+          gcloud auth configure-docker europe-central2-docker.pkg.dev
 
       - name: Push Docker images
         run: |
