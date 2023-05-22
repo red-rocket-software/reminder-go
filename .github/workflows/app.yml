@@ -72,14 +72,15 @@ jobs:
         run: |
           docker buildx build \
             --file dockers/Dockerfile-reminder \
-            --tag eu.gcr.io/coa-project-5c923/coa-reminder:latest \
+            -t eu.gcr.io/coa-project-5c923/coa-reminder:latest \
             .
+            docker image ls
 
       - name: Build Worker image
         run: |
           docker buildx build \
             --file dockers/Dockerfile-worker \
-            --tag eu.gcr.io/coa-project-5c923/coa-worker:latest \
+            -t eu.gcr.io/coa-project-5c923/coa-worker:latest \
             .
           docker image ls
 
