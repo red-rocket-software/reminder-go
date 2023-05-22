@@ -19,7 +19,7 @@ RUN apk --no-cache add ca-certificates
 EXPOSE 8000
 
 # GOPATH for scratch images is /
-COPY --from=builder /app/config.yaml /
-COPY --from=builder /app/serviceAccountKey.json /
+#COPY --from=builder /app/config.yaml /
+#COPY --from=builder /app/serviceAccountKey.json /
 COPY --from=builder /bin/app /app
 CMD ["/app"]
