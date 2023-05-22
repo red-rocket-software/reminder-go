@@ -102,7 +102,8 @@ jobs:
 
       - name: Push Docker images
         run: |
-          gcloud auth activate-service-account --key-file ${{ secrets.GCP_SA_KEY }}
+          echo ${{ secrets.GCP_SA_KEY }} > auth.json
+          gcloud auth activate-service-account --key-file auth.json
           docker push eu.gcr.io/coa-project-5c923/coa-reminder:latest
           docker push eu.gcr.io/coa-project-5c923/coa-worker:latest
   
