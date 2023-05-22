@@ -95,6 +95,11 @@ jobs:
         run: |
           gcloud auth configure-docker europe-central2-docker.pkg.dev
 
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Push Docker images
         run: |
           docker image ls
