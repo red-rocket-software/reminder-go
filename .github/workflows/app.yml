@@ -65,47 +65,67 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Build Reminder image
-        run: |
-          docker build \
-            --file dockers/Dockerfile-reminder \
-            -t eu.gcr.io/coa-project-5c923/coa-reminder:latest \
-            .
-            docker image ls
-
-      - name: Build Worker image
-        run: |
-          docker build \
-            --file dockers/Dockerfile-worker \
-            -t eu.gcr.io/coa-project-5c923/coa-worker:latest \
-            .
-          docker image ls
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@main
+      - name: Build and push reminder
+        uses: RafikFarhad/push-to-gcr-github-action@v5-beta
         with:
-          version: 'latest'
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          gcloud_service_key: ${{ secrets.GCP_SA_KEY }}
+          registry: eu.gcr.io
           project_id: coa-project-5c923
-
-      - name: Login to Google Container Registry
-        run: |
-          gcloud auth configure-docker europe-central2-docker.pkg.dev
-
-      - name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+          image_name: coa-reminder
+          image_tag: latest
+          dockerfile: dockers/Dockerfile-reminder
+          context: .
+      - name: Build and push worker
+        uses: RafikFarhad/push-to-gcr-github-action@v5-beta
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Push Docker images
-        run: |
-          echo ${{ secrets.GCP_SA_KEY }} > auth.json
-          gcloud auth activate-service-account --key-file auth.json
-          docker push eu.gcr.io/coa-project-5c923/coa-reminder:latest
-          docker push eu.gcr.io/coa-project-5c923/coa-worker:latest
+          gcloud_service_key: ${{ secrets.GCP_SA_KEY }}
+          registry: eu.gcr.io
+          project_id: coa-project-5c923
+          image_name: coa-worker
+          image_tag: latest
+          dockerfile: dockers/Dockerfile-worker
+          context: .
+     #- name: Set up Docker Buildx
+     #  uses: docker/setup-buildx-action@v1
+#
+     #- name: Build Reminder image
+     #  run: |
+     #    docker build \
+     #      --file dockers/Dockerfile-reminder \
+     #      -t eu.gcr.io/coa-project-5c923/coa-reminder:latest \
+     #      .
+     #      docker image ls
+#
+     #- name: Build Worker image
+     #  run: |
+     #    docker build \
+     #      --file dockers/Dockerfile-worker \
+     #      -t eu.gcr.io/coa-project-5c923/coa-worker:latest \
+     #      .
+     #    docker image ls
+#
+     #- name: Set up Google Cloud SDK
+     #  uses: google-github-actions/setup-gcloud@main
+     #  with:
+     #    version: 'latest'
+     #    service_account_key: ${{ secrets.GCP_SA_KEY }}
+     #    project_id: coa-project-5c923
+#
+     #- name: Login to Google Container Registry
+     #  run: |
+     #    gcloud auth configure-docker europe-central2-docker.pkg.dev
+#
+     #- name: 'Authenticate to Google Cloud'
+     #  uses: 'google-github-actions/auth@v1'
+     #  with:
+     #    credentials_json: ${{ secrets.GCP_SA_KEY }}
+#
+     #- name: Push Docker images
+     #  run: |
+     #    echo ${{ secrets.GCP_SA_KEY }} > auth.json
+     #    gcloud auth activate-service-account --key-file auth.json
+     #    docker push eu.gcr.io/coa-project-5c923/coa-reminder:latest
+     #    docker push eu.gcr.io/coa-project-5c923/coa-worker:latest
   
   manual-approval:
     runs-on: ubuntu-latest
