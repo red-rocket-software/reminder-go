@@ -162,11 +162,20 @@ jobs:
           git checkout dev
           cd Helm
 
+          REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
+          WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
+          docker pull $REMINDER_IMAGE
+          docker pull $WORKER_IMAGE
+          REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
+          WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
+          REMINDER_TAG={REMINDER_SHA: -25}
+          WORKER_TAG={WORKER_SHA: -25}
+
           helm upgrade --install staging-reminder-release reminder-chart \
             --set image=eu.gcr.io/coa-project-5c923/coa-reminder \
-            --set tag=latest
+            --set tag=$REMINDER_TAG
           helm upgrade --install staging-worker-release worker-chart \
             --set image=eu.gcr.io/coa-project-5c923/coa-worker \
-            --set tag=latest
+            --set tag=$WORKER_TAG
 
 # Вуздщ
