@@ -137,6 +137,8 @@ jobs:
 
       - name: Deploy to GKE
         run: |
+          eval `ssh-agent -s`
+          ssh-add - <<< '${{ secrets.INFRASTRUCTURE_PRIVATE_KEY }}'
           git clone https://github.com/red-rocket-software/coa-infrastructure.git
           cd coa-infrastructure
           git checkout dev
