@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS "todo" (
+CREATE SCHEMA IF NOT EXISTS "reminder";
+
+CREATE TABLE IF NOT EXISTS reminder.todo (
   "ID" serial PRIMARY KEY,
   "User" varchar NOT NULL,
   "Title" varchar NOT NULL,
@@ -12,9 +14,9 @@ CREATE TABLE IF NOT EXISTS "todo" (
   "NotifyPeriod" timestamp []
 );
 
-CREATE INDEX ON "todo" ("User");
+CREATE INDEX ON reminder.todo ("User");
 
-CREATE TABLE IF NOT EXISTS "users_configs" (
+CREATE TABLE IF NOT EXISTS reminder.users_configs (
   "ID" varchar NOT NULL PRIMARY KEY,
   "Notification" bool NOT NULL DEFAULT false,
   "Period" INT,
@@ -22,4 +24,4 @@ CREATE TABLE IF NOT EXISTS "users_configs" (
   "UpdatedAt" timestamp
 );
 
-ALTER TABLE "todo" ADD FOREIGN KEY ("User") REFERENCES "users_configs" ("ID");
+ALTER TABLE reminder.todo ADD FOREIGN KEY ("User") REFERENCES reminder.users_configs ("ID");

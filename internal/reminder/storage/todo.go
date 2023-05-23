@@ -49,16 +49,16 @@ func (s *TodoStorage) GetReminds(ctx context.Context, params FetchParams, userID
 	switch params.FilterByQuery {
 	case "current":
 		sql = fmt.Sprintf(`SELECT *, (
-SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = false) as total_count
-FROM todo WHERE "User" = '%s' AND "Completed" = false`, userID, userID)
+SELECT COUNT(*) FROM reminder.todo WHERE "User" = '%s' AND "Completed" = false) as total_count
+FROM reminder.todo WHERE "User" = '%s' AND "Completed" = false`, userID, userID)
 	case "completed":
 		sql = fmt.Sprintf(`SELECT *, (
-SELECT COUNT(*) FROM todo WHERE "User" = '%s' AND "Completed" = true) as total_count
-FROM todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
+SELECT COUNT(*) FROM reminder.todo WHERE "User" = '%s' AND "Completed" = true) as total_count
+FROM reminder.todo WHERE "User" = '%s' AND "Completed" = true`, userID, userID)
 	case "all":
 		sql = fmt.Sprintf(`SELECT *, (
-SELECT COUNT(*) FROM todo WHERE "User" = '%s') as total_count
-FROM todo WHERE "User" = '%s'`, userID, userID)
+SELECT COUNT(*) FROM reminder.todo WHERE "User" = '%s') as total_count
+FROM reminder.todo WHERE "User" = '%s'`, userID, userID)
 	default:
 		return nil, 0, 0, errors.New("wrong filterParams value")
 	}
@@ -66,9 +66,9 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 	if params.Cursor > 0 {
 		switch params.FilterByDate {
 		case "DESC":
-			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" < (SELECT "%s" FROM reminder.todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		case "ASC":
-			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
+			sql += fmt.Sprintf(` AND "%s" > (SELECT "%s" FROM reminder.todo WHERE "ID" = %d)`, params.FilterByDate, params.FilterByDate, params.Cursor)
 		}
 	}
 
@@ -126,7 +126,7 @@ FROM todo WHERE "User" = '%s'`, userID, userID)
 func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (model.Todo, error) {
 	var createdTodo model.Todo
 
-	const sql = `INSERT INTO todo ("Title", "Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod") 
+	const sql = `INSERT INTO reminder.todo ("Title", "Description",  "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod") 
 				 VALUES ($1, $2, $3, $4, $5, $6, $7) returning "ID", "Title", "Description", "User", "CreatedAt", "DeadlineAt", "DeadlineNotify", "NotifyPeriod"`
 	row := s.Postgres.QueryRow(ctx, sql, todo.Title, todo.Description, todo.UserID, todo.CreatedAt, todo.DeadlineAt, todo.DeadlineNotify, todo.NotifyPeriod)
 	err := row.Scan(
@@ -148,7 +148,7 @@ func (s *TodoStorage) CreateRemind(ctx context.Context, todo model.Todo) (model.
 
 // UpdateRemind update remind, can change Description, Completed and FinishedAt if Completed = true
 func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.TodoUpdateInput) (model.Todo, error) {
-	const sql = `UPDATE todo SET "Title" = $1, "Description" = $2, "DeadlineAt"=$3, "FinishedAt" = $4, "Completed" = $5, "DeadlineNotify" = $6, "NotifyPeriod" = $7 WHERE "ID" = $8`
+	const sql = `UPDATE reminder.todo SET "Title" = $1, "Description" = $2, "DeadlineAt"=$3, "FinishedAt" = $4, "Completed" = $5, "DeadlineNotify" = $6, "NotifyPeriod" = $7 WHERE "ID" = $8`
 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Title, input.Description, input.DeadlineAt, input.FinishedAt, input.Completed, input.DeadlineNotify, input.NotifyPeriod, id)
 	if err != nil {
@@ -191,7 +191,7 @@ func (s *TodoStorage) UpdateRemind(ctx context.Context, id int, input model.Todo
 
 // UpdateNotification update Notificated field
 func (s *TodoStorage) UpdateNotification(ctx context.Context, id int, dao model.NotificationDAO) error {
-	sql := `UPDATE todo SET "Notificated" = $1 WHERE "ID" = $2`
+	sql := `UPDATE reminder.todo SET "Notificated" = $1 WHERE "ID" = $2`
 
 	ct, err := s.Postgres.Exec(ctx, sql, dao.Notificated, id)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *TodoStorage) UpdateNotification(ctx context.Context, id int, dao model.
 
 // UpdateStatus update Completed field
 func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput model.TodoUpdateStatusInput) error {
-	const sql = `UPDATE todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "ID" = $3`
+	const sql = `UPDATE reminder.todo SET "FinishedAt" = $1, "Completed" = $2 WHERE "ID" = $3`
 
 	ct, err := s.Postgres.Exec(ctx, sql, updateInput.FinishedAt, updateInput.Completed, id)
 	if err != nil {
@@ -226,7 +226,7 @@ func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput mode
 // UpdateUserConfig update user_configs. Changes notification or period
 func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input model.UserConfigs) error {
 	tn := time.Now()
-	const sql = `UPDATE users_configs SET "Notification" = $1, "Period" = $2, "UpdatedAt" = $3 WHERE "ID" = $4`
+	const sql = `UPDATE reminder.users_configs SET "Notification" = $1, "Period" = $2, "UpdatedAt" = $3 WHERE "ID" = $4`
 
 	ct, err := s.Postgres.Exec(ctx, sql, input.Notification, input.Period, tn, id)
 
@@ -244,17 +244,16 @@ func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input mod
 
 // DeleteRemind deletes remind from DB
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
-	const sql = `DELETE FROM todo WHERE "ID" = $1`
+	const sql = `DELETE FROM reminder.todo WHERE "ID" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
-	s.logger.Errorf("Error delete remind: %v", err)
 	if err != nil {
-		s.logger.Errorf("error don't found remind: %v", err)
+		s.logger.Errorf("Error delete remind: %v", err)
 		return ErrDeleteFailed
 	}
 
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
-		s.logger.Errorf("Error delete remind: %v", err)
+		s.logger.Errorf("error don't found remind: %v", err)
 		return ErrCantFindRemindWithID
 	}
 
@@ -265,7 +264,7 @@ func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, error) {
 	var todo model.Todo
 
-	const sql = `SELECT "ID", "Title", "Description", "User", "CreatedAt", "DeadlineAt", "Completed", "FinishedAt", "Notificated" FROM todo
+	const sql = `SELECT "ID", "Title", "Description", "User", "CreatedAt", "DeadlineAt", "Completed", "FinishedAt", "Notificated" FROM reminder.todo
     WHERE "ID" = $1 LIMIT 1`
 
 	row := s.Postgres.QueryRow(ctx, sql, id)
@@ -294,7 +293,7 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 
 // Truncate removes all seed data from the test database.
 func (s *TodoStorage) Truncate() error {
-	stmt := "TRUNCATE TABLE todo, users_configs;"
+	stmt := "TRUNCATE TABLE reminder.todo, reminder.users_configs;"
 
 	if _, err := s.Postgres.Exec(context.Background(), stmt); err != nil {
 		return fmt.Errorf("truncate test database tables %v", err)
@@ -357,7 +356,7 @@ func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed") 
+		const sql = `INSERT INTO reminder.todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed") 
 				 VALUES ($1, $2, $3, $4, $5, $6, $7) returning "ID"`
 
 		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed)
@@ -431,7 +430,7 @@ func (s *TodoStorage) SeedTodosForDeadline() ([]model.Todo, error) {
 	}
 
 	for i := range todos {
-		const sql = `INSERT INTO todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
+		const sql = `INSERT INTO reminder.todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
 				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning "ID"`
 
 		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
@@ -457,7 +456,7 @@ func (s *TodoStorage) SeedUserConfig() (string, error) {
 
 	var ID string
 
-	const sql = `INSERT INTO users_configs ("ID", "Notification", "Period", "CreatedAt") 
+	const sql = `INSERT INTO reminder.users_configs ("ID", "Notification", "Period", "CreatedAt") 
 				 VALUES ($1, $2, $3, $4) returning "ID"`
 
 	row := s.Postgres.QueryRow(context.Background(), sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
@@ -477,8 +476,8 @@ func (s *TodoStorage) GetRemindsForNotification(ctx context.Context) ([]model.No
 		t := time.Now().AddDate(0, 0, i).Format("2006-01-02 15:04:05")
 		tn := time.Now().Format("2006-01-02 15:04:05")
 
-		sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from todo t 
-INNER JOIN users_configs u on u."ID" = t."User" 
+		sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from reminder.todo t 
+INNER JOIN reminder.users_configs u on u."ID" = t."User" 
 WHERE t."DeadlineAt" BETWEEN '%s' AND '%s' 
 AND t."Completed" = false 
 AND t."Notificated" = false
@@ -516,8 +515,8 @@ func (s *TodoStorage) GetRemindsForDeadlineNotification(ctx context.Context) ([]
 	var reminds []model.NotificationRemind
 	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
 
-	sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from todo t 
-INNER JOIN users_configs u on u."ID" = t."User" 
+	sql := fmt.Sprintf(`SELECT t."ID", t."Description", t."Title", t."DeadlineAt", t."User" from reminder.todo t 
+INNER JOIN reminder.users_configs u on u."ID" = t."User" 
 WHERE t."NotifyPeriod" @> ARRAY['%s']::TIMESTAMP[] 
 AND t."Completed" = false 
 AND t."DeadlineNotify" = true`, tn)
@@ -548,7 +547,7 @@ AND t."DeadlineNotify" = true`, tn)
 }
 
 func (s *TodoStorage) UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error {
-	sql := fmt.Sprintf(`UPDATE todo SET "NotifyPeriod" = array_remove("NotifyPeriod", '%s')
+	sql := fmt.Sprintf(`UPDATE reminder.todo SET "NotifyPeriod" = array_remove("NotifyPeriod", '%s')
 WHERE "ID" = '%d'`, timeToDelete, id)
 
 	ct, err := s.Postgres.Exec(ctx, sql)
@@ -567,7 +566,7 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 func (s *TodoStorage) GetUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error) {
 	var configs model.UserConfigs
 
-	const sql = `SELECT "ID", "Notification", "Period", "CreatedAt", "UpdatedAt"  FROM users_configs
+	const sql = `SELECT "ID", "Notification", "Period", "CreatedAt", "UpdatedAt"  FROM reminder.users_configs
     WHERE "ID" = $1 LIMIT 1`
 
 	row := s.Postgres.QueryRow(ctx, sql, userID)
@@ -599,7 +598,7 @@ func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (mod
 	userConfig.Period = 2
 	userConfig.CreatedAt = time.Now()
 
-	const sql = `INSERT INTO users_configs ("ID", "Notification",  "Period", "CreatedAt") 
+	const sql = `INSERT INTO reminder.users_configs ("ID", "Notification",  "Period", "CreatedAt") 
 				 VALUES ($1, $2, $3, $4) returning "ID", "Notification",  "Period", "CreatedAt", "UpdatedAt"`
 	row := s.Postgres.QueryRow(ctx, sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
 	err := row.Scan(

@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	//cfg := config.GetConfig()
 	logger := logging.GetLogger()
 
-	pClient, err := pgxpool.New(context.Background(), "postgres://root:secret@localhost:5432/test_reminder?sslmode=disable")
+	pClient, err := pgxpool.New(context.Background(), "postgres://root:secret@localhost:5432/test_coa?sslmode=disable")
 	if err != nil {
 		log.Fatal("cannot connect to db...")
 	}
