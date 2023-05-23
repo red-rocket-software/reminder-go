@@ -75,6 +75,7 @@ jobs:
           image_tag: latest
           dockerfile: dockers/Dockerfile-reminder
           context: .
+
       - name: Build and push worker
         uses: RafikFarhad/push-to-gcr-github-action@v5-beta
         with:
@@ -85,6 +86,23 @@ jobs:
           image_tag: latest
           dockerfile: dockers/Dockerfile-worker
           context: .
+      
+      - name: Retag with digest
+        run: |
+          for i in $(docker image ls -q); do docker image rm $i; done
+          REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
+          WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
+          docker pull $REMINDER_IMAGE
+          docker pull $WORKER_IMAGE
+          REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
+          WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
+          REMINDER_TAG={REMINDER_SHA: -25}
+          WORKER_TAG={WORKER_SHA: -25}
+          docker tag $REMINDER_IMAGE eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker tag $WORKER_IMAGE eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+
 
   manual-approval:
     runs-on: ubuntu-latest
