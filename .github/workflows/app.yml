@@ -107,6 +107,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@main
         with:
@@ -123,6 +128,12 @@ jobs:
       - name: Install Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+      
+      - name: Get GKE credentials
+        uses: "google-github-actions/get-gke-credentials@v1"
+        with:
+          cluster_name: 'coa-gke-cluster'
+          location: 'europe-central2'
 
       - name: Deploy to GKE
         run: |
@@ -130,6 +141,7 @@ jobs:
           cd coa-infrastructure
           git checkout dev
           cd Helm
+
           helm upgrade --install staging-reminder-release reminder-chart \
             --set image=eu.gcr.io/coa-project-5c923/coa-reminder \
             --set tag=latest
@@ -137,4 +149,4 @@ jobs:
             --set image=eu.gcr.io/coa-project-5c923/coa-worker \
             --set tag=latest
 
-# test ci run
+# Вуздщ
