@@ -158,6 +158,21 @@ func (mr *MockReminderRepoMockRecorder) GetUserConfigs(ctx, userID interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserConfigs", reflect.TypeOf((*MockReminderRepo)(nil).GetUserConfigs), ctx, userID)
 }
 
+// GetUserRoutes mocks base method.
+func (m *MockReminderRepo) GetUserRoutes(ctx context.Context, role string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserRoutes", ctx, role)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserRoutes indicates an expected call of GetUserRoutes.
+func (mr *MockReminderRepoMockRecorder) GetUserRoutes(ctx, role interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRoutes", reflect.TypeOf((*MockReminderRepo)(nil).GetUserRoutes), ctx, role)
+}
+
 // SeedTodos mocks base method.
 func (m *MockReminderRepo) SeedTodos() ([]domain.Todo, error) {
 	m.ctrl.T.Helper()
