@@ -96,4 +96,5 @@ type TodoRepository interface {
 	UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error
 	GetRemindsForNotification(ctx context.Context) ([]NotificationRemind, error)
 	GetRemindsForDeadlineNotification(ctx context.Context) ([]NotificationRemind, string, error)
+	GetUserRoutes(ctx context.Context, role string) ([]string, error)
 }

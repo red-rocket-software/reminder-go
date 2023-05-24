@@ -127,6 +127,21 @@ func (mr *MockTodoRepositoryMockRecorder) GetRemindsForNotification(ctx interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemindsForNotification", reflect.TypeOf((*MockTodoRepository)(nil).GetRemindsForNotification), ctx)
 }
 
+// GetUserRoutes mocks base method.
+func (m *MockTodoRepository) GetUserRoutes(ctx context.Context, role string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserRoutes", ctx, role)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserRoutes indicates an expected call of GetUserRoutes.
+func (mr *MockTodoRepositoryMockRecorder) GetUserRoutes(ctx, role interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserRoutes", reflect.TypeOf((*MockTodoRepository)(nil).GetUserRoutes), ctx, role)
+}
+
 // UpdateNotification mocks base method.
 func (m *MockTodoRepository) UpdateNotification(ctx context.Context, id int, dao domain.NotificationDAO) error {
 	m.ctrl.T.Helper()
