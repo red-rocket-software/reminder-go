@@ -2,7 +2,7 @@ CREATE SCHEMA IF NOT EXISTS "role";
 
 CREATE TABLE IF NOT EXISTS role.role_permissions (
     role varchar primary key,
-    permissions varchar [] not null
+    permissions int [] not null
 );
 
 CREATE TABLE IF NOT EXISTS role.permissions (
