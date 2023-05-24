@@ -615,3 +615,33 @@ func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (mod
 	}
 	return userConfig, nil
 }
+
+// GetUserRoutes return users permissions to role form DB PostgresSQL
+func (s *TodoStorage) GetUserRoutes(ctx context.Context, role string) ([]string, error) {
+	var routes []string
+	const sql = `SELECT sf.name	FROM role.role_permissions AS rp JOIN role.permissions AS p ON p.id = ANY(rp.permissions) JOIN role.features AS f ON f.feature_name = 'reminder' JOIN role.sub_features AS sf ON sf.featureid = f.id WHERE rp.role = $1`
+	rows, err := s.Postgres.Query(ctx, sql, role)
+
+	defer rows.Close()
+
+	if err != nil {
+		s.logger.Errorf("Error get user permissions: %v", err)
+		return []string{}, err
+	}
+
+	for rows.Next() {
+		var route string
+		if err := rows.Scan(&route); err != nil {
+			s.logger.Errorf("Error get user permission: %v", err)
+			return []string{}, err
+		}
+		routes = append(routes, route)
+	}
+
+	if err := rows.Err(); err != nil {
+		s.logger.Errorf("Error get user permission: %v", err)
+		return []string{}, err
+	}
+
+	return routes, nil
+}

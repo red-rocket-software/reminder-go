@@ -33,4 +33,5 @@ type ReminderRepo interface {
 	GetUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error)
 	CreateUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error)
 	UpdateUserConfig(ctx context.Context, id string, input model.UserConfigs) error
+	GetUserRoutes(ctx context.Context, role string) ([]string, error)
 }
