@@ -101,8 +101,8 @@ jobs:
           docker pull $WORKER_IMAGE
           REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
           WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
-          REMINDER_TAG={REMINDER_SHA: -25}
-          WORKER_TAG={WORKER_SHA: -25}
+          REMINDER_TAG={$REMINDER_SHA: -25}
+          WORKER_TAG={$WORKER_SHA: -25}
           docker tag $REMINDER_IMAGE eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
           docker tag $WORKER_IMAGE eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
           docker push eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
