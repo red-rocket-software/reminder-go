@@ -91,8 +91,7 @@ jobs:
         env: 
           SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo "$SA_KEY"
-          echo "$SA_KEY" | base64 -d > /tmp/key.json
+          echo "$SA_KEY" > /tmp/key.json
           cat /tmp/key.json | docker login -u _json_key --password-stdin https://eu.gcr.io
           REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
           WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
