@@ -92,21 +92,21 @@ jobs:
           SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
           echo "$SA_KEY" > /tmp/key.json
-          cat /tmp/key.json | sudo docker login -u _json_key --password-stdin https://eu.gcr.io
+          cat /tmp/key.json | docker login -u _json_key --password-stdin https://eu.gcr.io
           REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
           WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
-          sudo docker image rm -f $REMINDER_IMAGE
-          sudo docker image rm -f $WORKER_IMAGE
-          sudo docker pull $REMINDER_IMAGE
-          sudo docker pull $WORKER_IMAGE
-          REMINDER_SHA=$(sudo docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
-          WORKER_SHA=$(sudo docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
+          docker image rm -f $REMINDER_IMAGE
+          docker image rm -f $WORKER_IMAGE
+          docker pull $REMINDER_IMAGE
+          docker pull $WORKER_IMAGE
+          REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
+          WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
           REMINDER_TAG={REMINDER_SHA: -25}
           WORKER_TAG={WORKER_SHA: -25}
-          sudo docker tag $REMINDER_IMAGE eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
-          sudo docker tag $WORKER_IMAGE eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
-          sudo docker push eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
-          sudo docker push eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+          docker tag $REMINDER_IMAGE eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker tag $WORKER_IMAGE eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
 
 
   manual-approval:
