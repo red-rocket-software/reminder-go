@@ -89,9 +89,10 @@ jobs:
       
       - name: Retag with digest
         run: |
-          for i in $(docker image ls -q); do docker image rm -f $i; done
           REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
           WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
+          docker image rm -f $REMINDER_IMAGE
+          docker image rm -f $WORKER_IMAGE
           docker pull $REMINDER_IMAGE
           docker pull $WORKER_IMAGE
           REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
