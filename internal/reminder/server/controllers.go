@@ -11,18 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
-
-type RemindHandlers interface {
-	GetReminds(w http.ResponseWriter, r *http.Request)
-	GetRemindByID(w http.ResponseWriter, r *http.Request)
-	AddRemind(w http.ResponseWriter, r *http.Request)
-	UpdateRemind(w http.ResponseWriter, r *http.Request)
-	UpdateCompleteStatus(w http.ResponseWriter, r *http.Request)
-	DeleteRemind(w http.ResponseWriter, r *http.Request)
-}
 
 // AddRemind
 // @Description	AddRemind
@@ -129,11 +119,11 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 	// deleting remind from db
 	if err := server.TodoStorage.DeleteRemind(server.ctx, remindID); err != nil {
-		if errors.Is(err, storage.ErrDeleteFailed) {
+		if errors.Is(err, model.ErrDeleteFailed) {
 			utils.JSONError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if errors.Is(err, storage.ErrCantFindRemindWithID) {
+		if errors.Is(err, model.ErrCantFindRemindWithID) {
 			utils.JSONError(w, http.StatusNotFound, err)
 			return
 		}
@@ -271,7 +261,7 @@ func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = server.TodoStorage.UpdateUserConfig(server.ctx, uID, input)
+	err = server.ConfigsStorage.UpdateUserConfig(server.ctx, uID, input)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
@@ -386,7 +376,7 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//initialize fetchParameters
-	params := storage.FetchParams{
+	params := model.FetchParams{
 		Page: utils.Page{
 			Cursor: cursor,
 			Limit:  limit,
@@ -430,12 +420,12 @@ func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Reque
 	var userConfigs model.UserConfigs
 	var err error
 
-	userConfigs, err = server.TodoStorage.GetUserConfigs(server.ctx, uID)
+	userConfigs, err = server.ConfigsStorage.GetUserConfigs(server.ctx, uID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
 	} else if userConfigs == (model.UserConfigs{}) {
-		userConfigs, err = server.TodoStorage.CreateUserConfigs(server.ctx, uID)
+		userConfigs, err = server.ConfigsStorage.CreateUserConfigs(server.ctx, uID)
 		if err != nil {
 			utils.JSONError(w, http.StatusInternalServerError, err)
 			return
