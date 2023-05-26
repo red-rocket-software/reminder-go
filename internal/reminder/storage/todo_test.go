@@ -14,13 +14,13 @@ import (
 
 func TestStorageTodo_CreateRemind(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	userID, err := testStorage.SeedUserConfig()
+	userID, err := SeedUserConfig()
 	require.NoError(t, err)
 
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
@@ -57,7 +57,7 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := testStorage.CreateRemind(tt.args.ctx, tt.args.todo)
+			id, err := testTodoStorage.CreateRemind(tt.args.ctx, tt.args.todo)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -70,7 +70,7 @@ func TestStorageTodo_CreateRemind(t *testing.T) {
 
 func TestStorageTodo_GetRemindByID(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
@@ -78,7 +78,7 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
 
-	userID, err := testStorage.SeedUserConfig()
+	userID, err := SeedUserConfig()
 	require.NoError(t, err)
 
 	insertTodo := model.Todo{
@@ -89,9 +89,9 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	remind, _ := testStorage.CreateRemind(context.Background(), insertTodo)
+	remind, _ := testTodoStorage.CreateRemind(context.Background(), insertTodo)
 
-	got, err := testStorage.GetRemindByID(context.Background(), remind.ID)
+	got, err := testTodoStorage.GetRemindByID(context.Background(), remind.ID)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, got)
@@ -102,20 +102,20 @@ func TestStorageTodo_GetRemindByID(t *testing.T) {
 
 func TestStorageTodo_GetReminds(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	expectedTodo, err := testStorage.SeedTodos()
+	expectedTodo, err := SeedTodos()
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
 
 	type args struct {
 		ctx         context.Context
-		fetchParams FetchParams
+		fetchParams model.FetchParams
 		userID      string
 	}
 	tests := []struct {
@@ -126,7 +126,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 		want2   int
 		wantErr bool
 	}{
-		{name: "success get all reminds", args: args{context.Background(), FetchParams{
+		{name: "success get all reminds", args: args{context.Background(), model.FetchParams{
 			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
@@ -139,7 +139,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want1:   5,
 			want2:   expectedTodo[len(expectedTodo)-1].ID,
 			wantErr: false},
-		{name: "success get all reminds with cursor", args: args{context.Background(), FetchParams{
+		{name: "success get all reminds with cursor", args: args{context.Background(), model.FetchParams{
 			Page: utils.Page{
 				Cursor: expectedTodo[3].ID,
 				Limit:  2,
@@ -152,12 +152,12 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want1:   5,
 			want2:   expectedTodo[len(expectedTodo)-5].ID,
 			wantErr: false},
-		{name: "success get completed with time range ", args: args{ctx: context.Background(), fetchParams: FetchParams{
+		{name: "success get completed with time range ", args: args{ctx: context.Background(), fetchParams: model.FetchParams{
 			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
-			TimeRangeFilter: TimeRangeFilter{
+			TimeRangeFilter: model.TimeRangeFilter{
 				StartRange: "2023-03-01 11:50:34",
 				EndRange:   "2023-04-01 11:50:34",
 			},
@@ -169,12 +169,12 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want1:   1,
 			want2:   expectedTodo[len(expectedTodo)-4].ID,
 			wantErr: false},
-		{name: "success get completed not existing in time range", args: args{ctx: context.Background(), fetchParams: FetchParams{
+		{name: "success get completed not existing in time range", args: args{ctx: context.Background(), fetchParams: model.FetchParams{
 			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
 			},
-			TimeRangeFilter: TimeRangeFilter{
+			TimeRangeFilter: model.TimeRangeFilter{
 				StartRange: "2023-05-28 11:50:34",
 				EndRange:   "2023-06-12 11:50:34",
 			},
@@ -186,7 +186,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want1:   0,
 			want2:   0,
 			wantErr: false},
-		{name: "success get current", args: args{context.Background(), FetchParams{
+		{name: "success get current", args: args{context.Background(), model.FetchParams{
 			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
@@ -199,7 +199,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 			want1:   4,
 			want2:   expectedTodo[len(expectedTodo)-1].ID,
 			wantErr: false},
-		{name: "empty filterParams value", args: args{context.Background(), FetchParams{
+		{name: "empty filterParams value", args: args{context.Background(), model.FetchParams{
 			Page: utils.Page{
 				Cursor: 0,
 				Limit:  10,
@@ -214,7 +214,7 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := testStorage.GetReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
+			got, got1, got2, err := testTodoStorage.GetReminds(tt.args.ctx, tt.args.fetchParams, tt.args.userID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllReminds() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -234,35 +234,35 @@ func TestStorageTodo_GetReminds(t *testing.T) {
 
 func TestStorageTodo_DeleteRemind(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		require.NoError(t, err)
 	}()
 
-	expectedTodo, err := testStorage.SeedTodos()
+	expectedTodo, err := SeedTodos()
 	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
-		err = testStorage.DeleteRemind(context.Background(), expectedTodo[1].ID)
+		err = testTodoStorage.DeleteRemind(context.Background(), expectedTodo[1].ID)
 		require.NoError(t, err)
 
-		todo, _ := testStorage.GetRemindByID(context.Background(), expectedTodo[1].ID)
+		todo, _ := testTodoStorage.GetRemindByID(context.Background(), expectedTodo[1].ID)
 		require.Empty(t, todo)
 	})
 	t.Run("error remind doesn't existing", func(t *testing.T) {
-		err = testStorage.DeleteRemind(context.Background(), 99)
+		err = testTodoStorage.DeleteRemind(context.Background(), 99)
 		require.Error(t, err)
 	})
 }
 
 func TestStorageTodo_UpdateRemind(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	expectedTodo, err := testStorage.SeedTodos()
+	expectedTodo, err := SeedTodos()
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
@@ -278,10 +278,10 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 			NotifyPeriod: []string{"2023-01-26T16:05:00Z"},
 		}
 
-		_, err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
+		_, err = testTodoStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
 		require.NoError(t, err)
 
-		newTodo, _ := testStorage.GetRemindByID(context.Background(), expectedTodo[1].ID)
+		newTodo, _ := testTodoStorage.GetRemindByID(context.Background(), expectedTodo[1].ID)
 		require.Equal(t, updateInput.Description, newTodo.Description)
 		require.Equal(t, updateInput.Completed, newTodo.Completed)
 	})
@@ -294,7 +294,7 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 			NotifyPeriod: []string{"2023-01-26"},
 		}
 
-		_, err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
+		_, err = testTodoStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
 		require.Error(t, err)
 	})
 	t.Run("error wrong deadlineAt ", func(t *testing.T) {
@@ -305,7 +305,7 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 			DeadlineAt:  "2023-01-26",
 		}
 
-		_, err = testStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
+		_, err = testTodoStorage.UpdateRemind(context.Background(), expectedTodo[1].ID, updateInput)
 		require.Error(t, err)
 	})
 	t.Run("error not existing remind ", func(t *testing.T) {
@@ -316,20 +316,20 @@ func TestStorageTodo_UpdateRemind(t *testing.T) {
 			DeadlineAt:  "2023-01-26T17:05:00Z",
 		}
 
-		_, err = testStorage.UpdateRemind(context.Background(), 9999, updateInput)
+		_, err = testTodoStorage.UpdateRemind(context.Background(), 9999, updateInput)
 		require.Error(t, err)
 	})
 }
 
 func TestStorageTodo_SeedTodos(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	todos, err := testStorage.SeedTodos()
+	todos, err := SeedTodos()
 
 	require.NoError(t, err)
 	require.Equal(t, len(todos), 5)
@@ -337,13 +337,13 @@ func TestStorageTodo_SeedTodos(t *testing.T) {
 
 func TestStorageTodo_SeedTodosForDeadline(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	todos, err := testStorage.SeedTodosForDeadline()
+	todos, err := SeedTodosForDeadline()
 
 	require.NoError(t, err)
 	require.Equal(t, len(todos), 5)
@@ -351,11 +351,11 @@ func TestStorageTodo_SeedTodosForDeadline(t *testing.T) {
 
 func TestTodoStorage_UpdateNotification(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		require.NoError(t, err)
 	}()
 
-	expectedTodo, err := testStorage.SeedTodos()
+	expectedTodo, err := SeedTodos()
 	require.NoError(t, err)
 
 	type args struct {
@@ -385,14 +385,14 @@ func TestTodoStorage_UpdateNotification(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			err = testStorage.UpdateNotification(tt.args.ctx, tt.args.id, tt.args.dao)
+			err = testTodoStorage.UpdateNotification(tt.args.ctx, tt.args.id, tt.args.dao)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
 
-			remind, err := testStorage.GetRemindByID(ctx, expectedTodo[0].ID)
+			remind, err := testTodoStorage.GetRemindByID(ctx, expectedTodo[0].ID)
 			require.NoError(t, err)
 
 			require.Equal(t, tt.args.dao.Notificated, remind.Notificated)
@@ -402,11 +402,11 @@ func TestTodoStorage_UpdateNotification(t *testing.T) {
 
 func TestTodoStorage_UpdateStatus(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		require.NoError(t, err)
 	}()
 
-	expectedTodo, err := testStorage.SeedTodos()
+	expectedTodo, err := SeedTodos()
 	require.NoError(t, err)
 
 	tn := time.Now().UTC()
@@ -444,14 +444,14 @@ func TestTodoStorage_UpdateStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			err = testStorage.UpdateStatus(tt.args.ctx, tt.args.id, tt.args.dao)
+			err = testTodoStorage.UpdateStatus(tt.args.ctx, tt.args.id, tt.args.dao)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
 
-			remind, err := testStorage.GetRemindByID(ctx, expectedTodo[0].ID)
+			remind, err := testTodoStorage.GetRemindByID(ctx, expectedTodo[0].ID)
 			require.NoError(t, err)
 
 			require.Equal(t, tt.args.dao.FinishedAt.Truncate(time.Millisecond), remind.FinishedAt.Truncate(time.Millisecond))
@@ -460,56 +460,22 @@ func TestTodoStorage_UpdateStatus(t *testing.T) {
 	}
 }
 
-func TestTodoStorage_SeedUserConfig(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		require.NoError(t, err)
-	}()
-
-	tests := []struct {
-		name    string
-		userID  string
-		wantErr bool
-	}{
-		{
-			name:    "success",
-			userID:  "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			wantErr: false,
-		},
-		{
-			name:    "error",
-			userID:  "wrongID",
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := testStorage.SeedUserConfig()
-			require.NoError(t, err)
-
-			if !tt.wantErr {
-				require.Equal(t, tt.userID, got)
-			}
-		})
-	}
-}
-
 func TestStorage_GetRemindsForNotification(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	_, err := testStorage.SeedTodosForDeadline()
+	_, err := SeedTodosForDeadline()
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
 	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
-		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		reminds, err := testTodoStorage.GetRemindsForNotification(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, 0, len(reminds))
 
@@ -517,7 +483,7 @@ func TestStorage_GetRemindsForNotification(t *testing.T) {
 
 		for _, remind := range reminds {
 			userID := remind.UserID
-			userConfig, err := testStorage.GetUserConfigs(context.Background(), userID)
+			userConfig, err := testConfigStorage.GetUserConfigs(context.Background(), userID)
 			if err != nil {
 				log.Fatal("error to get userConfig")
 			}
@@ -526,7 +492,7 @@ func TestStorage_GetRemindsForNotification(t *testing.T) {
 			require.Equal(t, true, expr)
 		}
 
-		err = testStorage.Truncate()
+		err = Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
@@ -534,7 +500,7 @@ func TestStorage_GetRemindsForNotification(t *testing.T) {
 	})
 
 	t.Run("no reminds for Notification at this moment", func(t *testing.T) {
-		reminds, err := testStorage.GetRemindsForNotification(context.Background())
+		reminds, err := testTodoStorage.GetRemindsForNotification(context.Background())
 		require.NoError(t, err)
 		require.Empty(t, reminds)
 	})
@@ -542,13 +508,13 @@ func TestStorage_GetRemindsForNotification(t *testing.T) {
 
 func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	expectedReminds, err := testStorage.SeedTodosForDeadline()
+	expectedReminds, err := SeedTodosForDeadline()
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
@@ -557,13 +523,13 @@ func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 	tn := time.Now().Truncate(time.Minute).Format(time.RFC3339)
 
 	t.Run("success", func(t *testing.T) {
-		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		reminds, timeNow, err := testTodoStorage.GetRemindsForDeadlineNotification(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, 1, len(reminds))
 		require.Equal(t, tn, timeNow)
 		require.Equal(t, expectedReminds[0].UserID, reminds[0].UserID)
 
-		err = testStorage.Truncate()
+		err = Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
@@ -571,7 +537,7 @@ func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 	})
 
 	t.Run("no reminds for DeadlineNotification at this moment", func(t *testing.T) {
-		reminds, timeNow, err := testStorage.GetRemindsForDeadlineNotification(context.Background())
+		reminds, timeNow, err := testTodoStorage.GetRemindsForDeadlineNotification(context.Background())
 		require.Empty(t, reminds)
 		require.Equal(t, tn, timeNow)
 		require.Empty(t, err)
@@ -580,132 +546,31 @@ func TestStorage_GetRemindsForDeadlineNotification(t *testing.T) {
 
 func TestStorage_UpdateNotifyPeriod(t *testing.T) {
 	defer func() {
-		err := testStorage.Truncate()
+		err := Truncate()
 		if err != nil {
 			log.Fatal("error truncate table")
 		}
 	}()
 
-	expectedTodos, err := testStorage.SeedTodosForDeadline()
+	expectedTodos, err := SeedTodosForDeadline()
 	if err != nil {
 		log.Fatal("error seed reminds")
 	}
 	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
-		err = testStorage.UpdateNotifyPeriod(context.Background(), expectedTodos[0].ID, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		err = testTodoStorage.UpdateNotifyPeriod(context.Background(), expectedTodos[0].ID, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
 		require.NoError(t, err)
 	})
 
 	t.Run("remind not found", func(t *testing.T) {
-		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
+		err = testTodoStorage.UpdateNotifyPeriod(context.Background(), 0, (expectedTodos[0].NotifyPeriod[0]).Format("2006-01-02 15:04:05"))
 		require.Error(t, err)
 	})
 
 	t.Run("empty timeToDelete", func(t *testing.T) {
-		err = testStorage.UpdateNotifyPeriod(context.Background(), 0, "")
+		err = testTodoStorage.UpdateNotifyPeriod(context.Background(), 0, "")
 		require.Error(t, err)
 	})
 
-}
-
-func TestStorageTodo_UpdateUserConfig(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
-
-	expectedUserID, err := testStorage.SeedUserConfig()
-	if err != nil {
-		log.Fatal("error truncate config")
-	}
-	require.NoError(t, err)
-	tn := time.Now()
-
-	updateConfigInput := model.UserConfigs{
-		ID:           expectedUserID,
-		Notification: true,
-		Period:       1,
-		UpdatedAt:    &tn,
-	}
-
-	t.Run("success", func(t *testing.T) {
-		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, updateConfigInput)
-		require.NoError(t, err)
-	})
-	t.Run("empty input", func(t *testing.T) {
-		err = testStorage.UpdateUserConfig(context.Background(), expectedUserID, model.UserConfigs{})
-		require.NoError(t, err)
-	})
-
-	t.Run("user configs not found", func(t *testing.T) {
-		err = testStorage.UpdateUserConfig(context.Background(), "0", updateConfigInput)
-		require.Error(t, err)
-	})
-
-}
-
-func TestStorage_CreateUserConfigs(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
-
-	expectedUserID, err := testStorage.SeedUserConfig()
-	if err != nil {
-		log.Fatal("error truncate config")
-	}
-	require.NoError(t, err)
-
-	expectedUserConfig := model.UserConfigs{
-		ID:           "1",
-		Notification: false,
-		Period:       2,
-	}
-
-	t.Run("success", func(t *testing.T) {
-		got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserConfig.ID)
-		require.NoError(t, err)
-		require.Equal(t, got.ID, expectedUserConfig.ID)
-		require.Equal(t, got.Notification, expectedUserConfig.Notification)
-		require.Equal(t, got.Period, expectedUserConfig.Period)
-	})
-
-	t.Run("fail user already exist", func(t *testing.T) {
-		got, err := testStorage.CreateUserConfigs(context.Background(), expectedUserID)
-		require.Error(t, err)
-		require.Empty(t, got)
-	})
-}
-
-func TestStorage_GetUserConfigs(t *testing.T) {
-	defer func() {
-		err := testStorage.Truncate()
-		if err != nil {
-			log.Fatal("error truncate table")
-		}
-	}()
-
-	expectedUserID, err := testStorage.SeedUserConfig()
-	if err != nil {
-		log.Fatal("error truncate config")
-	}
-	require.NoError(t, err)
-
-	t.Run("success", func(t *testing.T) {
-		config, err := testStorage.GetUserConfigs(context.Background(), expectedUserID)
-		require.NoError(t, err)
-		require.Equal(t, config.ID, expectedUserID)
-		require.Equal(t, config.Notification, true)
-		require.Equal(t, config.Period, 2)
-	})
-	t.Run("no rows in result set", func(t *testing.T) {
-		config, err := testStorage.GetUserConfigs(context.Background(), "0")
-		require.Empty(t, err)
-		require.Empty(t, config)
-	})
 }

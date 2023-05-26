@@ -17,8 +17,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/storage/mocks"
+	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/domain/mocks"
 	mock_firestore "github.com/red-rocket-software/reminder-go/pkg/firestore/mocks"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
@@ -35,7 +34,7 @@ func TestControllers_AddRemind(t *testing.T) {
 		name                 string
 		body                 string
 		inputTodo            domain.Todo
-		mockBehavior         func(store *mockdb.MockReminderRepo, input domain.Todo)
+		mockBehavior         func(store *mockdb.MockTodoRepository, input domain.Todo)
 		expectedStatusCode   int
 		expectedResponseBody string
 	}{
@@ -51,7 +50,7 @@ func TestControllers_AddRemind(t *testing.T) {
 				DeadlineNotify: &b,
 				NotifyPeriod:   []time.Time{},
 			},
-			mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, input domain.Todo) {
 				store.EXPECT().CreateRemind(gomock.Any(), input).Return(domain.Todo{}, nil)
 			},
 			expectedStatusCode: 201,
@@ -60,7 +59,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			name:                 "Error - wrong input",
 			body:                 `{"description":"", "user_id": "1", "deadline_at": "2023-02-02"}`,
 			inputTodo:            domain.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			mockBehavior:         func(store *mockdb.MockTodoRepository, input domain.Todo) {},
 			expectedStatusCode:   422,
 			expectedResponseBody: "nothing to save",
 		},
@@ -68,7 +67,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			name:                 "Error - notify period after deadline",
 			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": ["2023-05-15T16:27:00+02:00"]}`,
 			inputTodo:            domain.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			mockBehavior:         func(store *mockdb.MockTodoRepository, input domain.Todo) {},
 			expectedStatusCode:   400,
 			expectedResponseBody: "time to deadline notification can't be more than deadline time",
 		},
@@ -76,7 +75,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			name:                 "Error - notify period more than 2 days before deadline",
 			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15T16:27:00+02:00", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": ["2023-04-12T16:27:00+02:00"]}`,
 			inputTodo:            domain.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			mockBehavior:         func(store *mockdb.MockTodoRepository, input domain.Todo) {},
 			expectedStatusCode:   400,
 			expectedResponseBody: "time to deadline notification can't be less than 2 days to deadline time",
 		},
@@ -84,7 +83,7 @@ func TestControllers_AddRemind(t *testing.T) {
 			name:                 "Error - wrong deadline time format",
 			body:                 `{"description": "Test", "title": "Title", "user_id": "GxRlwVXMF0UAc15VwtkYJGWdKmj2", "deadline_at": "2023-04-15", "created_at": "14.04.2023, 15:30:35", "deadline_notify": false, "notify_period": []}`,
 			inputTodo:            domain.Todo{},
-			mockBehavior:         func(store *mockdb.MockReminderRepo, input domain.Todo) {},
+			mockBehavior:         func(store *mockdb.MockTodoRepository, input domain.Todo) {},
 			expectedStatusCode:   400,
 			expectedResponseBody: "cannot parse",
 		},
@@ -100,7 +99,7 @@ func TestControllers_AddRemind(t *testing.T) {
 				DeadlineNotify: &b,
 				NotifyPeriod:   []time.Time{},
 			},
-			mockBehavior: func(store *mockdb.MockReminderRepo, input domain.Todo) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, input domain.Todo) {
 				store.EXPECT().CreateRemind(gomock.Any(), input).Return(domain.Todo{}, errors.New("something went wrong"))
 			},
 			expectedStatusCode:   500,
@@ -113,10 +112,11 @@ func TestControllers_AddRemind(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.inputTodo)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.inputTodo)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/remind", bytes.NewBufferString(test.body))
@@ -140,13 +140,13 @@ func TestControllers_GetRemindByID(t *testing.T) {
 		name               string
 		id                 int
 		resTodo            domain.Todo
-		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
+		mockBehavior       func(store *mockdb.MockTodoRepository, id int)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(1)).Return(domain.Todo{
 					ID:          1,
 					Description: "test",
@@ -160,7 +160,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 		{
 			name: "Not found",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(domain.Todo{}, sql.ErrNoRows).Times(1)
 			},
 			expectedStatusCode: 404,
@@ -168,7 +168,7 @@ func TestControllers_GetRemindByID(t *testing.T) {
 		{
 			name: "InternalError",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().GetRemindByID(gomock.Any(), gomock.Eq(id)).Return(domain.Todo{}, sql.ErrConnDone).Times(1)
 			},
 			expectedStatusCode: 500,
@@ -180,10 +180,11 @@ func TestControllers_GetRemindByID(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodGet, "/remind", http.NoBody)
@@ -202,14 +203,14 @@ func TestServer_UpdateRemind(t *testing.T) {
 		name               string
 		id                 int
 		body               string
-		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
+		mockBehavior       func(store *mockdb.MockTodoRepository, id int)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), id, domain.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
@@ -220,20 +221,20 @@ func TestServer_UpdateRemind(t *testing.T) {
 		{
 			name:               "Error - no description",
 			body:               `{"description":"", "title":"title"}`,
-			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, id int) {},
 			expectedStatusCode: 422,
 		},
 		{
 			name:               "Error - no title",
 			body:               `{"description":"test", "title":""}`,
-			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, id int) {},
 			expectedStatusCode: 422,
 		},
 		{
 			name: "Error - Internal error",
 			id:   1,
 			body: `{"description":"new test", "title":"new test"}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().UpdateRemind(gomock.Any(), gomock.Eq(id), domain.TodoUpdateInput{
 					Description: "new test",
 					Title:       "new test",
@@ -248,10 +249,11 @@ func TestServer_UpdateRemind(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPut, "/remind", bytes.NewBufferString(test.body))
@@ -268,14 +270,14 @@ func TestServer_UpdateRemind(t *testing.T) {
 func TestControllers_GetReminds(t *testing.T) {
 	testCases := []struct {
 		name               string
-		params             storage.FetchParams
+		params             domain.FetchParams
 		userID             string
-		mockBehavior       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string)
+		mockBehavior       func(store *mockdb.MockTodoRepository, params domain.FetchParams, userID string)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
-			params: storage.FetchParams{
+			params: domain.FetchParams{
 				Page: utils.Page{
 					Cursor: 0,
 					Limit:  10,
@@ -285,7 +287,7 @@ func TestControllers_GetReminds(t *testing.T) {
 				FilterByQuery: "all",
 			},
 			userID: "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior: func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, params domain.FetchParams, userID string) {
 				store.EXPECT().GetReminds(context.Background(), params, userID).Return([]domain.Todo{{
 					ID:          1,
 					Title:       "test",
@@ -299,7 +301,7 @@ func TestControllers_GetReminds(t *testing.T) {
 		},
 		{
 			name: "Error wrong filter",
-			params: storage.FetchParams{
+			params: domain.FetchParams{
 				Page: utils.Page{
 					Cursor: 0,
 					Limit:  10,
@@ -309,12 +311,12 @@ func TestControllers_GetReminds(t *testing.T) {
 				FilterByQuery: "all",
 			},
 			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, params domain.FetchParams, userID string) {},
 			expectedStatusCode: 400,
 		},
 		{
 			name: "Error wrong filter params",
-			params: storage.FetchParams{
+			params: domain.FetchParams{
 				Page: utils.Page{
 					Cursor: 0,
 					Limit:  10,
@@ -324,12 +326,12 @@ func TestControllers_GetReminds(t *testing.T) {
 				FilterByQuery: "",
 			},
 			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, params domain.FetchParams, userID string) {},
 			expectedStatusCode: 400,
 		},
 		{
 			name: "Error wrong filter options",
-			params: storage.FetchParams{
+			params: domain.FetchParams{
 				Page: utils.Page{
 					Cursor: 0,
 					Limit:  10,
@@ -339,7 +341,7 @@ func TestControllers_GetReminds(t *testing.T) {
 				FilterByQuery: "all",
 			},
 			userID:             "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior:       func(store *mockdb.MockReminderRepo, params storage.FetchParams, userID string) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, params domain.FetchParams, userID string) {},
 			expectedStatusCode: 400,
 		},
 	}
@@ -349,10 +351,11 @@ func TestControllers_GetReminds(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.params, test.userID)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.params, test.userID)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodGet, "/reminds", http.NoBody)
@@ -382,13 +385,13 @@ func Test_DeleteRemind(t *testing.T) {
 	testCases := []struct {
 		name           string
 		id             int
-		mockBehavior   func(store *mockdb.MockReminderRepo, id int)
+		mockBehavior   func(store *mockdb.MockTodoRepository, id int)
 		expectedStatus int
 	}{
 		{
 			name: "OK",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(nil).Times(1)
 			},
 			expectedStatus: 204,
@@ -396,7 +399,7 @@ func Test_DeleteRemind(t *testing.T) {
 		{
 			name: "InternalError",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(sql.ErrConnDone).Times(1)
 			},
 			expectedStatus: 500,
@@ -404,8 +407,8 @@ func Test_DeleteRemind(t *testing.T) {
 		{
 			name: "Error remind doesn't exist",
 			id:   1,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
-				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(storage.ErrCantFindRemindWithID).Times(1)
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
+				store.EXPECT().DeleteRemind(gomock.Any(), gomock.Eq(id)).Return(domain.ErrCantFindRemindWithID).Times(1)
 			},
 			expectedStatus: 404,
 		},
@@ -416,10 +419,11 @@ func Test_DeleteRemind(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodDelete, "/remind", http.NoBody)
@@ -440,14 +444,14 @@ func TestServer_UpdateUserConfig(t *testing.T) {
 		name               string
 		id                 string
 		body               string
-		mockBehavior       func(store *mockdb.MockReminderRepo, id string)
+		mockBehavior       func(store *mockdb.MockConfigRepository, id string)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
 			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
 			body: `{"notification": true, "period": 1}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 				store.EXPECT().UpdateUserConfig(gomock.Any(), gomock.Eq(id), domain.UserConfigs{
 					Notification: true,
 					Period:       1,
@@ -459,7 +463,7 @@ func TestServer_UpdateUserConfig(t *testing.T) {
 			name: "Error - internal error",
 			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
 			body: `{"notification": true, "period": 1}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 				store.EXPECT().UpdateUserConfig(gomock.Any(), gomock.Eq(id), domain.UserConfigs{
 					Notification: true,
 					Period:       1,
@@ -474,10 +478,11 @@ func TestServer_UpdateUserConfig(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(configStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPut, "/configs", bytes.NewBufferString(test.body))
@@ -585,14 +590,14 @@ func Test_UpdateCompleteStatus(t *testing.T) {
 		name               string
 		id                 int
 		body               string
-		mockBehavior       func(store *mockdb.MockReminderRepo, id int)
+		mockBehavior       func(store *mockdb.MockTodoRepository, id int)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
 			id:   1,
 			body: `{"completed": true}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
 					Completed:  true,
 					FinishedAt: &tn,
@@ -604,14 +609,14 @@ func Test_UpdateCompleteStatus(t *testing.T) {
 			name:               "Error - Missed Body",
 			id:                 1,
 			body:               "",
-			mockBehavior:       func(store *mockdb.MockReminderRepo, id int) {},
+			mockBehavior:       func(store *mockdb.MockTodoRepository, id int) {},
 			expectedStatusCode: 422,
 		},
 		{
 			name: "Error - Internal error",
 			id:   1,
 			body: `{"completed": true}`,
-			mockBehavior: func(store *mockdb.MockReminderRepo, id int) {
+			mockBehavior: func(store *mockdb.MockTodoRepository, id int) {
 				store.EXPECT().UpdateStatus(gomock.Any(), gomock.Eq(id), domain.TodoUpdateStatusInput{
 					Completed:  true,
 					FinishedAt: &tn,
@@ -626,10 +631,11 @@ func Test_UpdateCompleteStatus(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(todoStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodPut, "/status", bytes.NewBufferString(test.body))
@@ -650,13 +656,13 @@ func TestServer_GetOrCreateUserConfig(t *testing.T) {
 	testCases := []struct {
 		name               string
 		id                 string
-		mockBehavior       func(store *mockdb.MockReminderRepo, id string)
+		mockBehavior       func(store *mockdb.MockConfigRepository, id string)
 		expectedStatusCode int
 	}{
 		{
 			name: "OK",
 			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, nil)
 				store.EXPECT().CreateUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{
 					ID:           id,
@@ -670,14 +676,14 @@ func TestServer_GetOrCreateUserConfig(t *testing.T) {
 		{
 			name: "Error - Wrong uID",
 			id:   "",
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 			},
 			expectedStatusCode: 500,
 		},
 		{
 			name: "Error - GetUserConfigs Error",
 			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, errors.New("cannot get user-configs from database"))
 			},
 			expectedStatusCode: 500,
@@ -685,7 +691,7 @@ func TestServer_GetOrCreateUserConfig(t *testing.T) {
 		{
 			name: "Error - CreateUserConfigs Error",
 			id:   "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-			mockBehavior: func(store *mockdb.MockReminderRepo, id string) {
+			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 				store.EXPECT().GetUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, nil)
 				store.EXPECT().CreateUserConfigs(gomock.Any(), gomock.Eq(id)).Return(domain.UserConfigs{}, errors.New("Error create userConfigs"))
 			},
@@ -698,10 +704,11 @@ func TestServer_GetOrCreateUserConfig(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			store := mockdb.NewMockReminderRepo(c)
-			test.mockBehavior(store, test.id)
+			configStore := mockdb.NewMockConfigRepository(c)
+			todoStore := mockdb.NewMockTodoRepository(c)
+			test.mockBehavior(configStore, test.id)
 
-			server := newTestServer(store)
+			server := newTestServer(todoStore, configStore)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(http.MethodGet, "/configs", http.NoBody)
