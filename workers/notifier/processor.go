@@ -5,20 +5,19 @@ import (
 	"fmt"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	todoModel "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/workers/notifier/mail"
 )
 
 type Worker struct {
-	todoStorage storage.ReminderRepo
+	todoStorage domain.TodoRepository
 	fireClient  firestore.Client
 	ctx         context.Context
 	cfg         config.Config
 }
 
-func NewWorker(ctx context.Context, todoStorage storage.ReminderRepo, fireClient firestore.Client, cfg config.Config) *Worker {
+func NewWorker(ctx context.Context, todoStorage domain.TodoRepository, fireClient firestore.Client, cfg config.Config) *Worker {
 	return &Worker{
 		todoStorage: todoStorage,
 		fireClient:  fireClient,
@@ -57,7 +56,7 @@ func (w *Worker) ProcessSendNotification() error {
 			return fmt.Errorf("failed to send notifier email: %w", err)
 		}
 
-		err = w.todoStorage.UpdateNotification(w.ctx, remind.ID, todoModel.NotificationDAO{Notificated: true})
+		err = w.todoStorage.UpdateNotification(w.ctx, remind.ID, domain.NotificationDAO{Notificated: true})
 		if err != nil {
 			return fmt.Errorf("failed to update notificated status: %w", err)
 		}
