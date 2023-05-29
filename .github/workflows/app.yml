@@ -1,17 +1,17 @@
-on: [push]
+on: [push, pull_request]
 name: CI
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push'
     services:
       db:
         image: postgres:latest
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: test_coa
+          POSTGRES_DB: test_reminder
         ports:
           - 5432:5432
         options: >-
@@ -43,6 +43,7 @@ jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
         - name: Setup Go
           uses: actions/setup-go@v3.0.0
@@ -56,3 +57,129 @@ jobs:
           with:
             # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
             version: v1.45.2
+  
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/stage'
+    needs: [test, lint]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Build and push reminder
+        uses: RafikFarhad/push-to-gcr-github-action@v5-beta
+        with:
+          gcloud_service_key: ${{ secrets.GCP_SA_KEY }}
+          registry: eu.gcr.io
+          project_id: coa-project-5c923
+          image_name: coa-reminder
+          image_tag: latest
+          dockerfile: dockers/Dockerfile-reminder
+          context: .
+
+      - name: Build and push worker
+        uses: RafikFarhad/push-to-gcr-github-action@v5-beta
+        with:
+          gcloud_service_key: ${{ secrets.GCP_SA_KEY }}
+          registry: eu.gcr.io
+          project_id: coa-project-5c923
+          image_name: coa-worker
+          image_tag: latest
+          dockerfile: dockers/Dockerfile-worker
+          context: .
+      
+      - name: Retag with digest
+        env: 
+          SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$SA_KEY" > /tmp/key.json
+          cat /tmp/key.json | docker login -u _json_key --password-stdin https://eu.gcr.io
+          REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
+          WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
+          docker image rm -f $REMINDER_IMAGE
+          docker image rm -f $WORKER_IMAGE
+          docker pull $REMINDER_IMAGE
+          docker pull $WORKER_IMAGE
+          REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
+          WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
+          REMINDER_TAG=${REMINDER_SHA: -25}
+          WORKER_TAG=${WORKER_SHA: -25}
+          docker tag $REMINDER_IMAGE eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker tag $WORKER_IMAGE eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-reminder:${REMINDER_TAG}
+          docker push eu.gcr.io/coa-project-5c923/coa-worker:${WORKER_TAG}
+
+
+  manual-approval:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/stage'
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: PavelDonchenko,vitalis-virtus,penkova,pibblokto
+          minimum-approvals: 1
+          issue-title: "Deploying Reminder and Worker to cluster"
+          issue-body: "Please approve or deny the deployment of Reminder and Worker images"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [manual-approval]
+    if: github.ref == 'refs/heads/stage'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@main
+        with:
+          version: 'latest'
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: coa-project-5c923
+
+      - name: Configure Docker and Kubectl
+        run: |
+          gcloud --quiet components update
+          gcloud --quiet components install kubectl
+          gcloud auth configure-docker --quiet
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+      
+      - name: Get GKE credentials
+        uses: "google-github-actions/get-gke-credentials@v1"
+        with:
+          cluster_name: 'coa-gke-cluster'
+          location: 'europe-central2'
+
+      - name: Deploy to GKE
+        run: |
+          eval `ssh-agent -s`
+          ssh-add - <<< '${{ secrets.INFRASTRUCTURE_PRIVATE_KEY }}'
+          git clone git@github.com:red-rocket-software/coa-infrastructure.git
+          cd coa-infrastructure
+          git checkout dev
+          cd Helm
+
+          REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
+          WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
+          docker pull $REMINDER_IMAGE
+          docker pull $WORKER_IMAGE
+          REMINDER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $REMINDER_IMAGE)
+          WORKER_SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $WORKER_IMAGE)
+          REMINDER_TAG=${REMINDER_SHA: -25}
+          WORKER_TAG=${WORKER_SHA: -25}
+
+          helm upgrade --install staging-reminder-release reminder-chart \
+            --set image=eu.gcr.io/coa-project-5c923/coa-reminder \
+            --set tag=$REMINDER_TAG
+          helm upgrade --install staging-worker-release worker-chart \
+            --set image=eu.gcr.io/coa-project-5c923/coa-worker \
+            --set tag=$WORKER_TAG
