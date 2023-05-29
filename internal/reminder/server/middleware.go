@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -28,19 +29,23 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		verifyToken, err := server.FireClient.VerifyIDToken(token)
+		role, fireToken, err := utils.ParseToken(token, server.config.JWTSecret)
+		if err != nil {
+			utils.JSONError(w, http.StatusUnauthorized, errors.New("error to parse JWT token"))
+			return
+		}
+
+		verifyToken, err := server.FireClient.VerifyIDToken(fireToken)
 		if err != nil {
 			utils.JSONError(w, http.StatusUnauthorized, errors.New("error verify token"))
 			return
 		}
 
 		userID := verifyToken.Claims["user_id"].(string)
-		// role := verifyToken.Claims["role"].(string)
+
 		ctx := context.WithValue(r.Context(), "authData", middlewareData{
-			uID: userID,
-			//! use role instead
-			//! this is only for dev mode
-			role: "admin",
+			uID:  userID,
+			role: role,
 		})
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -52,9 +57,6 @@ func (server *Server) RoleMiddleware(next http.Handler) http.Handler {
 		middlewareData := r.Context().Value("authData").(middlewareData)
 		route := strings.Split(r.URL.Path, "/")[1]
 
-		// method := r.Method
-		// fmt.Println(route, method)
-
 		routes, err := server.TodoStorage.GetUserRoutes(r.Context(), middlewareData.role)
 		if err != nil {
 			utils.JSONError(w, http.StatusUnauthorized, err)
@@ -62,7 +64,7 @@ func (server *Server) RoleMiddleware(next http.Handler) http.Handler {
 		}
 
 		for _, rt := range routes {
-			if route == rt {
+			if rt == "all" || rt == route {
 				ctx := context.WithValue(r.Context(), "userID", middlewareData.uID)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
