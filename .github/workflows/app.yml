@@ -74,7 +74,7 @@ jobs:
           project_id: coa-project-5c923
           image_name: coa-reminder
           image_tag: latest
-          dockerfile: dockers/Dockerfile-reminder
+          dockerfile: deploy_dockers/Dockerfile-reminder
           context: .
 
       - name: Build and push worker
@@ -85,7 +85,7 @@ jobs:
           project_id: coa-project-5c923
           image_name: coa-worker
           image_tag: latest
-          dockerfile: dockers/Dockerfile-worker
+          dockerfile: deploy_dockers/Dockerfile-worker
           context: .
       
       - name: Retag with digest
