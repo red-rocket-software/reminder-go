@@ -33,6 +33,7 @@ func main() {
 	defer postgresClient.Close()
 
 	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
+	userConfigsStorage := storage.NewConfigsStorage(postgresClient, &logger)
 
 	// creating firebase client
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
@@ -42,7 +43,7 @@ func main() {
 		return
 	}
 
-	app := server.New(ctx, logger, todoStorage, fireClient, *cfg)
+	app := server.New(ctx, logger, todoStorage, userConfigsStorage, fireClient, *cfg)
 	logger.Debugf("Starting reminder server on port %s", cfg.HTTP.Port)
 
 	if err := app.Run(cfg); err != nil {

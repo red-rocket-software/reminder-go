@@ -26,6 +26,7 @@ type Config struct {
 		SMTPAuthAddress     string `env-required:"true" yaml:"smtp_auth_address" env:"SMTP_AUTH_ADDRESS"`
 		SMTPServerAddress   string `env-required:"true" yaml:"smtp_server_address" env:"SMTP_SERVER_ADDRESS"`
 	} `yaml:"email"`
+	JWTSecret string `env-required:"true" yaml:"jwt_secret" env:"JWT_SECRET"`
 }
 
 func GetConfig() *Config {

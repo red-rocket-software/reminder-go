@@ -1,22 +1,20 @@
 ---
 postgresql:
-  host: "localhost"
-  port: "5432"
-  username: "root"
-  password: "secret"
-  database: "reminder"
+  host: "your_postgresql_host"
+  port: "your_postgresql_port"
+  username: "your_postgresql_username"
+  password: "your_postgresql_password"
+  database: "your_postgresql_database"
 
 http:
-  ip: "localhost"
-  port: "8000"
+  ip: "your_http_ip"
+  port: "your_http_port"
 
-auth:
-  jwt-secret: secret
-  token-expired-in: "60m"
-  token-maxage:  60
+email: 
+  email_sender_name: "your_email_sender_name"
+  email_sender_address: "your_email_sender_address"
+  email_sender_password: "your_email_sender_password"
+  smtp_auth_address: "your_smtp_auth_address"
+  smtp_server_address: "your_smtp_server_address"
 
-  google_auth_client_id: secret
-  google_auth_client_secret: secret
-  google_auth_redirect_url: secret
-
-  frontend_origin: "http://localhost:3000"
+jwt_secret: "your_jwt_secret"

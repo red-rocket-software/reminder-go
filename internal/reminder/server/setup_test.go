@@ -6,22 +6,21 @@ import (
 	"testing"
 
 	"github.com/red-rocket-software/reminder-go/config"
-	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
+	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"google.golang.org/api/option"
 )
 
-func newTestServer(store storage.ReminderRepo) *Server {
+func newTestServer(todoStorage model.TodoRepository, configsStorage model.ConfigRepository) *Server {
 	logger := logging.GetLogger()
-	//cfg := config.GetConfig()
 	cfg := config.Config{}
 
 	// creating firebase client
 	opt := option.WithCredentialsFile("serviceAccountKey.json")
 	fireClient, _ := firestore.NewClient(context.Background(), opt)
 
-	server := New(context.Background(), logger, store, fireClient, cfg)
+	server := New(context.Background(), logger, todoStorage, configsStorage, fireClient, cfg)
 
 	return server
 }
