@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
-	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
+
+var _ model.TodoRepository = (*TodoStorage)(nil)
 
 // TodoStorage handles database communication with PostgreSQL.
 type TodoStorage struct {
@@ -22,27 +22,13 @@ type TodoStorage struct {
 	logger *logging.Logger
 }
 
-type TimeRangeFilter struct {
-	StartRange string
-	EndRange   string
-}
-
-type FetchParams struct {
-	utils.Page
-	TimeRangeFilter
-	FilterByDate  string //createdAt or deadlineAt
-	FilterBySort  string // ASC or DESC
-	FilterByQuery string // current, all or completed
-
-}
-
 // NewStorageTodo  return new SorageTodo with Postgres pool and logger
-func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) ReminderRepo {
+func NewStorageTodo(postgres *pgxpool.Pool, logger *logging.Logger) model.TodoRepository {
 	return &TodoStorage{Postgres: postgres, logger: logger}
 }
 
 // GetReminds return all todos in DB PostgreSQL
-func (s *TodoStorage) GetReminds(ctx context.Context, params FetchParams, userID string) ([]model.Todo, int, int, error) {
+func (s *TodoStorage) GetReminds(ctx context.Context, params model.FetchParams, userID string) ([]model.Todo, int, int, error) {
 	var reminds []model.Todo
 	var sql string
 
@@ -223,38 +209,19 @@ func (s *TodoStorage) UpdateStatus(ctx context.Context, id int, updateInput mode
 	return nil
 }
 
-// UpdateUserConfig update user_configs. Changes notification or period
-func (s *TodoStorage) UpdateUserConfig(ctx context.Context, id string, input model.UserConfigs) error {
-	tn := time.Now()
-	const sql = `UPDATE reminder.users_configs SET "Notification" = $1, "Period" = $2, "UpdatedAt" = $3 WHERE "ID" = $4`
-
-	ct, err := s.Postgres.Exec(ctx, sql, input.Notification, input.Period, tn, id)
-
-	if err != nil {
-		s.logger.Errorf("unable to update user-config %v", err)
-		return err
-	}
-
-	if ct.RowsAffected() == 0 {
-		return errors.New("user configs not found")
-	}
-
-	return nil
-}
-
 // DeleteRemind deletes remind from DB
 func (s *TodoStorage) DeleteRemind(ctx context.Context, id int) error {
 	const sql = `DELETE FROM reminder.todo WHERE "ID" = $1`
 	res, err := s.Postgres.Exec(ctx, sql, id)
 	if err != nil {
 		s.logger.Errorf("Error delete remind: %v", err)
-		return ErrDeleteFailed
+		return model.ErrDeleteFailed
 	}
 
 	rowsAffected := res.RowsAffected()
 	if rowsAffected == 0 {
 		s.logger.Errorf("error don't found remind: %v", err)
-		return ErrCantFindRemindWithID
+		return model.ErrCantFindRemindWithID
 	}
 
 	return nil
@@ -289,184 +256,6 @@ func (s *TodoStorage) GetRemindByID(ctx context.Context, id int) (model.Todo, er
 	}
 
 	return todo, nil
-}
-
-// Truncate removes all seed data from the test database.
-func (s *TodoStorage) Truncate() error {
-	stmt := "TRUNCATE TABLE reminder.todo, reminder.users_configs;"
-
-	if _, err := s.Postgres.Exec(context.Background(), stmt); err != nil {
-		return fmt.Errorf("truncate test database tables %v", err)
-	}
-
-	return nil
-}
-
-// SeedTodos seed todos for tests
-func (s *TodoStorage) SeedTodos() ([]model.Todo, error) {
-	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
-	now := time.Now().Truncate(1 * time.Millisecond).UTC()
-	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
-
-	userID, err := s.SeedUserConfig()
-	if err != nil {
-		s.logger.Println(err)
-		return []model.Todo{}, err
-	}
-
-	todos := []model.Todo{
-		{
-			Description: "tes1",
-			Title:       "tes1",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-			Completed:   false,
-		},
-		{
-			Description: "tes2",
-			Title:       "tes2",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-			Completed:   true,
-			FinishedAt:  &finishedDate,
-		},
-		{
-			Description: "tes3",
-			Title:       "tes3",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-		{
-			Description: "tes4",
-			Title:       "tes4",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-		{
-			Description: "tes5",
-			Title:       "tes5",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-	}
-
-	for i := range todos {
-		const sql = `INSERT INTO reminder.todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed") 
-				 VALUES ($1, $2, $3, $4, $5, $6, $7) returning "ID"`
-
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed)
-
-		err := row.Scan(&todos[i].ID)
-		if err != nil {
-			s.logger.Errorf("Error create remind: %v", err)
-		}
-
-	}
-
-	return todos, nil
-}
-
-// SeedTodos seed todos for tests with notification
-func (s *TodoStorage) SeedTodosForDeadline() ([]model.Todo, error) {
-	date := time.Date(2023, time.April, 1, 1, 0, 0, 0, time.UTC)
-	now := time.Now().Truncate(1 * time.Millisecond).UTC()
-	finishedDate := time.Date(2023, time.April, 1, 2, 0, 0, 0, time.UTC)
-	dateNotifyPeriod, _ := time.Parse(time.RFC3339, time.Now().Truncate(time.Minute).Format(time.RFC3339))
-
-	userID, err := s.SeedUserConfig()
-	if err != nil {
-		s.logger.Println(err)
-		return []model.Todo{}, err
-	}
-
-	b := true
-
-	todos := []model.Todo{
-		{
-			Description:    "tes1",
-			Title:          "tes1",
-			UserID:         userID,
-			CreatedAt:      now,
-			DeadlineAt:     date,
-			Completed:      false,
-			DeadlineNotify: &b,
-			NotifyPeriod:   []time.Time{dateNotifyPeriod},
-		},
-		{
-			Description: "tes2",
-			Title:       "tes2",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-			Completed:   true,
-			FinishedAt:  &finishedDate,
-		},
-		{
-			Description: "tes3",
-			Title:       "tes3",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-		{
-			Description: "tes4",
-			Title:       "tes4",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-		{
-			Description: "tes5",
-			Title:       "tes5",
-			UserID:      userID,
-			CreatedAt:   now,
-			DeadlineAt:  date,
-		},
-	}
-
-	for i := range todos {
-		const sql = `INSERT INTO reminder.todo ("Description", "Title", "User", "CreatedAt", "DeadlineAt", "FinishedAt", "Completed", "DeadlineNotify", "NotifyPeriod") 
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning "ID"`
-
-		row := s.Postgres.QueryRow(context.Background(), sql, todos[i].Description, todos[i].Title, todos[i].UserID, todos[i].CreatedAt, todos[i].DeadlineAt, todos[i].FinishedAt, todos[i].Completed, todos[i].DeadlineNotify, todos[i].NotifyPeriod)
-
-		err := row.Scan(&todos[i].ID)
-		if err != nil {
-			s.logger.Errorf("Error create remind: %v", err)
-		}
-
-	}
-
-	return todos, nil
-}
-
-// SeedUserConfig seed todos for tests
-func (s *TodoStorage) SeedUserConfig() (string, error) {
-	userConfig := model.UserConfigs{
-		ID:           "rrdZH9ERxueDxj2m1e1T2vIQKBP2",
-		Notification: true,
-		Period:       2,
-		CreatedAt:    time.Now(),
-	}
-
-	var ID string
-
-	const sql = `INSERT INTO reminder.users_configs ("ID", "Notification", "Period", "CreatedAt") 
-				 VALUES ($1, $2, $3, $4) returning "ID"`
-
-	row := s.Postgres.QueryRow(context.Background(), sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
-
-	err := row.Scan(&ID)
-	if err != nil {
-		s.logger.Errorf("Error create userConfig: %v", err)
-	}
-
-	return ID, nil
 }
 
 func (s *TodoStorage) GetRemindsForNotification(ctx context.Context) ([]model.NotificationRemind, error) {
@@ -563,55 +352,32 @@ WHERE "ID" = '%d'`, timeToDelete, id)
 	return nil
 }
 
-func (s *TodoStorage) GetUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error) {
-	var configs model.UserConfigs
+// GetUserRoutes return users permissions to role form DB PostgresSQL
+func (s *TodoStorage) GetUserRoutes(ctx context.Context, role string) ([]string, error) {
+	var routes []string
+	const sql = `SELECT sf.name	FROM role.role_permissions AS rp JOIN role.permissions AS p ON p.id = ANY(rp.permissions) JOIN role.features AS f ON f.feature_name = 'reminder' JOIN role.sub_features AS sf ON sf.featureid = f.id WHERE rp.role = $1`
+	rows, err := s.Postgres.Query(ctx, sql, role)
 
-	const sql = `SELECT "ID", "Notification", "Period", "CreatedAt", "UpdatedAt"  FROM reminder.users_configs
-    WHERE "ID" = $1 LIMIT 1`
+	defer rows.Close()
 
-	row := s.Postgres.QueryRow(ctx, sql, userID)
-
-	err := row.Scan(
-		&configs.ID,
-		&configs.Notification,
-		&configs.Period,
-		&configs.CreatedAt,
-		&configs.UpdatedAt,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.UserConfigs{}, nil
-	}
 	if err != nil {
-		s.logger.Printf("cannot get user-configs from database: %v\n", err)
-		return model.UserConfigs{}, errors.New("cannot get user-configs from database")
+		s.logger.Errorf("Error get user permissions: %v", err)
+		return []string{}, err
 	}
 
-	return configs, nil
-}
-
-// CreateUserConfigs  store new remind entity to DB PostgresSQL
-func (s *TodoStorage) CreateUserConfigs(ctx context.Context, userID string) (model.UserConfigs, error) {
-	var userConfig model.UserConfigs
-
-	userConfig.ID = userID
-	userConfig.Notification = false
-	userConfig.Period = 2
-	userConfig.CreatedAt = time.Now()
-
-	const sql = `INSERT INTO reminder.users_configs ("ID", "Notification",  "Period", "CreatedAt") 
-				 VALUES ($1, $2, $3, $4) returning "ID", "Notification",  "Period", "CreatedAt", "UpdatedAt"`
-	row := s.Postgres.QueryRow(ctx, sql, userConfig.ID, userConfig.Notification, userConfig.Period, userConfig.CreatedAt)
-	err := row.Scan(
-		&userConfig.ID,
-		&userConfig.Notification,
-		&userConfig.Period,
-		&userConfig.CreatedAt,
-		&userConfig.UpdatedAt,
-	)
-	log.Print("CreatedAt ", userConfig.CreatedAt)
-	if err != nil {
-		s.logger.Errorf("Error create userConfigs: %v", err)
-		return model.UserConfigs{}, err
+	for rows.Next() {
+		var route string
+		if err := rows.Scan(&route); err != nil {
+			s.logger.Errorf("Error get user permission: %v", err)
+			return []string{}, err
+		}
+		routes = append(routes, route)
 	}
-	return userConfig, nil
+
+	if err := rows.Err(); err != nil {
+		s.logger.Errorf("Error get user permission: %v", err)
+		return []string{}, err
+	}
+
+	return routes, nil
 }

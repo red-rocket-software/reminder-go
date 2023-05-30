@@ -1,9 +1,16 @@
 package domain
 
 import (
+	"context"
+	"errors"
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
+)
+
+var (
+	ErrDeleteFailed         = errors.New("error delete remind")
+	ErrCantFindRemindWithID = errors.New("can't find remind")
 )
 
 type Todo struct {
@@ -18,14 +25,6 @@ type Todo struct {
 	Notificated    bool        `json:"notificated"`
 	DeadlineNotify *bool       `json:"deadline_notify"`
 	NotifyPeriod   []time.Time `json:"notify_period"`
-}
-
-type UserConfigs struct {
-	ID           string     `json:"ID"`
-	Notification bool       `json:"notification"`
-	Period       int        `json:"period"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
 type TodoInput struct {
@@ -69,4 +68,33 @@ type NotificationRemind struct {
 
 type NotificationDAO struct {
 	Notificated bool
+}
+
+type TimeRangeFilter struct {
+	StartRange string
+	EndRange   string
+}
+
+type FetchParams struct {
+	utils.Page
+	TimeRangeFilter
+	FilterByDate  string //createdAt or deadlineAt
+	FilterBySort  string // ASC or DESC
+	FilterByQuery string // current, all or completed
+
+}
+
+//go:generate mockgen -source=todo.go -destination=mocks/todoStorage.go
+type TodoRepository interface {
+	GetReminds(ctx context.Context, params FetchParams, userID string) ([]Todo, int, int, error)
+	CreateRemind(ctx context.Context, todo Todo) (Todo, error)
+	UpdateRemind(ctx context.Context, id int, input TodoUpdateInput) (Todo, error)
+	UpdateStatus(ctx context.Context, id int, updateInput TodoUpdateStatusInput) error
+	UpdateNotification(ctx context.Context, id int, dao NotificationDAO) error
+	DeleteRemind(ctx context.Context, id int) error
+	GetRemindByID(ctx context.Context, id int) (Todo, error)
+	UpdateNotifyPeriod(ctx context.Context, id int, timeToDelete string) error
+	GetRemindsForNotification(ctx context.Context) ([]NotificationRemind, error)
+	GetRemindsForDeadlineNotification(ctx context.Context) ([]NotificationRemind, string, error)
+	GetUserRoutes(ctx context.Context, role string) ([]string, error)
 }
