@@ -101,7 +101,7 @@ You need to pass the verification token in each request. This token is checked i
 This is a service that starts and runs in a goroutine. Every 5 seconds, the service goes through the database and looks for a reminder to send a notification via the SMTP protocol
 
 ## CI/CD
-**Note:** currently CI/CD is implented under for stage environment only
+**Note:** currently CI/CD is implemented for stage environment only
 
 Pipeline is triggered either by push or merge (pull request) but certain jobs work with dev branch only. If make feature or fix branch from dev branch, pipeline will only run lint and tests. For dev branch after tests and lint finish successfully build job will start. Build job builds Docker images and pushes them to GCR. After succesfull build job manual approval for deployment is required (again, dev branch only). Pipeline creates issue for specified approvers. One of the approvers has to use key word specified in issue in order to deploy both services into GKE cluster or deny deployment.
 
