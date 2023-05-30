@@ -183,4 +183,5 @@ jobs:
           helm upgrade --install staging-worker-release worker-chart \
             --set image=eu.gcr.io/coa-project-5c923/coa-worker \
             --set tag=$WORKER_TAG
-#fytf
+
+#su
