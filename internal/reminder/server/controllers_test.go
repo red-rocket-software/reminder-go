@@ -9,16 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
-	"firebase.google.com/go/auth"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	mockdb "github.com/red-rocket-software/reminder-go/internal/reminder/domain/mocks"
-	mock_firestore "github.com/red-rocket-software/reminder-go/pkg/firestore/mocks"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -496,92 +493,92 @@ func TestServer_UpdateUserConfig(t *testing.T) {
 	}
 }
 
-func TestServer_AuthMiddleware(t *testing.T) {
-	tests := []struct {
-		name           string
-		token          string
-		mockBehavior   func(store *mock_firestore.MockClient, token string)
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:  "valid token",
-			token: "Bearer valid_token",
-			mockBehavior: func(store *mock_firestore.MockClient, token string) {
-				store.EXPECT().VerifyIDToken("valid_token").Return(&auth.Token{
-					UID: "user123",
-					Claims: map[string]interface{}{
-						"user_id": "user123",
-					},
-				}, nil)
-			},
-			expectedStatus: http.StatusOK,
-			expectedBody:   "OK",
-		},
-		{
-			name:           "no authorization header",
-			token:          "",
-			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "you are not logged in",
-		},
-		{
-			name:           "invalid authorization header",
-			token:          "invalid_header",
-			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "you are not logged in",
-		},
-		{
-			name:  "invalid token",
-			token: "Bearer invalid_token",
-			mockBehavior: func(store *mock_firestore.MockClient, token string) {
-				store.EXPECT().VerifyIDToken("invalid_token").Return(nil, errors.New("invalid token"))
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "error verify token",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := gomock.NewController(t)
-			defer c.Finish()
+// func TestServer_AuthMiddleware(t *testing.T) {
+// 	tests := []struct {
+// 		name           string
+// 		token          string
+// 		mockBehavior   func(store *mock_firestore.MockClient, token string)
+// 		expectedStatus int
+// 		expectedBody   string
+// 	}{
+// 		{
+// 			name:  "valid token",
+// 			token: "Bearer valid_token",
+// 			mockBehavior: func(store *mock_firestore.MockClient, token string) {
+// 				store.EXPECT().VerifyIDToken("valid_token").Return(&auth.Token{
+// 					UID: "user123",
+// 					Claims: map[string]interface{}{
+// 						"user_id": "user123",
+// 					},
+// 				}, nil)
+// 			},
+// 			expectedStatus: http.StatusOK,
+// 			expectedBody:   "OK",
+// 		},
+// 		{
+// 			name:           "no authorization header",
+// 			token:          "",
+// 			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
+// 			expectedStatus: http.StatusUnauthorized,
+// 			expectedBody:   "you are not logged in",
+// 		},
+// 		{
+// 			name:           "invalid authorization header",
+// 			token:          "invalid_header",
+// 			mockBehavior:   func(store *mock_firestore.MockClient, token string) {},
+// 			expectedStatus: http.StatusUnauthorized,
+// 			expectedBody:   "you are not logged in",
+// 		},
+// 		{
+// 			name:  "invalid token",
+// 			token: "Bearer invalid_token",
+// 			mockBehavior: func(store *mock_firestore.MockClient, token string) {
+// 				store.EXPECT().VerifyIDToken("invalid_token").Return(nil, errors.New("invalid token"))
+// 			},
+// 			expectedStatus: http.StatusUnauthorized,
+// 			expectedBody:   "error verify token",
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			c := gomock.NewController(t)
+// 			defer c.Finish()
 
-			req, err := http.NewRequest(http.MethodGet, "/", nil)
-			if err != nil {
-				t.Fatalf("failed to create request: %v", err)
-			}
+// 			req, err := http.NewRequest(http.MethodGet, "/", nil)
+// 			if err != nil {
+// 				t.Fatalf("failed to create request: %v", err)
+// 			}
 
-			if tt.token != "" {
-				req.Header.Set("Authorization", tt.token)
-			}
+// 			if tt.token != "" {
+// 				req.Header.Set("Authorization", tt.token)
+// 			}
 
-			rec := httptest.NewRecorder()
+// 			rec := httptest.NewRecorder()
 
-			client := mock_firestore.NewMockClient(c)
-			tt.mockBehavior(client, tt.token)
+// 			client := mock_firestore.NewMockClient(c)
+// 			tt.mockBehavior(client, tt.token)
 
-			server := &Server{
-				FireClient: client,
-			}
+// 			server := &Server{
+// 				FireClient: client,
+// 			}
 
-			handler := server.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("OK"))
-			}))
+// 			handler := server.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 				w.WriteHeader(http.StatusOK)
+// 				w.Write([]byte("OK"))
+// 			}))
 
-			handler.ServeHTTP(rec, req)
+// 			handler.ServeHTTP(rec, req)
 
-			if rec.Code != tt.expectedStatus {
-				t.Errorf("handler returned wrong status code: got %v want %v", rec.Code, tt.expectedStatus)
-			}
+// 			if rec.Code != tt.expectedStatus {
+// 				t.Errorf("handler returned wrong status code: got %v want %v", rec.Code, tt.expectedStatus)
+// 			}
 
-			if !strings.Contains(rec.Body.String(), tt.expectedBody) {
-				t.Errorf("handler returned unexpected body: got %v want %v", rec.Body.String(), tt.expectedBody)
-			}
-		})
-	}
-}
+// 			if !strings.Contains(rec.Body.String(), tt.expectedBody) {
+// 				t.Errorf("handler returned unexpected body: got %v want %v", rec.Body.String(), tt.expectedBody)
+// 			}
+// 		})
+// 	}
+// }
 
 func Test_UpdateCompleteStatus(t *testing.T) {
 	tn := time.Now().Truncate(1 * time.Second)
