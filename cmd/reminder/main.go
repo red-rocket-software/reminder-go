@@ -6,10 +6,8 @@ import (
 	"github.com/red-rocket-software/reminder-go/config"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/server"
 	"github.com/red-rocket-software/reminder-go/internal/reminder/storage"
-	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 	"github.com/red-rocket-software/reminder-go/pkg/postgresql"
-	"google.golang.org/api/option"
 )
 
 //	@title			Reminder App API
@@ -35,15 +33,7 @@ func main() {
 	todoStorage := storage.NewStorageTodo(postgresClient, &logger)
 	userConfigsStorage := storage.NewConfigsStorage(postgresClient, &logger)
 
-	// creating firebase client
-	opt := option.WithCredentialsFile("serviceAccountKey.json")
-	fireClient, err := firestore.NewClient(ctx, opt)
-	if err != nil {
-		logger.Errorf("Failed to Auth a Firestore Client: %v", err)
-		return
-	}
-
-	app := server.New(ctx, logger, todoStorage, userConfigsStorage, fireClient, *cfg)
+	app := server.New(ctx, logger, todoStorage, userConfigsStorage, *cfg)
 	logger.Debugf("Starting reminder server on port %s", cfg.HTTP.Port)
 
 	if err := app.Run(cfg); err != nil {

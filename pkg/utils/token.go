@@ -24,5 +24,5 @@ func ParseToken(token string, signedJWTKey string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid token claim")
 	}
 
-	return claims["role"].(string), claims["fireToken"].(string), nil
+	return claims["role"].(string), claims["uid"].(string), nil
 }
