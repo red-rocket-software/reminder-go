@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/red-rocket-software/reminder-go/config"
 	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
-	"github.com/red-rocket-software/reminder-go/pkg/firestore"
 	"github.com/red-rocket-software/reminder-go/pkg/logging"
 )
 
@@ -21,19 +20,17 @@ type Server struct {
 	Logger         logging.Logger
 	TodoStorage    model.TodoRepository
 	ConfigsStorage model.ConfigRepository
-	FireClient     firestore.Client
 	ctx            context.Context
 	config         config.Config
 }
 
 // New returns new Server.
-func New(ctx context.Context, logger logging.Logger, todoStorage model.TodoRepository, configsStorage model.ConfigRepository, fireClient firestore.Client, cfg config.Config) *Server {
+func New(ctx context.Context, logger logging.Logger, todoStorage model.TodoRepository, configsStorage model.ConfigRepository, cfg config.Config) *Server {
 	server := &Server{
 		ctx:            ctx,
 		Logger:         logger,
 		TodoStorage:    todoStorage,
 		ConfigsStorage: configsStorage,
-		FireClient:     fireClient,
 		config:         cfg,
 	}
 	return server
