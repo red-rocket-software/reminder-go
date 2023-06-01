@@ -55,7 +55,7 @@ func (server *Server) RoleMiddleware(next http.Handler) http.Handler {
 		}
 
 		for _, rt := range p {
-			if rt == "all" {
+			if rt == "allReminder" {
 				ctx := context.WithValue(r.Context(), "userID", middlewareData.uID)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return

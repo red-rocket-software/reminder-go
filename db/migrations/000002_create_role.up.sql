@@ -28,6 +28,6 @@ CREATE TABLE IF NOT EXISTS role.features (
 ALTER TABLE role.sub_features ADD FOREIGN KEY (featureID) REFERENCES role.features (id);
 
 INSERT INTO role.features (feature_name) VALUES ('reminder'), ('dashboard');
-INSERT INTO role.sub_features (name, featureID) VALUES ('all', 1), ('all', 2);
-INSERT INTO role.permissions (sub_features) VALUES ('{1,2}');
-INSERT INTO role.role_permissions (role, permissions) VALUES ('admin', '{1}');
+INSERT INTO role.sub_features (name, featureID) VALUES ('allRemainder', 1), ('allDashboard', 2);
+INSERT INTO role.permissions (sub_features) VALUES ('{1,2}'),('{1}');
+INSERT INTO role.role_permissions (role, permissions) VALUES ('admin', '{1}'), ('user', '{2}');
