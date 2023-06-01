@@ -147,7 +147,6 @@ jobs:
         run: |
           gcloud --quiet components update
           gcloud --quiet components install kubectl
-          gcloud auth configure-docker --quiet
 
       - name: Install Helm
         run: |
@@ -160,6 +159,8 @@ jobs:
           location: 'europe-central2'
 
       - name: Deploy to GKE
+        env:
+          SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
           eval `ssh-agent -s`
           ssh-add - <<< '${{ secrets.INFRASTRUCTURE_PRIVATE_KEY }}'
@@ -167,6 +168,9 @@ jobs:
           cd coa-infrastructure
           git checkout dev
           cd Helm
+
+          echo "$SA_KEY" > /tmp/key.json
+          cat /tmp/key.json | docker login -u _json_key --password-stdin https://eu.gcr.io
 
           REMINDER_IMAGE=eu.gcr.io/coa-project-5c923/coa-reminder:latest
           WORKER_IMAGE=eu.gcr.io/coa-project-5c923/coa-worker:latest
