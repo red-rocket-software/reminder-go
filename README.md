@@ -101,7 +101,7 @@ You need to pass the verification token in each request. This token is checked i
 This is a service that starts and runs in a goroutine. Every 5 seconds, the service goes through the database and looks for a reminder to send a notification via the SMTP protocol
 
 ## CI/CD
-**Note:** currently CI/CD is implemented for stage environment only and steps for coa infrastructure (with frontend and backend services) are identical, except coa repo doesn’t have tests and environment variables for frontend microservice are set in GitHub Actions secrets (not in GCP's Secret Manager since that are only used during build and not during container start).
+**Note:** currently CI/CD is implemented for stage environment only and steps for coa infrastructure (with frontend and backend services) are identical, except coa repo doesn’t have tests and environment variables for frontend microservice are set in GitHub Actions secrets (not in GCP's Secret Manager since they are only used during build and not during container start).
 
 ![image](https://github.com/red-rocket-software/reminder-go/assets/73254444/f2667561-4cb7-4cf8-bfc3-a5168a1a099b)
 
