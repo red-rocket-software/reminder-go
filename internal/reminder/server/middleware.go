@@ -31,7 +31,7 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 
 		role, uid, err := utils.ParseToken(token, server.config.JWTSecret)
 		if err != nil {
-			utils.JSONError(w, http.StatusUnauthorized, errors.New("error to parse JWT token"))
+			utils.JSONError(w, http.StatusUnauthorized, err)
 			return
 		}
 
