@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -53,8 +54,11 @@ func (server *Server) RoleMiddleware(next http.Handler) http.Handler {
 			utils.JSONError(w, http.StatusUnauthorized, err)
 			return
 		}
+		fmt.Println("permissions:", p)
 
 		for _, rt := range p {
+			fmt.Println("sub-features:", rt)
+
 			if rt == "allReminder" {
 				ctx := context.WithValue(r.Context(), "userID", middlewareData.uID)
 				next.ServeHTTP(w, r.WithContext(ctx))
