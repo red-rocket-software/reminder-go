@@ -675,7 +675,7 @@ func TestServer_GetOrCreateUserConfig(t *testing.T) {
 			id:   "",
 			mockBehavior: func(store *mockdb.MockConfigRepository, id string) {
 			},
-			expectedStatusCode: 500,
+			expectedStatusCode: 400,
 		},
 		{
 			name: "Error - GetUserConfigs Error",

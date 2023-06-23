@@ -10,26 +10,28 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	model "github.com/red-rocket-software/reminder-go/internal/reminder/domain"
+	"github.com/red-rocket-software/reminder-go/internal/reminder/domain"
 	"github.com/red-rocket-software/reminder-go/pkg/utils"
 )
 
-// AddRemind
-// @Description	AddRemind
+// AddRemind godoc
+// @Description	AddRemind create a new remind
 // @Summary		create a new remind
 // @Tags			reminds
 // @Accept			json
 // @Produce		json
 // @Param			input	body		domain.TodoInput	true	"remind info"
-// @Success		201		{string}	domain.Todo
+// @Param			Authorization	header		string	true	"Authentication header"
+// @Success		201		{object}	domain.Todo
 //
 // @Failure		422		{object}	utils.HTTPError
 // @Failure		400		{object}	utils.HTTPError
 // @Failure		500		{object}	utils.HTTPError
+// @Security	ApiKeyAuth
 //
 // @Router			/remind [post]
 func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
-	var input model.TodoInput
+	var input domain.TodoInput
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -44,7 +46,7 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 
 	userID := r.Context().Value("userID").(string)
 
-	var todo model.Todo
+	var todo domain.Todo
 
 	deadlineParseTime, err := time.Parse(time.RFC3339, input.DeadlineAt)
 	if err != nil {
@@ -96,17 +98,20 @@ func (server *Server) AddRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusCreated, remind)
 }
 
-// DeleteRemind
-// @Description	DeleteRemind
+// DeleteRemind godoc
+// @Description	DeleteRemind deleting remind
 // @Summary		delete remind
 // @Tags			reminds
 // @Accept			json
 // @Produce		json
 // @Param			id	path		int		true	"id"
+// @Param			Authorization	header		string	true	"Authentication header"
 // @Success		204	{string}	string	"remind with id:1 successfully deleted"
 //
 // @Failure		400	{object}	utils.HTTPError
+// @Failure		404	{object}	utils.HTTPError
 // @Failure		500	{object}	utils.HTTPError
+// @Security	ApiKeyAuth
 //
 // @Router			/remind{id} [delete]
 func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
@@ -119,11 +124,11 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 	// deleting remind from db
 	if err := server.TodoStorage.DeleteRemind(server.ctx, remindID); err != nil {
-		if errors.Is(err, model.ErrDeleteFailed) {
+		if errors.Is(err, domain.ErrDeleteFailed) {
 			utils.JSONError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if errors.Is(err, model.ErrCantFindRemindWithID) {
+		if errors.Is(err, domain.ErrCantFindRemindWithID) {
 			utils.JSONError(w, http.StatusNotFound, err)
 			return
 		}
@@ -139,19 +144,21 @@ func (server *Server) DeleteRemind(w http.ResponseWriter, r *http.Request) {
 
 // GetRemindByID godoc
 //
-//	@Description	GetRemindByID
-//	@Summary		return a remind by id
-//	@Tags			reminds
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int	true	"id"
-//	@Success		200	{object}	domain.Todo
+//		@Description	GetRemindByID
+//		@Summary		return a remind by id
+//		@Tags			reminds
+//		@Accept			json
+//		@Produce		json
+//		@Param			id	path		int	true	"id"
+//	 @Param			Authorization	header		string	true	"Authentication header"
 //
-//	@Failure		400	{object}	utils.HTTPError
-//	@Failure		404	{object}	utils.HTTPError
-//	@Failure		500	{object}	utils.HTTPError
+// @Success		200	{object}	domain.Todo
 //
-//	@Router			/remind/{id} [get]
+// @Failure		400	{object}	utils.HTTPError
+// @Failure		404	{object}	utils.HTTPError
+// @Failure		500	{object}	utils.HTTPError
+// @Security	ApiKeyAuth
+// @Router			/remind/{id} [get]
 func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -173,7 +180,7 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, todo)
 }
 
-// UpdateRemind update Description field and Completed if true changes FinishedAt on time.Now
+// UpdateRemind godoc
 //
 //	@Description	UpdateRemind
 //	@Summary		update remind with given fields
@@ -182,11 +189,16 @@ func (server *Server) GetRemindByID(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		int						true	"id"
 //	@Param			input	body		domain.TodoUpdateInput	true	"update info"
-//	@Success		200		{string}	domain.Todo
+//
+// @Param			Authorization	header		string	true	"Authentication header"
+//
+//	@Success		200		{object}	domain.Todo
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
+//
+// @Security	ApiKeyAuth
 //
 //	@Router			/remind/{id} [put]
 func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +210,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var input model.TodoUpdateInput
+	var input domain.TodoUpdateInput
 
 	err = json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -220,7 +232,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if input.Title == "" {
-		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("description is empty"))
+		utils.JSONError(w, http.StatusUnprocessableEntity, errors.New("title is empty"))
 		return
 	}
 
@@ -233,7 +245,7 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, remind)
 }
 
-// UpdateUserConfig update user_config model
+// UpdateUserConfig godoc
 //
 //	@Description	UpdateUserConfig
 //	@Summary		update user_config with given fields
@@ -242,10 +254,15 @@ func (server *Server) UpdateRemind(w http.ResponseWriter, r *http.Request) {
 //	@Produce		json
 //	@Param			id		path		string						true	"id"
 //	@Param			input	body		domain.UserConfigs	true	"update info"
+//
+// @Param			Authorization	header		string	true	"Authentication header"
+//
 //	@Success		200		{string}	string					"success"
 //
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
+//
+// @Security	ApiKeyAuth
 //
 //	@Router			/configs/{id} [put]
 func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +270,7 @@ func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 
 	uID := vars["id"]
 
-	var input model.UserConfigs
+	var input domain.UserConfigs
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -270,20 +287,25 @@ func (server *Server) UpdateUserConfig(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, "success")
 }
 
-// UpdateCompleteStatus update Completed field to true
+// UpdateCompleteStatus godoc
 //
 //	@Description	UpdateCompleteStatus
-//	@Summary		update remind's field "completed"
+//	@Summary		update reminds field "completed"
 //	@Tags			reminds
 //	@Accept			json
 //	@Produce		json
 //	@Param			id		path		int							true	"id"
 //	@Param			input	body		domain.TodoUpdateStatusInput	true	"update info"
+//
+// @Param			Authorization	header		string	true	"Authentication header"
+//
 //	@Success		200		{string}	string						"remind status updated"
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		422		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
+//
+// @Security	ApiKeyAuth
 //
 //	@Router			/status/{id} [put]
 func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +317,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var updateInput model.TodoUpdateStatusInput
+	var updateInput domain.TodoUpdateStatusInput
 
 	err = json.NewDecoder(r.Body).Decode(&updateInput)
 	if err != nil {
@@ -318,7 +340,7 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 	utils.JSONFormat(w, http.StatusOK, "remind status updated")
 }
 
-// GetReminds handle get reminds.
+// GetReminds godoc
 //
 //	@Description	GetReminds
 //	@Summary		return a list of reminds according to params
@@ -329,12 +351,18 @@ func (server *Server) UpdateCompleteStatus(w http.ResponseWriter, r *http.Reques
 //	@Param			cursor	query		string	true	"cursor"
 //	@Param			filter	query		string	true	"filter"
 //	@Param			filterOptions	query		string	true	"filterOptions"
+//	@Param			filterOptions	query		string	true	"filterParams"
+//
+// @Param			Authorization	header		string	true	"Authentication header"
+//
 //	@Success		200		{object}	domain.TodoResponse
 //
 //	@Failure		400		{object}	utils.HTTPError
 //	@Failure		500		{object}	utils.HTTPError
 //
-//	@Router			/remind [get]
+// @Security	ApiKeyAuth
+//
+//	@Router			/reminds [get]
 func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	// scan for limit in parameters
 	limitStr := r.URL.Query().Get("limit")
@@ -376,7 +404,7 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//initialize fetchParameters
-	params := model.FetchParams{
+	params := domain.FetchParams{
 		Page: utils.Page{
 			Cursor: cursor,
 			Limit:  limit,
@@ -394,7 +422,7 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := model.TodoResponse{
+	res := domain.TodoResponse{
 		Todos: reminds,
 		Count: count,
 		PageInfo: utils.PageInfo{
@@ -406,25 +434,43 @@ func (server *Server) GetReminds(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, res)
 }
 
+// GetOrCreateUserConfig godoc
+//
+//	@Description	GetOrCreateUserConfig
+//	@Summary		return user configs or create it if it doesn't exist
+//	@Tags			user_config
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int	true	"id"
+//
+// @Param			Authorization	header		string	true	"Authentication header"
+//
+//	@Success		200		{object}	domain.UserConfigs
+//
+//	@Failure		400		{object}	utils.HTTPError
+//	@Failure		500		{object}	utils.HTTPError
+//
+// @Security	ApiKeyAuth
+//
+//	@Router			/configs/{id} [get]
 func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	uID := vars["id"]
 
 	if uID == "" {
-
-		utils.JSONError(w, http.StatusInternalServerError, errors.New("empty or wrong userID"))
+		utils.JSONError(w, http.StatusBadRequest, errors.New("empty or wrong userID"))
 		return
 	}
 
-	var userConfigs model.UserConfigs
+	var userConfigs domain.UserConfigs
 	var err error
 
 	userConfigs, err = server.ConfigsStorage.GetUserConfigs(server.ctx, uID)
 	if err != nil {
 		utils.JSONError(w, http.StatusInternalServerError, err)
 		return
-	} else if userConfigs == (model.UserConfigs{}) {
+	} else if userConfigs == (domain.UserConfigs{}) {
 		userConfigs, err = server.ConfigsStorage.CreateUserConfigs(server.ctx, uID)
 		if err != nil {
 			utils.JSONError(w, http.StatusInternalServerError, err)
@@ -435,6 +481,15 @@ func (server *Server) GetOrCreateUserConfig(w http.ResponseWriter, r *http.Reque
 	utils.JSONFormat(w, http.StatusOK, userConfigs)
 }
 
+// HealthCheck godoc
+//
+//	@Description	HealthCheck
+//	@Summary		check server health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{string}	string "OK"
+//
+//	@Router			/health [get]
 func (server *Server) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	utils.JSONFormat(w, http.StatusOK, "OK")
 }

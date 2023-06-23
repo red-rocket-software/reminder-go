@@ -49,7 +49,7 @@ definitions:
       count:
         type: integer
       pageInfo:
-        $ref: '#/definitions/pagination.PageInfo'
+        $ref: '#/definitions/utils.PageInfo'
       todos:
         items:
           $ref: '#/definitions/domain.Todo'
@@ -96,31 +96,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  pagination.Page:
-    properties:
-      cursor:
-        description: Cursor describes the position in the database to start from
-        type: integer
-      filter:
-        description: Filter describe filter params - by DeadlineAt or CreateAt
-        type: string
-      filterOption:
-        description: FilterOption describe filterOption params - DESC or ASC
-        type: string
-      limit:
-        description: Limit describes the number of records per request
-        type: integer
-    type: object
-  pagination.PageInfo:
-    properties:
-      nextCursor:
-        description: NextCursor describes the position of the next page
-        type: integer
-      page:
-        allOf:
-        - $ref: '#/definitions/pagination.Page'
-        description: Page describes original request
-    type: object
   utils.HTTPError:
     properties:
       code:
@@ -130,47 +105,46 @@ definitions:
         example: status bad request
         type: string
     type: object
-host: localhost:8000
+  utils.Page:
+    properties:
+      cursor:
+        description: Cursor describes the position in the database to start from
+        type: integer
+      limit:
+        description: Limit describes the number of records per request
+        type: integer
+    type: object
+  utils.PageInfo:
+    properties:
+      nextCursor:
+        description: NextCursor describes the position of the next page
+        type: integer
+      page:
+        allOf:
+        - $ref: '#/definitions/utils.Page'
+        description: Page describes original request
+    type: object
+host: coa-reminder.redrocket.software
 info:
   contact: {}
   description: API Server for Reminder Application
   title: Reminder App API
   version: "1.0"
 paths:
-  /completed:
+  /configs/{id}:
     get:
       consumes:
       - application/json
-      description: GetCompletedReminds
+      description: GetOrCreateUserConfig
       parameters:
-      - description: limit
-        in: query
-        name: limit
+      - description: id
+        in: path
+        name: id
         required: true
-        type: string
-      - description: cursor
-        in: query
-        name: cursor
-        required: true
-        type: string
-      - description: filter
-        in: query
-        name: filter
-        required: true
-        type: string
-      - description: filterOptions
-        in: query
-        name: filterOptions
-        required: true
-        type: string
-      - description: start of time range
-        in: query
-        name: start
-        required: true
-        type: string
-      - description: end of time range
-        in: query
-        name: end
+        type: integer
+      - description: Authentication header
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
@@ -179,7 +153,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/domain.TodoResponse'
+            $ref: '#/definitions/domain.UserConfigs'
         "400":
           description: Bad Request
           schema:
@@ -189,102 +163,69 @@ paths:
           schema:
             $ref: '#/definitions/utils.HTTPError'
       security:
-      - BasicAuth: []
-      summary: return a list of completed reminds
+      - ApiKeyAuth: []
+      summary: return user configs or create it if it doesn't exist
       tags:
-      - reminds
-  /current:
-    get:
+      - user_config
+    put:
       consumes:
       - application/json
-      description: GetCurrentReminds
+      description: UpdateUserConfig
       parameters:
-      - description: limit
-        in: query
-        name: limit
+      - description: id
+        in: path
+        name: id
         required: true
         type: string
-      - description: cursor
-        in: query
-        name: cursor
+      - description: update info
+        in: body
+        name: input
         required: true
-        type: string
-      - description: filter
-        in: query
-        name: filter
-        required: true
-        type: string
-      - description: filterOption
-        in: query
-        name: filterOption
+        schema:
+          $ref: '#/definitions/domain.UserConfigs'
+      - description: Authentication header
+        in: header
+        name: Authorization
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: success
           schema:
-            $ref: '#/definitions/domain.TodoResponse'
-        "400":
-          description: Bad Request
+            type: string
+        "422":
+          description: Unprocessable Entity
           schema:
             $ref: '#/definitions/utils.HTTPError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      summary: return a list of current reminds
+      security:
+      - ApiKeyAuth: []
+      summary: update user_config with given fields
       tags:
-      - reminds
+      - user_config
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: HealthCheck
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: check server health
   /remind:
-    get:
-      consumes:
-      - application/json
-      description: GetAllReminds
-      parameters:
-      - description: limit
-        in: query
-        name: limit
-        required: true
-        type: string
-      - description: cursor
-        in: query
-        name: cursor
-        required: true
-        type: string
-      - description: filter
-        in: query
-        name: filter
-        required: true
-        type: string
-      - description: filterOptions
-        in: query
-        name: filterOptions
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/domain.TodoResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-      summary: return a list of all reminds
-      tags:
-      - reminds
     post:
       consumes:
       - application/json
-      description: AddRemind
+      description: AddRemind create a new remind
       parameters:
       - description: remind info
         in: body
@@ -292,13 +233,18 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.TodoInput'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/domain.Todo'
         "400":
           description: Bad Request
           schema:
@@ -311,6 +257,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: create a new remind
       tags:
       - reminds
@@ -325,6 +273,11 @@ paths:
         name: id
         required: true
         type: integer
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -344,6 +297,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: return a remind by id
       tags:
       - reminds
@@ -363,13 +318,18 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.TodoUpdateInput'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            $ref: '#/definitions/domain.Todo'
         "400":
           description: Bad Request
           schema:
@@ -382,6 +342,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: update remind with given fields
       tags:
       - reminds
@@ -389,13 +351,18 @@ paths:
     delete:
       consumes:
       - application/json
-      description: DeleteRemind
+      description: DeleteRemind deleting remind
       parameters:
       - description: id
         in: path
         name: id
         required: true
         type: integer
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -407,11 +374,73 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/utils.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
+      security:
+      - ApiKeyAuth: []
       summary: delete remind
+      tags:
+      - reminds
+  /reminds:
+    get:
+      consumes:
+      - application/json
+      description: GetReminds
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: cursor
+        in: query
+        name: cursor
+        required: true
+        type: string
+      - description: filter
+        in: query
+        name: filter
+        required: true
+        type: string
+      - description: filterOptions
+        in: query
+        name: filterOptions
+        required: true
+        type: string
+      - description: filterParams
+        in: query
+        name: filterOptions
+        required: true
+        type: string
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.TodoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.HTTPError'
+      security:
+      - ApiKeyAuth: []
+      summary: return a list of reminds according to params
       tags:
       - reminds
   /status/{id}:
@@ -431,6 +460,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/domain.TodoUpdateStatusInput'
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -450,42 +484,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.HTTPError'
-      summary: update remind's field "completed"
+      security:
+      - ApiKeyAuth: []
+      summary: update reminds field "completed"
       tags:
       - reminds
-  /update-configs/{id}:
-    put:
-      consumes:
-      - application/json
-      description: UpdateUserConfig
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: update info
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/domain.UserConfigs'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: success
-          schema:
-            type: string
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.HTTPError'
-      summary: update user_config with given fields
-      tags:
-      - user_config
+securityDefinitions:
+  ApiKeyAuth:
+    description: Used for secure privet data
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

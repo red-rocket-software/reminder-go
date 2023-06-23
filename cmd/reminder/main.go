@@ -14,8 +14,13 @@ import (
 //	@version		1.0
 //	@description	API Server for Reminder Application
 
-// @host		localhost:8000
+// @host		coa-reminder.redrocket.software
 // @BasePath	/
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Used for secure privet data
+
 func main() {
 	cfg := config.GetConfig()
 	logger := logging.GetLogger()
