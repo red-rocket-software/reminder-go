@@ -18,9 +18,9 @@ func GetUserPermissions(ctx context.Context, role string, cfg config.Config) ([]
 	defer postgresClient.Close()
 
 	var routes []string
-	const sql = `SELECT sf.name
+	const sql = `SELECT sf.sub_feature_name
 FROM role.role_permissions rp
-JOIN role.permissions p ON p.id = ANY (rp.permissions)
+JOIN role.permissions p ON p.id = rp.permissionID
 JOIN role.sub_features sf ON sf.id = ANY (p.sub_features)
 WHERE rp.role = $1`
 	rows, err := postgresClient.Query(ctx, sql, role)
