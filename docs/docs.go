@@ -15,14 +15,14 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/completed": {
+        "/configs/{id}": {
             "get": {
                 "security": [
                     {
-                        "BasicAuth": []
+                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "GetCompletedReminds",
+                "description": "GetOrCreateUserConfig",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,50 +30,22 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "reminds"
+                    "user_config"
                 ],
-                "summary": "return a list of completed reminds",
+                "summary": "return user configs or create it if it doesn't exist",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query",
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "cursor",
-                        "name": "cursor",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter",
-                        "name": "filter",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filterOptions",
-                        "name": "filterOptions",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "start of time range",
-                        "name": "start",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "end of time range",
-                        "name": "end",
-                        "in": "query",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -81,137 +53,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/domain.TodoResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/current": {
-            "get": {
-                "description": "GetCurrentReminds",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reminds"
-                ],
-                "summary": "return a list of current reminds",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "cursor",
-                        "name": "cursor",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter",
-                        "name": "filter",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filterOption",
-                        "name": "filterOption",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.TodoResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/remind": {
-            "get": {
-                "description": "GetAllReminds",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reminds"
-                ],
-                "summary": "return a list of all reminds",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "cursor",
-                        "name": "cursor",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filter",
-                        "name": "filter",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "filterOptions",
-                        "name": "filterOptions",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/domain.TodoResponse"
+                            "$ref": "#/definitions/domain.UserConfigs"
                         }
                     },
                     "400": {
@@ -228,8 +70,98 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "UpdateUserConfig",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_config"
+                ],
+                "summary": "update user_config with given fields",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "update info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/domain.UserConfigs"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "HealthCheck",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check server health",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/remind": {
             "post": {
-                "description": "AddRemind",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "AddRemind create a new remind",
                 "consumes": [
                     "application/json"
                 ],
@@ -249,13 +181,20 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/domain.TodoInput"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/domain.Todo"
                         }
                     },
                     "400": {
@@ -281,6 +220,11 @@ const docTemplate = `{
         },
         "/remind/{id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "GetRemindByID",
                 "consumes": [
                     "application/json"
@@ -298,6 +242,13 @@ const docTemplate = `{
                         "description": "id",
                         "name": "id",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
                         "required": true
                     }
                 ],
@@ -329,6 +280,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "UpdateRemind",
                 "consumes": [
                     "application/json"
@@ -356,13 +312,20 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/domain.TodoUpdateInput"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/domain.Todo"
                         }
                     },
                     "400": {
@@ -386,9 +349,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/reminds": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "GetReminds",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reminds"
+                ],
+                "summary": "return a list of reminds according to params",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter",
+                        "name": "filter",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filterOptions",
+                        "name": "filterOptions",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "filterParams",
+                        "name": "filterOptions",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.TodoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/remind{id}": {
             "delete": {
-                "description": "DeleteRemind",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "DeleteRemind deleting remind",
                 "consumes": [
                     "application/json"
                 ],
@@ -406,6 +458,13 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -421,6 +480,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/utils.HTTPError"
                         }
                     },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.HTTPError"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -432,6 +497,11 @@ const docTemplate = `{
         },
         "/status/{id}": {
             "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "UpdateCompleteStatus",
                 "consumes": [
                     "application/json"
@@ -442,7 +512,7 @@ const docTemplate = `{
                 "tags": [
                     "reminds"
                 ],
-                "summary": "update remind's field \"completed\"",
+                "summary": "update reminds field \"completed\"",
                 "parameters": [
                     {
                         "type": "integer",
@@ -459,6 +529,13 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/domain.TodoUpdateStatusInput"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -472,59 +549,6 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "422": {
-                        "description": "Unprocessable Entity",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.HTTPError"
-                        }
-                    }
-                }
-            }
-        },
-        "/update-configs/{id}": {
-            "put": {
-                "description": "UpdateUserConfig",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user_config"
-                ],
-                "summary": "update user_config with given fields",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "update info",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/domain.UserConfigs"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "success",
-                        "schema": {
-                            "type": "string"
                         }
                     },
                     "422": {
@@ -618,7 +642,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "pageInfo": {
-                    "$ref": "#/definitions/pagination.PageInfo"
+                    "$ref": "#/definitions/utils.PageInfo"
                 },
                 "todos": {
                     "type": "array",
@@ -691,44 +715,6 @@ const docTemplate = `{
                 }
             }
         },
-        "pagination.Page": {
-            "type": "object",
-            "properties": {
-                "cursor": {
-                    "description": "Cursor describes the position in the database to start from",
-                    "type": "integer"
-                },
-                "filter": {
-                    "description": "Filter describe filter params - by DeadlineAt or CreateAt",
-                    "type": "string"
-                },
-                "filterOption": {
-                    "description": "FilterOption describe filterOption params - DESC or ASC",
-                    "type": "string"
-                },
-                "limit": {
-                    "description": "Limit describes the number of records per request",
-                    "type": "integer"
-                }
-            }
-        },
-        "pagination.PageInfo": {
-            "type": "object",
-            "properties": {
-                "nextCursor": {
-                    "description": "NextCursor describes the position of the next page",
-                    "type": "integer"
-                },
-                "page": {
-                    "description": "Page describes original request",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/pagination.Page"
-                        }
-                    ]
-                }
-            }
-        },
         "utils.HTTPError": {
             "type": "object",
             "properties": {
@@ -741,6 +727,44 @@ const docTemplate = `{
                     "example": "status bad request"
                 }
             }
+        },
+        "utils.Page": {
+            "type": "object",
+            "properties": {
+                "cursor": {
+                    "description": "Cursor describes the position in the database to start from",
+                    "type": "integer"
+                },
+                "limit": {
+                    "description": "Limit describes the number of records per request",
+                    "type": "integer"
+                }
+            }
+        },
+        "utils.PageInfo": {
+            "type": "object",
+            "properties": {
+                "nextCursor": {
+                    "description": "NextCursor describes the position of the next page",
+                    "type": "integer"
+                },
+                "page": {
+                    "description": "Page describes original request",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/utils.Page"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "Used for secure privet data",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
@@ -748,7 +772,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8000",
+	Host:             "coa-reminder.redrocket.software",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Reminder App API",

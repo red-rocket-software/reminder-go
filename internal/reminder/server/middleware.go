@@ -31,7 +31,7 @@ func (server *Server) AuthMiddleware(next http.Handler) http.Handler {
 
 		role, uid, err := utils.ParseToken(token, server.config.JWTSecret)
 		if err != nil {
-			utils.JSONError(w, http.StatusUnauthorized, errors.New("error to parse JWT token"))
+			utils.JSONError(w, http.StatusUnauthorized, err)
 			return
 		}
 
@@ -55,6 +55,7 @@ func (server *Server) RoleMiddleware(next http.Handler) http.Handler {
 		}
 
 		for _, rt := range p {
+
 			if rt == "allReminder" {
 				ctx := context.WithValue(r.Context(), "userID", middlewareData.uID)
 				next.ServeHTTP(w, r.WithContext(ctx))

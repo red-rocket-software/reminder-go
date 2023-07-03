@@ -24,6 +24,7 @@ func GetUserPermissions(ctx context.Context, role string, cfg config.Config) ([]
 		JOIN role.sub_features sf ON sf.id =  ANY(p.sub_features)
 		JOIN role.features f ON sf.featureID = f.id
 		WHERE rp.role = $1`
+
 	rows, err := postgresClient.Query(ctx, sql, role)
 
 	defer rows.Close()

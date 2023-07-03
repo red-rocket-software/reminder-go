@@ -1,8 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS "role";
 
 CREATE TABLE IF NOT EXISTS role.permissions (
-                                                id serial primary key,
-                                                sub_features int [] not null
+    id serial primary key,
+    sub_features int [] not null
 );
 
 CREATE TABLE IF NOT EXISTS role.role_permissions (
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS role.role_permissions (
 );
 
 CREATE TABLE IF NOT EXISTS role.features (
-                                             id serial primary key,
-                                             feature_name varchar unique not null
+    id serial primary key,
+    feature_name varchar unique not null
 );
 
 CREATE TABLE IF NOT EXISTS role.sub_features (
@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS role.sub_features (
     featureID int not null REFERENCES role.features (id),
     sub_feature_name varchar not null unique
 );
+
 
 INSERT INTO role.features (feature_name) VALUES ('reminder'), ('dashboard'), ('backoffice');
 INSERT INTO role.sub_features (sub_feature_name, featureID) VALUES ('allReminder', 1), ('allDashboard', 2), ('allBackoffice', 3);
