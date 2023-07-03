@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/red-rocket-software/reminder-go/config"
@@ -40,39 +38,48 @@ func main() {
 
 	remindStorage := todoStorage.NewStorageTodo(postgresClient, &logger)
 
-	newWorker := notifier.NewWorker(ctx, remindStorage, fireClient, *cfg)
-
-	//run workers in scheduler
-	c := make(chan os.Signal, 1)
-	signal.Notify(c)
-	stop := make(chan error)
-
 	ticker := time.NewTicker(time.Second * 10) // workers runs every 10 second
 
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				err = newWorker.ProcessSendNotification()
-				if err != nil {
-					logger.Errorf("error to process workers send notification: %v", err)
-					stop <- err
-				}
-				err = newWorker.ProcessSendDeadlineNotification()
-				if err != nil {
-					logger.Errorf("error to process workers send deadline notification: %v", err)
-					stop <- err
-				}
-			case <-stop:
-				logger.Info("closing goroutine")
-				return
-			}
+	worker := notifier.NewWorker(ctx, remindStorage, fireClient, *ticker, *cfg, logger)
+
+	for {
+		select {
+		case <-ticker.C:
+			worker.Run()
+		default:
 		}
+	}
 
-	}()
-	<-c
-	defer ticker.Stop()
-
-	<-stop
-	logger.Info("Stop application")
+	//run workers in scheduler
+	//c := make(chan os.Signal, 1)
+	//signal.Notify(c)
+	//stop := make(chan error)
+	//
+	//
+	//go func() {
+	//	for {
+	//		select {
+	//		case <-ticker.C:
+	//			err = newWorker.ProcessSendNotification()
+	//			if err != nil {
+	//				logger.Errorf("error to process workers send notification: %v", err)
+	//				stop <- err
+	//			}
+	//			err = newWorker.ProcessSendDeadlineNotification()
+	//			if err != nil {
+	//				logger.Errorf("error to process workers send deadline notification: %v", err)
+	//				stop <- err
+	//			}
+	//		case <-stop:
+	//			logger.Info("closing goroutine")
+	//			return
+	//		}
+	//	}
+	//
+	//}()
+	//<-c
+	//defer ticker.Stop()
+	//
+	//<-stop
+	//logger.Info("Stop application")
 }
