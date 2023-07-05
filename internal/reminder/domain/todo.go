@@ -64,6 +64,7 @@ type NotificationRemind struct {
 	Description string    `json:"description"`
 	DeadlineAt  time.Time `json:"deadline_at"`
 	UserID      string    `json:"user_id"`
+	MessageType string    `json:"message_type"`
 }
 
 type NotificationDAO struct {
