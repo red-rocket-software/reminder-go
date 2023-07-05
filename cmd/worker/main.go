@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"time"
 
 	"github.com/red-rocket-software/reminder-go/config"
 	todoStorage "github.com/red-rocket-software/reminder-go/internal/reminder/storage"
@@ -38,17 +37,18 @@ func main() {
 
 	remindStorage := todoStorage.NewStorageTodo(postgresClient, &logger)
 
-	ticker := time.NewTicker(time.Second * 10) // workers runs every 10 second
+	worker := notifier.NewWorker(ctx, remindStorage, fireClient, *cfg, logger)
 
-	worker := notifier.NewWorker(ctx, remindStorage, fireClient, *ticker, *cfg, logger)
+	worker.Run()
 
-	for {
-		select {
-		case <-ticker.C:
-			worker.Run()
-		default:
-		}
-	}
+	//ticker := time.NewTicker(time.Second * 5) // workers runs every 10 second
+	//for {
+	//	select {
+	//	case <-ticker.C:
+	//		worker.Run()
+	//	default:
+	//	}
+	//}
 
 	//run workers in scheduler
 	//c := make(chan os.Signal, 1)
