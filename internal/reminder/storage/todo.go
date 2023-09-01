@@ -295,6 +295,7 @@ AND u."Period" = %d`, tn, t, i)
 			reminds = append(reminds, remind)
 		}
 
+		rows.Close()
 	}
 
 	return reminds, nil
@@ -315,6 +316,8 @@ AND t."DeadlineNotify" = true`, tn)
 		s.logger.Errorf("error to select deadline reminds for notification: %v", err)
 		return nil, "", err
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var remind model.NotificationRemind
