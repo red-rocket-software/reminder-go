@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS role.sub_features (
     sub_feature_name varchar not null unique
 );
 
-
 INSERT INTO role.features (feature_name) VALUES ('reminder'), ('dashboard'), ('backoffice');
 INSERT INTO role.sub_features (sub_feature_name, featureID) VALUES ('allReminder', 1), ('allDashboard', 2), ('allBackoffice', 3);
 INSERT INTO role.permissions (sub_features) VALUES ('{1,2,3}'),('{1}');
